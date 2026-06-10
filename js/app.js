@@ -1,85 +1,79 @@
 // ============================================================
-//  BAZAAR — APP.JS v4 — localStorage (Supabase-ready)
+//  BAZAAR — APP.JS v5 — Supabase backend via Vercel API
+//  All sensitive data lives on the server.
+//  localStorage only stores non-sensitive session cache.
 // ============================================================
-let currentUser = null;
-let pendingEmail = null, pendingCode = null;
-let signupData = null;
+let currentUser = null;   // safe fields only (no password, no raw credits)
+let pendingEmail = null;
 let currentItemForDl = null;
 let searchMode = 'auto';
 let searchCooldown = false;
-let cooldownTimer = null;
+let cooldownEnd = 0;
 let sessionStart = Date.now();
 
-// ── CURSOR (instant, no smooth) ──────────────────────────────
+// ── CURSOR (instant, no lerp) ─────────────────────────────────
 const cursorEl = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursorEl.style.left = e.clientX + 'px';
   cursorEl.style.top  = e.clientY + 'px';
-});
+}, { passive: true });
 document.addEventListener('mousedown', () => cursorEl.classList.add('click'));
 document.addEventListener('mouseup',   () => cursorEl.classList.remove('click'));
-const hoverQ = 'a,button,.nav-link,.item-card,.filter-btn,.mode-tab,.plan-card,.dd-item,.btn,.credits-pill,.auth-tab';
-document.addEventListener('mouseover', e => { if(e.target.closest(hoverQ)) cursorEl.classList.add('hover'); });
-document.addEventListener('mouseout',  e => { if(e.target.closest(hoverQ)) cursorEl.classList.remove('hover'); });
+const hQ = 'a,button,.nav-link,.item-card,.filter-btn,.mode-tab,.plan-card,.dd-item,.btn,.credits-pill,.auth-tab';
+document.addEventListener('mouseover', e => { if(e.target.closest(hQ)) cursorEl.classList.add('hover'); });
+document.addEventListener('mouseout',  e => { if(e.target.closest(hQ)) cursorEl.classList.remove('hover'); });
 
-// ── BG CANVAS (no mouse tracking) ────────────────────────────
+// ── BG CANVAS (fixed, no mouse) ───────────────────────────────
 (function(){
   const c = document.getElementById('bg-canvas'), ctx = c.getContext('2d');
-  let w, h;
-  function resize(){ w = c.width = innerWidth; h = c.height = innerHeight; }
-  window.addEventListener('resize', resize); resize();
+  let w, h; function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; }
+  window.addEventListener('resize', resize, {passive:true}); resize();
   let off = 0;
   function draw(){
-    ctx.clearRect(0, 0, w, h); off = (off + 0.15) % 80;
-    const vpx = w * .5, vpy = h * .55, depth = 600, far = 1200, spread = 2400;
-    ctx.lineWidth = .6;
-    for(let i = -22; i <= 22; i++){
-      const x = i * 80;
-      for(let z = 40; z < far; z += 10){
-        const z1 = z-off, z2 = z-off+10, s1 = depth/(depth+z1), s2 = depth/(depth+z2);
-        ctx.strokeStyle = `rgba(123,110,246,${.05*s1})`;
-        ctx.beginPath();
-        ctx.moveTo(vpx+(x-vpx)*s1, vpy+(h*.9-vpy)*s1);
-        ctx.lineTo(vpx+(x-vpx)*s2, vpy+(h*.9-vpy)*s2);
-        ctx.stroke();
-      }
-    }
-    for(let z = 40; z < far; z += 80){
-      const zz = z-(off%80), s = depth/(depth+zz), y = vpy+(h*.9-vpy)*s, hw = spread*s;
-      ctx.strokeStyle = `rgba(123,110,246,${.035*s})`;
-      ctx.beginPath(); ctx.moveTo(vpx-hw, y); ctx.lineTo(vpx+hw, y); ctx.stroke();
-    }
+    ctx.clearRect(0,0,w,h); off=(off+0.15)%80;
+    const vpx=w*.5,vpy=h*.55,depth=600,far=1200,spread=2400;
+    ctx.lineWidth=.6;
+    for(let i=-22;i<=22;i++){const x=i*80;for(let z=40;z<far;z+=10){const z1=z-off,z2=z-off+10,s1=depth/(depth+z1),s2=depth/(depth+z2);ctx.strokeStyle=`rgba(123,110,246,${.05*s1})`;ctx.beginPath();ctx.moveTo(vpx+(x-vpx)*s1,vpy+(h*.9-vpy)*s1);ctx.lineTo(vpx+(x-vpx)*s2,vpy+(h*.9-vpy)*s2);ctx.stroke();}}
+    for(let z=40;z<far;z+=80){const zz=z-(off%80),s=depth/(depth+zz),y=vpy+(h*.9-vpy)*s,hw=spread*s;ctx.strokeStyle=`rgba(123,110,246,${.035*s})`;ctx.beginPath();ctx.moveTo(vpx-hw,y);ctx.lineTo(vpx+hw,y);ctx.stroke();}
     requestAnimationFrame(draw);
   }
   draw();
 })();
 
-// ── TYPEWRITER ───────────────────────────────────────────────
+// ── TYPEWRITER ────────────────────────────────────────────────
 (function(){
-  const words = ['enquêtes.','investigations.','recherches.','vérifications.'];
-  let wi = 0, ci = 0, del = false;
-  const el = document.getElementById('hero-type'); if(!el) return;
-  function tick(){
-    const w = words[wi];
-    if(!del){ el.textContent = w.slice(0,++ci); if(ci===w.length){del=true;setTimeout(tick,1800);return;} setTimeout(tick,60); }
-    else { el.textContent = w.slice(0,--ci); if(ci===0){del=false;wi=(wi+1)%words.length;setTimeout(tick,300);return;} setTimeout(tick,35); }
-  }
-  setTimeout(tick, 800);
+  const words=['enquêtes.','investigations.','recherches.','vérifications.'];
+  let wi=0,ci=0,del=false;
+  const el=document.getElementById('hero-type'); if(!el)return;
+  function tick(){const w=words[wi];if(!del){el.textContent=w.slice(0,++ci);if(ci===w.length){del=true;setTimeout(tick,1800);return;}setTimeout(tick,60);}else{el.textContent=w.slice(0,--ci);if(ci===0){del=false;wi=(wi+1)%words.length;setTimeout(tick,300);return;}setTimeout(tick,35);}}
+  setTimeout(tick,800);
 })();
+
+// ── API HELPERS ───────────────────────────────────────────────
+async function api(path, body){
+  const r = await fetch('/api/'+path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Erreur serveur');
+  return data;
+}
 
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem('bazaar_user');
-  if(saved){
-    currentUser = JSON.parse(saved);
-    check48hVerif();
+  const saved = localStorage.getItem('bzr_session');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      // Check 48h re-verify
+      const lastVerif = currentUser.last_verif ? new Date(currentUser.last_verif).getTime() : 0;
+      if (Date.now() - lastVerif > 48*3600*1000) { showReverify(); }
+      else { bootApp(); }
+    } catch(e) { localStorage.removeItem('bzr_session'); }
   }
-  renderShop('Discord');
-  renderTools();
-  renderFounders();
-  renderPlans();
-  initQuota();
-  // Credits pill click
+  renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
   document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
 });
 
@@ -87,107 +81,95 @@ function bootApp(){
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('main-screen').style.display = 'flex';
   document.getElementById('user-name-nav').textContent = currentUser.pseudo || currentUser.email.split('@')[0];
-  updateQuotaUI(); startResetTimer();
-  currentUser.lastLogin = new Date().toISOString();
-  currentUser.loginCount = (currentUser.loginCount||0) + 1;
-  saveUser();
+  startResetTimer();
+  updateCreditsUI();
+  notify('👋 Bienvenue, '+( currentUser.pseudo || currentUser.email.split('@')[0])+'!');
 }
 
-function saveUser(){ localStorage.setItem('bazaar_user', JSON.stringify(currentUser)); }
+function saveSession(u){
+  currentUser = u;
+  localStorage.setItem('bzr_session', JSON.stringify(u));
+}
 
 // ── 48H RE-VERIFY ─────────────────────────────────────────────
-function check48hVerif(){
-  const last = currentUser.lastVerif || 0;
-  if(Date.now() - last > 48*3600*1000){
-    showReverify();
-  } else {
-    bootApp();
-  }
-}
-
 function showReverify(){
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('auth-login-step1').style.display = 'none';
-  document.getElementById('auth-login-otp').style.display = 'block';
-  const email = currentUser.email;
-  pendingEmail = email;
-  pendingCode = Math.floor(100000 + Math.random()*900000).toString();
-  document.getElementById('reverify-email').textContent = email;
-  sendOTP(email, pendingCode);
-  setAuthNote('reverify-note', `Code envoyé (démo: ${pendingCode})`, 'inf');
+  document.getElementById('auth-login-otp').style.display   = 'block';
+  document.getElementById('reverify-email').textContent = currentUser.email;
+  api('send-otp', { email: currentUser.email, purpose: 'reverify' })
+    .then(() => setAuthNote('reverify-note','Code envoyé !','inf'))
+    .catch(() => setAuthNote('reverify-note','Erreur envoi — réessayez.','err'));
 }
 
-function verifyReverify(){
-  const input = document.getElementById('reverify-code').value.trim();
-  if(input !== pendingCode){ setAuthNote('reverify-note','Code incorrect.','err'); return; }
-  currentUser.lastVerif = Date.now(); saveUser();
-  document.getElementById('auth-login-otp').style.display = 'none';
-  document.getElementById('auth-login-step1').style.display = 'block';
-  bootApp();
+async function verifyReverify(){
+  const code = document.getElementById('reverify-code').value.trim();
+  try {
+    await api('verify-otp', { email: currentUser.email, code, purpose: 'reverify' });
+    currentUser.last_verif = new Date().toISOString();
+    saveSession(currentUser);
+    document.getElementById('auth-login-otp').style.display   = 'none';
+    document.getElementById('auth-login-step1').style.display = 'block';
+    bootApp();
+  } catch(e){ setAuthNote('reverify-note', e.message, 'err'); }
 }
 
-// ── AUTH TABS ────────────────────────────────────────────────
+// ── AUTH TABS ─────────────────────────────────────────────────
 function switchAuthTab(tab){
-  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='signup')));
-  document.getElementById('auth-login').classList.toggle('active', tab==='login');
-  document.getElementById('auth-signup').classList.toggle('active', tab==='signup');
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='login')||(i===1&&tab==='signup')));
+  document.getElementById('auth-login').classList.toggle('active',tab==='login');
+  document.getElementById('auth-signup').classList.toggle('active',tab==='signup');
 }
 
-// ── LOGIN ────────────────────────────────────────────────────
+// ── LOGIN ─────────────────────────────────────────────────────
 async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-password').value;
   if(!email.includes('@')){ setAuthNote('login-note','Email invalide.','err'); return; }
   if(!pass){ setAuthNote('login-note','Mot de passe requis.','err'); return; }
-  // Check existing account in localStorage
-  const accounts = JSON.parse(localStorage.getItem('bazaar_accounts')||'{}');
-  if(!accounts[email]){ setAuthNote('login-note','Compte introuvable. Créez un compte.','err'); return; }
-  const acc = accounts[email];
-  if(acc.password !== btoa(pass)){ setAuthNote('login-note','Mot de passe incorrect.','err'); return; }
-  currentUser = { ...acc, lastVerif: Date.now() };
-  delete currentUser.password;
-  saveUser();
-  setAuthNote('login-note','✓ Connexion réussie !','ok');
-  setTimeout(bootApp, 400);
+  setAuthNote('login-note','Connexion…','inf');
+  try {
+    const res = await api('login', { email, password: pass });
+    res.user.last_verif = new Date().toISOString();
+    saveSession(res.user);
+    setAuthNote('login-note','✓ Connecté !','ok');
+    setTimeout(bootApp, 400);
+  } catch(e){ setAuthNote('login-note', e.message, 'err'); }
 }
 
-// ── SIGNUP ───────────────────────────────────────────────────
+// ── SIGNUP ────────────────────────────────────────────────────
 async function doSignup(){
   const pseudo  = document.getElementById('signup-pseudo').value.trim();
   const email   = document.getElementById('signup-email').value.trim();
   const pass    = document.getElementById('signup-password').value;
   const confirm = document.getElementById('signup-confirm').value;
-  if(pseudo.length < 2){ setAuthNote('signup-note','Pseudo trop court (min 2 caractères).','err'); return; }
+  if(pseudo.length<2){ setAuthNote('signup-note','Pseudo trop court.','err'); return; }
   if(!email.includes('@')){ setAuthNote('signup-note','Email invalide.','err'); return; }
-  if(pass.length < 8){ setAuthNote('signup-note','Mot de passe trop court (min 8 caractères).','err'); return; }
-  if(pass !== confirm){ setAuthNote('signup-note','Les mots de passe ne correspondent pas.','err'); return; }
-  const accounts = JSON.parse(localStorage.getItem('bazaar_accounts')||'{}');
-  if(accounts[email]){ setAuthNote('signup-note','Ce compte existe déjà.','err'); return; }
-  pendingCode = Math.floor(100000 + Math.random()*900000).toString();
-  signupData = { pseudo, email, password: btoa(pass) };
-  document.getElementById('signup-email-show').textContent = email;
-  document.getElementById('signup-step1').style.display = 'none';
-  document.getElementById('signup-step2').style.display = 'block';
-  sendOTP(email, pendingCode);
-  setAuthNote('signup-otp-note', `Code envoyé (démo: ${pendingCode})`, 'inf');
+  if(pass.length<8){ setAuthNote('signup-note','Mot de passe trop court (min 8 caractères).','err'); return; }
+  if(pass!==confirm){ setAuthNote('signup-note','Les mots de passe ne correspondent pas.','err'); return; }
+  setAuthNote('signup-note','Envoi du code…','inf');
+  pendingEmail = email;
+  try {
+    await api('signup', { email, pseudo, password: pass });
+    document.getElementById('signup-email-show').textContent = email;
+    document.getElementById('signup-step1').style.display = 'none';
+    document.getElementById('signup-step2').style.display = 'block';
+    setAuthNote('signup-otp-note','Code envoyé à votre email.','inf');
+  } catch(e){ setAuthNote('signup-note', e.message, 'err'); }
 }
 
-function verifySignupOTP(){
-  const input = document.getElementById('signup-otp').value.trim();
-  if(input !== pendingCode){ setAuthNote('signup-otp-note','Code incorrect.','err'); return; }
-  // Create account
-  const accounts = JSON.parse(localStorage.getItem('bazaar_accounts')||'{}');
-  accounts[signupData.email] = {
-    ...signupData,
-    joined: new Date().toISOString(),
-    totalSearches: 0, loginCount: 0, weekSearches: {}, monthSearches: {}
-  };
-  localStorage.setItem('bazaar_accounts', JSON.stringify(accounts));
-  // Login
-  currentUser = { email: signupData.email, pseudo: signupData.pseudo, joined: accounts[signupData.email].joined, lastVerif: Date.now(), totalSearches:0, loginCount:0, weekSearches:{}, monthSearches:{} };
-  saveUser();
-  setAuthNote('signup-otp-note','✓ Compte créé !','ok');
-  setTimeout(bootApp, 400);
+async function verifySignupOTP(){
+  const code = document.getElementById('signup-otp').value.trim();
+  const email   = document.getElementById('signup-email').value.trim();
+  const pseudo  = document.getElementById('signup-pseudo').value.trim();
+  const pass    = document.getElementById('signup-password').value;
+  try {
+    const res = await api('signup', { email, pseudo, password: pass, otp: code });
+    res.user.last_verif = new Date().toISOString();
+    saveSession(res.user);
+    setAuthNote('signup-otp-note','✓ Compte créé !','ok');
+    setTimeout(bootApp, 400);
+  } catch(e){ setAuthNote('signup-otp-note', e.message, 'err'); }
 }
 
 function backToSignup(){
@@ -195,40 +177,23 @@ function backToSignup(){
   document.getElementById('signup-step1').style.display = 'block';
 }
 
-async function sendOTP(email, code){
-  const payload = {
-    service_id: CONFIG.emailjs.serviceId, template_id: CONFIG.emailjs.templateId,
-    user_id: CONFIG.emailjs.publicKey,
-    template_params: { to_email: email, otp_code: code, from_name: 'Bazaar' }
-  };
-  try{ await fetch('https://api.emailjs.com/api/v1.0/email/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}); }catch(e){}
-}
+function setAuthNote(id,msg,type=''){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='auth-note '+type;}
+function setNote(id,msg,type=''){const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='modal-note '+type;}
+function logout(){if(!confirm('Se déconnecter ?'))return;localStorage.removeItem('bzr_session');location.reload();}
 
-function setAuthNote(id, msg, type=''){
-  const el = document.getElementById(id); if(!el) return;
-  el.textContent = msg; el.className = 'auth-note ' + type;
-}
-function setNote(id, msg, type=''){
-  const el = document.getElementById(id); if(!el) return;
-  el.textContent = msg; el.className = 'modal-note ' + type;
-}
-function logout(){ if(!confirm('Se déconnecter ?'))return; localStorage.removeItem('bazaar_user'); location.reload(); }
-
-// ── DROPDOWN ─────────────────────────────────────────────────
+// ── DROPDOWN ──────────────────────────────────────────────────
 function toggleDropdown(){
-  const btn = document.querySelector('.user-menu-btn'), dd = document.getElementById('user-dropdown');
-  const open = dd.classList.toggle('open'); btn.classList.toggle('open', open);
+  const btn=document.querySelector('.user-menu-btn'),dd=document.getElementById('user-dropdown');
+  const open=dd.classList.toggle('open'); btn.classList.toggle('open',open);
 }
-document.addEventListener('click', e => {
-  if(!e.target.closest('.user-menu-wrap')){ document.getElementById('user-dropdown')?.classList.remove('open'); document.querySelector('.user-menu-btn')?.classList.remove('open'); }
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.user-menu-wrap')){document.getElementById('user-dropdown')?.classList.remove('open');document.querySelector('.user-menu-btn')?.classList.remove('open');}
 });
 
 function openCreditsModal(){
-  const s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-  const left = Math.max(0,(s.max||5)-(s.used||0));
-  const box = document.getElementById('profile-content');
-  document.querySelector('#profile-modal .modal-header h2').textContent = 'Crédits';
-  box.innerHTML = `
+  const left = getCreditsLeft();
+  document.querySelector('#profile-modal .modal-header h2').textContent='Crédits';
+  document.getElementById('profile-content').innerHTML=`
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:40px;font-weight:900;color:var(--yellow);font-family:'JetBrains Mono',monospace">${left}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:1px;text-transform:uppercase">Crédits restants</div>
@@ -236,7 +201,7 @@ function openCreditsModal(){
     <div class="info-card" style="margin-bottom:14px;padding:16px">
       <p style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:0">
         Pour recharger, ouvrez un ticket sur Discord.<br>
-        <strong style="color:var(--white)">Tarif : 1 crédit = 0.10€</strong><br>
+        <strong style="color:var(--white)">Tarif : 1 crédit = 0.25€</strong><br>
         Paiement en LTC ou PayPal F&F.
       </p>
     </div>
@@ -247,143 +212,197 @@ function openCreditsModal(){
 function openProfile(section){
   document.getElementById('user-dropdown')?.classList.remove('open');
   document.querySelector('.user-menu-btn')?.classList.remove('open');
-  const box = document.getElementById('profile-content');
-  document.querySelector('#profile-modal .modal-header h2').textContent = 'Mon profil';
+  const box=document.getElementById('profile-content');
+  document.querySelector('#profile-modal .modal-header h2').textContent='Mon profil';
 
-  if(section === 'pseudo'){
-    box.innerHTML = `<label class="lbl">Nouveau pseudo</label>
-      <input class="inp" type="text" id="pm-pseudo" placeholder="MonPseudo" maxlength="20" value="${esc(currentUser.pseudo||'')}">
+  if(section==='pseudo'){
+    box.innerHTML=`<label class="lbl">Nouveau pseudo</label>
+      <div class="inp-icon-wrap"><img class="inp-icon" src="logo/user.png" alt=""><input class="inp" type="text" id="pm-pseudo" placeholder="MonPseudo" maxlength="20" value="${esc(currentUser.pseudo||'')}"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveNewPseudo()">Enregistrer</button>
       <p class="modal-note" id="pm-note"></p>`;
-  } else if(section === 'coupon'){
-    box.innerHTML = `<label class="lbl">Code</label>
+  } else if(section==='password'){
+    box.innerHTML=`<label class="lbl">Nouveau mot de passe</label>
+      <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="pm-pass1" placeholder="Min. 8 caractères"></div>
+      <label class="lbl">Confirmer</label>
+      <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="pm-pass2" placeholder="Répétez le mot de passe"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveNewPassword()">Changer le mot de passe</button>
+      <p class="modal-note" id="pm-note"></p>`;
+  } else if(section==='email'){
+    box.innerHTML=`<p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7">Un code OTP sera envoyé à la nouvelle adresse.</p>
+      <label class="lbl">Nouvel email</label>
+      <div class="inp-icon-wrap"><img class="inp-icon" src="logo/mail.png" alt=""><input class="inp" type="email" id="pm-email" placeholder="nouveau@domaine.com"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="changeEmailStep1()">Envoyer le code</button>
+      <p class="modal-note" id="pm-note"></p>`;
+  } else if(section==='coupon'){
+    box.innerHTML=`<label class="lbl">Code</label>
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <input class="inp" style="margin-bottom:0;flex:1" type="text" id="pm-coupon" placeholder="••••••••••••" maxlength="30">
         <button class="btn btn-primary" style="white-space:nowrap;padding:0 18px" onclick="applyCouponModal()">Appliquer</button>
       </div>
       <p class="modal-note" id="pm-note"></p>`;
-  } else if(section === 'stats'){
+  } else if(section==='stats'){
     renderStats(box);
-    document.querySelector('#profile-modal .modal-header h2').textContent = 'Statistiques';
+    document.querySelector('#profile-modal .modal-header h2').textContent='Statistiques';
   }
   document.getElementById('profile-modal').classList.add('open');
 }
 
 function renderStats(box){
-  const s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-  const left = Math.max(0,(s.max||5)-(s.used||0));
+  if(!currentUser){return;}
+  const left = getCreditsLeft();
   const now = new Date();
   const wk = `w_${now.getFullYear()}_${getWeek(now)}`;
   const mk = `m_${now.getFullYear()}_${now.getMonth()}`;
-  const vipActive = localStorage.getItem('bzaar_vip_'+currentUser.email) === '1';
-  const plan = currentUser.plan || 'Standard';
   const timeOn = Math.floor((Date.now()-sessionStart)/60000);
-  box.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    ${sRow('👤','Pseudo', currentUser.pseudo||'—')}
-    ${sRow('✉','Email', currentUser.email)}
-    ${sRow('📅','Inscrit le', currentUser.joined ? new Date(currentUser.joined).toLocaleDateString('fr-FR') : '—')}
-    ${sRow('🕐','Dernière connexion', currentUser.lastLogin ? new Date(currentUser.lastLogin).toLocaleDateString('fr-FR') : '—')}
-    ${sRow('⏱','Session actuelle', timeOn+'min')}
-    ${sRow('🔑','Connexions totales', currentUser.loginCount||1)}
-    ${sRow('🔍','Recherches aujourd\'hui', s.used||0)}
-    ${sRow('📊','Recherches cette semaine', (currentUser.weekSearches||{})[wk]||0)}
-    ${sRow('📈','Recherches ce mois', (currentUser.monthSearches||{})[mk]||0)}
-    ${sRow('🔎','Recherches totales', currentUser.totalSearches||0)}
-    ${sRow('💛','Crédits restants', left+' / '+(s.max||5))}
-    ${sRow('🏅','Rang', getRank(currentUser.totalSearches||0))}
-    ${sRow('📦','Abonnement', plan)}
-    ${sRow('👑','Accès VIP', vipActive?'✓ Actif':'✗ Inactif')}
-    ${sRow('✅','Email vérifié','✓ Oui')}
+  box.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    ${sRow('👤','Pseudo',currentUser.pseudo||'—')}
+    ${sRow('✉','Email',currentUser.email)}
+    ${sRow('📅','Inscrit le',currentUser.joined_at?new Date(currentUser.joined_at).toLocaleDateString('fr-FR'):'—')}
+    ${sRow('🕐','Dernière connexion',currentUser.last_login?new Date(currentUser.last_login).toLocaleDateString('fr-FR'):'—')}
+    ${sRow('⏱','Session',timeOn+'min')}
+    ${sRow('🔑','Connexions',currentUser.login_count||1)}
+    ${sRow('🔍','Recherches / jour',(currentUser.credits_used||0))}
+    ${sRow('📊','Cette semaine',(currentUser.week_searches||{})[wk]||0)}
+    ${sRow('📈','Ce mois',(currentUser.month_searches||{})[mk]||0)}
+    ${sRow('🔎','Total recherches',currentUser.total_searches||0)}
+    ${sRow('💛','Crédits restants',left+' / '+(currentUser.credits_max||5))}
+    ${sRow('🏅','Rang',getRank(currentUser.total_searches||0))}
+    ${sRow('📦','Plan',currentUser.plan||'standard')}
+    ${sRow('👑','VIP',currentUser.vip_active?'✓ Actif':'✗ Inactif')}
   </div>`;
 }
-function sRow(icon,label,value){ return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${icon} ${label}</div><div style="font-size:13px;font-weight:700;color:var(--text)">${value}</div></div>`; }
-function getRank(n){ if(n>=500)return'🏆 Expert'; if(n>=200)return'💎 Avancé'; if(n>=50)return'🥈 Intermédiaire'; if(n>=10)return'🥉 Débutant+'; return'🆕 Nouveau'; }
-function getWeek(d){ const s=new Date(d.getFullYear(),0,1); return Math.ceil(((d-s)/86400000+s.getDay()+1)/7); }
+function sRow(i,l,v){return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${i} ${l}</div><div style="font-size:13px;font-weight:700;color:var(--text)">${v}</div></div>`;}
+function getRank(n){if(n>=500)return'🏆 Expert';if(n>=200)return'💎 Avancé';if(n>=50)return'🥈 Intermédiaire';if(n>=10)return'🥉 Débutant+';return'🆕 Nouveau';}
+function getWeek(d){const s=new Date(d.getFullYear(),0,1);return Math.ceil(((d-s)/86400000+s.getDay()+1)/7);}
 
-function closeProfile(){ document.getElementById('profile-modal').classList.remove('open'); }
+function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
 
-function saveNewPseudo(){
-  const p = document.getElementById('pm-pseudo')?.value.trim();
-  if(!p||p.length<2){ setNote('pm-note','Pseudo trop court.','err'); return; }
-  currentUser.pseudo = p; saveUser();
-  document.getElementById('user-name-nav').textContent = p;
-  setNote('pm-note','✓ Mis à jour !','ok'); setTimeout(closeProfile, 900);
+async function saveNewPseudo(){
+  const p=document.getElementById('pm-pseudo')?.value.trim();
+  if(!p||p.length<2){setNote('pm-note','Pseudo trop court.','err');return;}
+  try{
+    const res=await api('update-user',{user_id:currentUser.id,pseudo:p});
+    saveSession({...currentUser,...res.user});
+    document.getElementById('user-name-nav').textContent=p;
+    setNote('pm-note','✓ Mis à jour !','ok'); setTimeout(closeProfile,900);
+  }catch(e){setNote('pm-note',e.message,'err');}
 }
 
-function applyCouponModal(){
-  const code = document.getElementById('pm-coupon')?.value.trim().toUpperCase();
-  if(code === CONFIG._codes.refund.toUpperCase()){
-    const s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-    const left = Math.max(0,(s.max||5)-(s.used||0));
-    if(left>0){ setNote('pm-note','✗ Vous avez encore des crédits.','err'); return; }
-    const usedCodes = JSON.parse(localStorage.getItem('bzaar_used_codes')||'[]');
-    const key = CONFIG._codes.refund.toUpperCase()+'_'+currentUser.email;
-    if(usedCodes.includes(key)){ setNote('pm-note','✗ Code déjà utilisé.','err'); return; }
-    s.used=0; s.max=5; s.exhaustedAt=null;
-    localStorage.setItem('bzq',JSON.stringify(s));
-    usedCodes.push(key); localStorage.setItem('bzaar_used_codes',JSON.stringify(usedCodes));
-    updateQuotaUI(); setNote('pm-note','✓ 5 crédits restaurés !','ok');
-    notify('✅ Crédits restaurés !'); setTimeout(closeProfile,1200); return;
-  }
-  if(code === CONFIG._codes.vip.toUpperCase()){
-    localStorage.setItem('bzaar_vip_'+currentUser.email,'1');
-    setNote('pm-note','✓ Accès VIP activé !','ok');
-    notify('👑 Accès VIP activé !'); setTimeout(closeProfile,1200); return;
-  }
-  setNote('pm-note','✗ Code invalide.','err');
+async function saveNewPassword(){
+  const p1=document.getElementById('pm-pass1')?.value;
+  const p2=document.getElementById('pm-pass2')?.value;
+  if(!p1||p1.length<8){setNote('pm-note','Min 8 caractères.','err');return;}
+  if(p1!==p2){setNote('pm-note','Les mots de passe ne correspondent pas.','err');return;}
+  try{
+    await api('update-user',{user_id:currentUser.id,new_password:p1});
+    setNote('pm-note','✓ Mot de passe mis à jour !','ok'); setTimeout(closeProfile,900);
+  }catch(e){setNote('pm-note',e.message,'err');}
 }
 
-// ── NAV ──────────────────────────────────────────────────────
+async function changeEmailStep1(){
+  const email=document.getElementById('pm-email')?.value.trim();
+  if(!email.includes('@')){setNote('pm-note','Email invalide.','err');return;}
+  try{
+    await api('send-otp',{email,purpose:'change_email'});
+    document.getElementById('profile-content').innerHTML=`
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Code envoyé à <strong style="color:var(--white)">${esc(email)}</strong></p>
+      <label class="lbl">Code reçu</label>
+      <input class="inp" type="text" id="pm-code" placeholder="000000" maxlength="6">
+      <button class="btn btn-primary" style="width:100%" onclick="changeEmailStep2('${esc(email)}')">Confirmer</button>
+      <p class="modal-note" id="pm-note"></p>`;
+  }catch(e){setNote('pm-note',e.message,'err');}
+}
+async function changeEmailStep2(email){
+  const code=document.getElementById('pm-code')?.value.trim();
+  try{
+    await api('verify-otp',{email,code,purpose:'change_email'});
+    const res=await api('update-user',{user_id:currentUser.id,email});
+    saveSession({...currentUser,...res.user});
+    setNote('pm-note','✓ Email mis à jour !','ok'); setTimeout(closeProfile,900);
+  }catch(e){setNote('pm-note',e.message,'err');}
+}
+
+async function applyCouponModal(){
+  const code=document.getElementById('pm-coupon')?.value.trim();
+  try{
+    const res=await api('coupon',{user_id:currentUser.id,code});
+    saveSession({...currentUser,...res.user});
+    updateCreditsUI();
+    if(res.type==='vip') notify('👑 Accès VIP activé !');
+    else if(res.type==='refund') notify('✅ Crédits restaurés !');
+    setNote('pm-note','✓ Code appliqué !','ok'); setTimeout(closeProfile,1200);
+  }catch(e){setNote('pm-note',e.message,'err');}
+}
+
+// ── NAV ───────────────────────────────────────────────────────
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   document.getElementById('page-'+name)?.classList.add('active');
-  const pages = ['home','shop','tools','subs','features','contact','about'];
-  const idx = pages.indexOf(name);
+  const pages=['home','shop','tools','subs','features','contact','about'];
+  const idx=pages.indexOf(name);
   if(idx>=0) document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
   window.scrollTo(0,0);
 }
 
-// ── QUOTA (24h from exhaustion) ───────────────────────────────
-function initQuota(){
-  const q = JSON.parse(localStorage.getItem('bzq')||'null');
-  if(!q) localStorage.setItem('bzq',JSON.stringify({used:0,max:5,exhaustedAt:null}));
-  updateQuotaUI();
+// ── CREDITS (server-side values) ──────────────────────────────
+function getCreditsLeft(){
+  if(!currentUser) return 0;
+  return Math.max(0, (currentUser.credits_max||5) - (currentUser.credits_used||0));
 }
-function updateQuotaUI(){
-  const s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-  const left = Math.max(0,(s.max||5)-(s.used||0));
-  ['sq-left','sr-left'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=left; });
+
+function updateCreditsUI(){
+  const left = getCreditsLeft();
+  ['sq-left','sr-left'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=left;});
 }
+
 function startResetTimer(){
   setInterval(()=>{
-    let s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-    const left = Math.max(0,(s.max||5)-(s.used||0));
+    if(!currentUser) return;
+    const left = getCreditsLeft();
     const qw=document.getElementById('quota-warn'),qt=document.getElementById('quota-timer'),srt=document.getElementById('sr-reset');
-    if(left<=0){
-      if(!s.exhaustedAt){ s.exhaustedAt=Date.now(); localStorage.setItem('bzq',JSON.stringify(s)); }
-      const d = Math.max(0, s.exhaustedAt+24*3600*1000-Date.now());
-      if(d<=0){ s.used=0;s.exhaustedAt=null;localStorage.setItem('bzq',JSON.stringify(s));if(qw)qw.style.display='none';if(srt)srt.style.display='none';updateQuotaUI();notify('✅ Crédits réinitialisés !');return; }
+    if(left<=0 && currentUser.credits_exhausted_at){
+      const resetAt = new Date(currentUser.credits_exhausted_at).getTime() + 24*3600*1000;
+      const d = Math.max(0, resetAt - Date.now());
+      if(d<=0){
+        // Auto-reset
+        currentUser.credits_used=0; currentUser.credits_exhausted_at=null; saveSession(currentUser);
+        if(qw)qw.style.display='none'; if(srt)srt.style.display='none';
+        updateCreditsUI(); notify('✅ Crédits réinitialisés !'); return;
+      }
       const str=`${pad(Math.floor(d/3600000))}h ${pad(Math.floor((d%3600000)/60000))}m ${pad(Math.floor((d%60000)/1000))}s`;
-      if(qw)qw.style.display='flex';if(qt)qt.textContent=str;
+      if(qw)qw.style.display='flex'; if(qt)qt.textContent=str;
       if(srt){srt.style.display='block';const el=document.getElementById('sr-timer');if(el)el.textContent=str;}
-    }else{if(qw)qw.style.display='none';if(srt)srt.style.display='none';updateQuotaUI();}
+    }else{
+      if(qw)qw.style.display='none'; if(srt)srt.style.display='none';
+    }
+    // Update cooldown button
+    if(searchCooldown){
+      const remaining=Math.ceil((cooldownEnd-Date.now())/1000);
+      if(remaining<=0){searchCooldown=false;const btn=document.getElementById('search-btn');if(btn){btn.disabled=false;btn.textContent='Rechercher';}document.getElementById('search-cooldown').className='search-cooldown';}
+      else{const btn=document.getElementById('search-btn');if(btn)btn.textContent=`⏳ ${remaining}s`;const cd=document.getElementById('search-cooldown');if(cd){cd.className='search-cooldown show';cd.textContent=`Prochaine recherche dans ${remaining}s`;}}
+    }
   },1000);
 }
-function pad(n){ return String(n).padStart(2,'0'); }
+function pad(n){return String(n).padStart(2,'0');}
 
-// ── SEARCH ───────────────────────────────────────────────────
+// ── SEARCH ────────────────────────────────────────────────────
 function setSearchMode(mode){
-  searchMode = mode;
+  searchMode=mode;
   document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
   document.querySelector(`.mode-tab[data-mode="${mode}"]`)?.classList.add('active');
-  const row = document.getElementById('manual-select-row');
-  if(row) row.style.display = mode==='manual' ? 'flex' : 'none';
+  const row=document.getElementById('manual-select-row');
+  if(row)row.style.display=mode==='manual'?'flex':'none';
+  // Update placeholder
+  const si=document.getElementById('search-input');
+  if(si) si.placeholder=mode==='manual'?'Entrez votre cible…':'Entrez une cible — auto-détection du type…';
 }
+
 function updateSelIcon(){
   const sel=document.getElementById('search-type'),opt=sel?.options[sel.selectedIndex],img=document.getElementById('sel-icon-img');
-  if(opt&&img) img.src=opt.getAttribute('data-icon')||'';
+  if(opt&&img){img.src=opt.getAttribute('data-icon')||'';}
 }
+
 function detectType(q){
   if(!q)return'username';
   if(/^(\+\d{1,3}[\s-]?)?\d{6,15}$/.test(q.replace(/[\s\-\(\)\.]/g,'')))return'phone';
@@ -394,109 +413,81 @@ function detectType(q){
 }
 
 async function doSearch(){
-  // Cooldown check (60s)
-  if(searchCooldown){
-    const remaining = Math.ceil((cooldownTimer - Date.now())/1000);
-    notify(`⏳ Attendez encore ${remaining}s avant la prochaine recherche.`, true); return;
-  }
-  let s = JSON.parse(localStorage.getItem('bzq')||'{"used":0,"max":5}');
-  const left = (s.max||5)-(s.used||0);
-  if(left<=0){ notify('⛔ Plus de crédits — rechargez via Discord', true); return; }
-  const q = document.getElementById('search-input').value.trim();
-  if(!q){ notify('Entrez une cible.', true); return; }
+  if(searchCooldown){const r=Math.ceil((cooldownEnd-Date.now())/1000);notify(`⏳ Attendez encore ${r}s.`,true);return;}
+  if(getCreditsLeft()<=0){notify('⛔ Plus de crédits — rechargez via Discord',true);return;}
+  const q=document.getElementById('search-input').value.trim();
+  if(!q){notify('Entrez une cible.',true);return;}
+  const type=searchMode==='auto'?detectType(q):(document.getElementById('search-type')?.value||'username');
+  const labels={phone:'📱 Téléphone',mail:'✉ Email',username:'👤 Username',discord:'💬 Discord ID',ip:'🌐 IP'};
 
-  const type = searchMode==='auto' ? detectType(q) : (document.getElementById('search-type')?.value||'username');
-  const labels = {phone:'📱 Téléphone',mail:'✉ Email',username:'👤 Username',discord:'💬 Discord ID',ip:'🌐 IP'};
+  // Deduct credit server-side
+  try{
+    const res=await api('search',{user_id:currentUser.id,query:q,type});
+    currentUser.credits_used=(currentUser.credits_max||5)-res.credits_left;
+    if(res.exhausted_at) currentUser.credits_exhausted_at=res.exhausted_at;
+    saveSession(currentUser); updateCreditsUI();
+  }catch(e){notify(e.message,true);return;}
 
-  // Deduct credit
-  s.used++;
-  if((s.max||5)-s.used<=0) s.exhaustedAt=Date.now();
-  localStorage.setItem('bzq',JSON.stringify(s)); updateQuotaUI();
+  // Start 60s cooldown
+  const btn=document.getElementById('search-btn');
+  btn.disabled=true; searchCooldown=true; cooldownEnd=Date.now()+60000;
 
-  // Track stats
-  if(currentUser){
-    currentUser.totalSearches=(currentUser.totalSearches||0)+1;
-    const now=new Date(), wk=`w_${now.getFullYear()}_${getWeek(now)}`, mk=`m_${now.getFullYear()}_${now.getMonth()}`;
-    if(!currentUser.weekSearches)currentUser.weekSearches={};
-    if(!currentUser.monthSearches)currentUser.monthSearches={};
-    currentUser.weekSearches[wk]=(currentUser.weekSearches[wk]||0)+1;
-    currentUser.monthSearches[mk]=(currentUser.monthSearches[mk]||0)+1;
-    saveUser();
-  }
-
-  // Disable button + start 60s cooldown
-  const btn = document.getElementById('search-btn');
-  btn.disabled = true; btn.textContent = '⏳ 60s';
-  searchCooldown = true; cooldownTimer = Date.now() + 60000;
-  let cdSec = 60;
-  const cdInterval = setInterval(()=>{
-    cdSec--;
-    if(btn) btn.textContent = `⏳ ${cdSec}s`;
-    if(cdSec<=0){ clearInterval(cdInterval); searchCooldown=false; if(btn){btn.disabled=false;btn.textContent='Rechercher';} }
-    const cd = document.getElementById('search-cooldown');
-    if(cd&&cdSec>0){ cd.className='search-cooldown show'; cd.textContent=`Prochaine recherche disponible dans ${cdSec}s`; }
-    else if(cd){ cd.className='search-cooldown'; }
-  },1000);
-
-  // Show loading (5s animation)
-  const loadDiv = document.getElementById('search-loading');
-  const fillEl  = document.getElementById('search-fill');
-  const loadTxt = document.getElementById('search-loading-text');
-  const messages = ['Interrogation des sources OSINT…','Agrégation des données…','Analyse en cours…','Vérification des résultats…','Finalisation…'];
+  // Loading bar (5s)
+  const loadDiv=document.getElementById('search-loading'),fillEl=document.getElementById('search-fill'),loadTxt=document.getElementById('search-loading-text');
+  const msgs=['Interrogation des sources OSINT…','Agrégation des données…','Analyse en cours…','Vérification des résultats…','Finalisation…'];
   loadDiv.className='search-loading show';
   fillEl.style.animation='none'; fillEl.offsetHeight; fillEl.style.animation='searchLoad 5s linear forwards';
-  let msgIdx=0;
-  const msgInterval=setInterval(()=>{ msgIdx=(msgIdx+1)%messages.length; if(loadTxt)loadTxt.textContent=messages[msgIdx]; },1000);
+  let mi=0;
+  const mi_=setInterval(()=>{mi=(mi+1)%msgs.length;if(loadTxt)loadTxt.textContent=msgs[mi];},1000);
 
   notify(`🔍 Recherche ${labels[type]||type} lancée…`);
-  const wrap = document.getElementById('results-wrap');
-  wrap.innerHTML='';
+  document.getElementById('results-wrap').innerHTML='';
 
   await new Promise(r=>setTimeout(r,5000));
-  clearInterval(msgInterval); loadDiv.className='search-loading';
+  clearInterval(mi_); loadDiv.className='search-loading';
 
-  try{ wrap.innerHTML = await fetchOSINT(q, type); }
-  catch(e){ wrap.innerHTML=`<div class="result-item"><h4>Erreur</h4><p>Réessayez.</p></div>`; }
+  try{document.getElementById('results-wrap').innerHTML=await fetchOSINT(q,type);}
+  catch(e){document.getElementById('results-wrap').innerHTML=`<div class="result-item"><h4>Erreur</h4><p>Réessayez.</p></div>`;}
 }
 
 async function fetchOSINT(q,type){
-  if(type==='ip'){try{const r=await fetch(`https://ipapi.co/${encodeURIComponent(q)}/json/`);const d=await r.json();if(d.error)throw'';return`<div class="result-item"><h4>🌐 IP Lookup — ${esc(q)}</h4><p>Pays : <strong>${d.country_name||'N/A'}</strong> (${d.country_code||'?'})<br>Région : <strong>${d.region||'N/A'}</strong> — Ville : <strong>${d.city||'N/A'}</strong><br>FAI / ASN : <strong>${d.org||'N/A'}</strong><br>Timezone : <strong>${d.timezone||'N/A'}</strong><br>Coordonnées : <strong>${d.latitude||'?'}, ${d.longitude||'?'}</strong></p><span class="result-tag">IPAPI.CO</span></div>`;}catch(e){return noRes(q);}}
+  if(type==='ip'){try{const r=await fetch(`https://ipapi.co/${encodeURIComponent(q)}/json/`);const d=await r.json();if(d.error)throw'';return`<div class="result-item"><h4>🌐 IP — ${esc(q)}</h4><p>Pays : <strong>${d.country_name||'N/A'}</strong><br>Région : <strong>${d.region||'N/A'}</strong> — Ville : <strong>${d.city||'N/A'}</strong><br>FAI : <strong>${d.org||'N/A'}</strong><br>Timezone : <strong>${d.timezone||'N/A'}</strong><br>GPS : <strong>${d.latitude||'?'}, ${d.longitude||'?'}</strong></p><span class="result-tag">IPAPI.CO</span></div>`;}catch(e){return noRes(q);}}
   if(type==='username'){const ps=[{n:'GitHub',u:`https://github.com/${q}`,i:'logo/github.png'},{n:'Reddit',u:`https://reddit.com/u/${q}`,i:'logo/redit.png'},{n:'Twitter',u:`https://twitter.com/${q}`,i:'logo/twitter.png'},{n:'Instagram',u:`https://instagram.com/${q}`,i:'logo/insta.png'},{n:'TikTok',u:`https://tiktok.com/@${q}`,i:'logo/tiktok.png'},{n:'Twitch',u:`https://twitch.tv/${q}`,i:'logo/twitch.png'},{n:'Steam',u:`https://steamcommunity.com/id/${q}`,i:'logo/steam.png'},{n:'Pinterest',u:`https://pinterest.com/${q}`,i:'logo/pinterest.png'},{n:'SoundCloud',u:`https://soundcloud.com/${q}`,i:'logo/soundcloud.png'},{n:'Spotify',u:`https://open.spotify.com/user/${q}`,i:'logo/spotify.png'},{n:'Snapchat',u:`https://snapchat.com/add/${q}`,i:'logo/snap.png'},{n:'Roblox',u:`https://roblox.com/users/profile?username=${q}`,i:'logo/roblox.png'}];const links=ps.map(p=>`<a href="${p.u}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;color:var(--blue);text-decoration:none;font-size:12px;margin-right:14px;margin-bottom:4px;font-family:'JetBrains Mono',monospace"><img src="${p.i}" style="width:13px;height:13px">${p.n} ↗</a>`).join('');return`<div class="result-item"><h4>👤 Username — ${esc(q)}</h4><div style="line-height:2.4;margin-bottom:6px">${links}</div><span class="result-tag">MULTI-PLATFORM</span></div>`;}
-  if(type==='mail'){const enc=encodeURIComponent(q),dom=q.split('@')[1]||'';return`<div class="result-item"><h4>✉ Email — ${esc(q)}</h4><p>Domaine : <strong>${esc(dom)}</strong><br><a href="https://haveibeenpwned.com/account/${enc}" target="_blank" style="color:var(--blue)">HaveIBeenPwned ↗</a><br><a href="https://hunter.io/email-verifier/${enc}" target="_blank" style="color:var(--blue)">Hunter.io ↗</a><br><a href="https://www.google.com/search?q=%22${enc}%22" target="_blank" style="color:var(--blue)">Google ↗</a></p><span class="result-tag">HIBP · HUNTER.IO · GOOGLE</span></div>`;}
+  if(type==='mail'){const enc=encodeURIComponent(q),dom=q.split('@')[1]||'';return`<div class="result-item"><h4>✉ Email — ${esc(q)}</h4><p>Domaine : <strong>${esc(dom)}</strong><br><a href="https://haveibeenpwned.com/account/${enc}" target="_blank" style="color:var(--blue)">HaveIBeenPwned ↗</a><br><a href="https://hunter.io/email-verifier/${enc}" target="_blank" style="color:var(--blue)">Hunter.io ↗</a><br><a href="https://www.google.com/search?q=%22${enc}%22" target="_blank" style="color:var(--blue)">Google ↗</a></p><span class="result-tag">HIBP · HUNTER.IO</span></div>`;}
   if(type==='phone'){return`<div class="result-item"><h4>📱 Téléphone — ${esc(q)}</h4><p><a href="https://www.numlookup.com/?number=${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">NumLookup ↗</a><br><a href="https://sync.me/search/?number=${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">Sync.me ↗</a><br><a href="https://www.google.com/search?q=%22${encodeURIComponent(q)}%22" target="_blank" style="color:var(--blue)">Google ↗</a></p><span class="result-tag">NUMLOOKUP · SYNC.ME</span></div>`;}
-  if(type==='discord'){return`<div class="result-item"><h4>💬 Discord ID — ${esc(q)}</h4><p>Compte créé le : <strong>${discordTs(q)}</strong><br><a href="https://discord.id/?prefill=${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">discord.id ↗</a><br><a href="https://discordlookup.com/user/${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">discordlookup.com ↗</a></p><span class="result-tag">DISCORD.ID</span></div>`;}
+  if(type==='discord'){return`<div class="result-item"><h4>💬 Discord ID — ${esc(q)}</h4><p>Créé le : <strong>${discordTs(q)}</strong><br><a href="https://discord.id/?prefill=${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">discord.id ↗</a><br><a href="https://discordlookup.com/user/${encodeURIComponent(q)}" target="_blank" style="color:var(--blue)">discordlookup.com ↗</a></p><span class="result-tag">DISCORD.ID</span></div>`;}
   return noRes(q);
 }
 function discordTs(id){try{return new Date(Number(BigInt(id)>>22n)+1420070400000).toLocaleDateString('fr-FR');}catch{return'ID invalide';}}
 function noRes(q){return`<div class="result-item"><h4>Aucun résultat</h4><p>Aucune donnée pour <strong>${esc(q)}</strong>.</p></div>`;}
 
-// ── RENDER ───────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────
 function renderShop(filter='Discord'){
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-filter')===filter));
-  const vip = currentUser && localStorage.getItem('bzaar_vip_'+currentUser.email)==='1';
-  const items = CONFIG.shop.filter(i=>i.category===filter);
+  const vip=currentUser&&currentUser.vip_active;
+  const items=CONFIG.shop.filter(i=>i.category===filter);
   document.getElementById('shop-grid').innerHTML=items.map(item=>{
     const locked=item.premium&&!vip;
     return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
       <div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.premium?'<span class="premium-crown">👑</span>':''}${locked?'<div class="lock-overlay">🔒</div>':''}</div>
       <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?'Contenu réservé.':item.desc.substring(0,80)+'…'}</p></div>
-      <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒 Accès restreint':item.price}</span><button class="btn-sm">Voir</button></div>
+      <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">Voir</button></div>
     </div>`;
   }).join('');
 }
 
 function renderTools(){
-  const vip = currentUser && localStorage.getItem('bzaar_vip_'+currentUser.email)==='1';
+  const vip=currentUser&&currentUser.vip_active;
   const visible=CONFIG.tools.filter(i=>!i.vip||(i.vip&&vip));
   const locked=CONFIG.tools.filter(i=>i.vip&&!vip);
   document.getElementById('tools-grid').innerHTML=[
     ...visible.map(item=>`<div class="item-card${item.vip?' premium-card':''}" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.vip?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="card-free">✓ Gratuit</span><button class="btn-sm">Télécharger</button></div></div>`),
-    ...locked.map(item=>`<div class="item-card premium-card locked-card" onclick="notifyVipRequired()"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}<div class="lock-overlay">🔒</div></div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Contenu réservé.</p></div><div class="card-footer-inner"><span class="premium-price">🔒 Accès restreint</span><button class="btn-sm">Voir</button></div></div>`)
+    ...locked.map(item=>`<div class="item-card premium-card locked-card" onclick="notifyVipRequired()"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}<div class="lock-overlay">🔒</div></div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Contenu réservé.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Voir</button></div></div>`)
   ].join('');
 }
 
 function renderPlans(){
-  const c=document.getElementById('plans-grid'); if(!c)return;
+  const c=document.getElementById('plans-grid');if(!c)return;
   c.innerHTML=CONFIG.plans.map(p=>`
     <div class="plan-card${p.highlight?' plan-highlight':''}">
       ${p.highlight?'<div class="plan-best">👑 BEST VALUE</div>':''}
@@ -512,23 +503,20 @@ function renderPlans(){
 }
 
 function renderFounders(){
-  const c=document.getElementById('founders-grid'); if(!c)return;
+  const c=document.getElementById('founders-grid');if(!c)return;
   c.innerHTML=CONFIG.founders.map(f=>`
-    <div class="team-card">
-      <span class="t-crown">👑</span>
-      <div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
-      <div class="t-links" style="margin-top:10px">
-        <a href="https://discord.com/users/" target="_blank" class="t-link"><img src="logo/discord.png" alt="">${f.discord}</a>
-        <a href="${f.gunslol}" target="_blank" class="t-link"><img src="logo/gunslol.png" alt="">${f.gunslolLabel}</a>
-      </div>
-    </div>`).join('');
+    <div class="team-card"><span class="t-crown">👑</span><div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
+    <div class="t-links" style="margin-top:10px">
+      <a href="https://discord.com/users/" target="_blank" class="t-link"><img src="logo/discord.png" alt="">${f.discord}</a>
+      <a href="${f.gunslol}" target="_blank" class="t-link"><img src="logo/gunslol.png" alt="">${f.gunslolLabel}</a>
+    </div></div>`).join('');
 }
 
-function notifyVipRequired(){ notify('🔒 Accès restreint — entrez votre code dans le menu profil', true); }
+function notifyVipRequired(){notify('🔒 Accès restreint — entrez votre code VIP dans le menu',true);}
 
 function openItem(id,src){
   const item=src==='shop'?CONFIG.shop.find(i=>i.id===id):CONFIG.tools.find(i=>i.id===id);
-  if(!item)return; currentItemForDl=item;
+  if(!item)return;currentItemForDl=item;
   document.getElementById('iv-name').textContent=item.name;
   document.getElementById('iv-cat').textContent=(item.category||'').toUpperCase();
   document.getElementById('iv-desc').textContent=item.desc;
@@ -541,7 +529,7 @@ function openItem(id,src){
   document.getElementById('item-view').classList.add('open');
   window.scrollTo(0,0);
 }
-function closeItemView(){ document.getElementById('item-view').classList.remove('open'); }
+function closeItemView(){document.getElementById('item-view').classList.remove('open');}
 function downloadTool(){
   if(!currentItemForDl)return;
   const blob=new Blob([currentItemForDl.dlContent||`=== ${currentItemForDl.name} ===\ndiscord.gg/ssYFSXRGPP`],{type:'text/plain;charset=utf-8'});
@@ -549,30 +537,25 @@ function downloadTool(){
   notify('⬇ Téléchargement lancé !');
 }
 
-// ── NOTIFY ───────────────────────────────────────────────────
+// ── NOTIFY ────────────────────────────────────────────────────
 let nq=[],nActive=false;
 function notify(msg,err=false){nq.push({msg,err});if(!nActive)processNotif();}
 function processNotif(){
   if(!nq.length){nActive=false;return;}nActive=true;
-  const {msg,err}=nq.shift();
-  const el=document.getElementById('notif');
+  const{msg,err}=nq.shift();const el=document.getElementById('notif');
   el.textContent=msg;el.className='notif show'+(err?' notif-err':'');
   clearTimeout(el._t);el._t=setTimeout(()=>{el.className='notif';setTimeout(processNotif,300);},2800);
 }
 
-// ── UTILS ────────────────────────────────────────────────────
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify('✓ Adresse LTC copiée !'));}
+
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeItemView();closeProfile();}
   if(e.key==='Enter'){
-    const loginStep=document.getElementById('auth-login-step1');
-    const signupStep=document.getElementById('signup-step1');
-    const otpStep=document.getElementById('signup-step2');
-    const revStep=document.getElementById('auth-login-otp');
-    if(revStep?.style.display!=='none')verifyReverify();
-    else if(otpStep?.style.display!=='none')verifySignupOTP();
-    else if(signupStep?.style.display!=='none'&&document.getElementById('auth-signup')?.classList.contains('active'))doSignup();
-    else if(loginStep?.style.display!=='none'&&document.getElementById('auth-login')?.classList.contains('active'))doLogin();
+    if(document.getElementById('auth-login-otp')?.style.display!=='none')verifyReverify();
+    else if(document.getElementById('signup-step2')?.style.display!=='none')verifySignupOTP();
+    else if(document.getElementById('auth-signup')?.classList.contains('active'))doSignup();
+    else if(document.getElementById('auth-login')?.classList.contains('active'))doLogin();
   }
 });
