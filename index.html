@@ -104,7 +104,7 @@
 <!-- ═══ MAIN APP ═══ -->
 <div id="main-screen" style="display:none;flex-direction:column;min-height:100vh;position:relative;z-index:1">
   <nav>
-    <a class="nav-logo" onclick="gotoPage('home')">BAZAAR</a>
+    <a class="nav-logo" onclick="gotoPage('home')" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:900;letter-spacing:3px">BAZAAR</a>
     <div class="nav-links">
       <span class="nav-link active"  onclick="gotoPage('home')">    <img src="logo/loupe.png"   alt="">Accueil</span>
       <span class="nav-link"         onclick="gotoPage('shop')">    <img src="logo/dollars.png" alt="">Boutique</span>
@@ -126,6 +126,8 @@
         <div id="user-dropdown">
           <div class="dd-label">Mon compte</div>
           <div class="dd-item" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
+          <div class="dd-item" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
+          <div class="dd-item" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
           <div class="dd-item" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
           <div class="dd-sep"></div>
           <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
@@ -168,8 +170,8 @@
           <div class="sel-inner">
             <img class="sel-icon" id="sel-icon-img" src="logo/phone.png" alt="">
             <select class="type-select" id="search-type" onchange="updateSelIcon()">
-              <option value="phone"    data-icon="logo/phone.png">Numéro de téléphone</option>
-              <option value="mail"     data-icon="logo/mail.png">Adresse Email</option>
+              <option value="phone"    data-icon="logo/phone.png">Téléphone</option>
+              <option value="mail"     data-icon="logo/mail.png">Email</option>
               <option value="username" data-icon="logo/user.png">Username</option>
               <option value="discord"  data-icon="logo/discord.png">Discord ID</option>
               <option value="ip"       data-icon="logo/ip.png">Adresse IP</option>
@@ -177,7 +179,7 @@
           </div>
         </div>
         <div class="search-row">
-          <input class="search-input" id="search-input" placeholder="Entrez une cible — auto-détection du type (email, IP, username, Discord ID…)">
+          <input class="search-input" id="search-input" placeholder="Entrez une cible (auto-détection du type)…" id="search-input">
           <button class="btn btn-primary" id="search-btn" onclick="doSearch()">Rechercher</button>
         </div>
         <div class="search-footer">
