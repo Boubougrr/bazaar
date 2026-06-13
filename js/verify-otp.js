@@ -8,9 +8,12 @@ export default async function handler(req, res) {
 
   try {
     const { email, code, purpose } = req.body || {};
-    if (!email || !code || !purpose) return res.status(400).json({ error: 'Paramètres manquants.' });
+    if (!email || !code || !purpose)
+      return res.status(400).json({ error: 'Paramètres manquants.' });
 
-    const { data: rows } = await sb
+    const inputCode = String(code).trim();
+
+    const { data: rows, error: fetchErr } = await sb
       .from('otp_codes')
       .select('*')
       .eq('email', email)
@@ -20,9 +23,15 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false })
       .limit(1);
 
+    if (fetchErr) {
+      console.error('OTP fetch error:', fetchErr);
+      return res.status(500).json({ error: 'Erreur vérification.' });
+    }
+
     const otpRow = rows && rows[0];
-    if (!otpRow || otpRow.code !== String(code).trim())
-      return res.status(400).json({ error: 'Code invalide ou expiré.' });
+    if (!otpRow) return res.status(400).json({ error: 'Code expiré. Veuillez recommencer.' });
+    if (otpRow.code !== inputCode)
+      return res.status(400).json({ error: 'Code invalide.' });
 
     await sb.from('otp_codes').update({ used: true }).eq('id', otpRow.id);
     return res.json({ ok: true });
