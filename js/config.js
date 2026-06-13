@@ -11,7 +11,7 @@ const CONFIG = {
   },
   emailjs: {
     serviceId:  "service_bazaar",
-    templateId: "template_8wtc9vk",
+    templateId: "template_7kiw3sb",
     publicKey:  "M-eHZGppCNRyWiLMi",
   },
   // Codes secrets — jamais affichés dans l'UI
