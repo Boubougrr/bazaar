@@ -11,7 +11,7 @@ const CONFIG = {
   },
   emailjs: {
     serviceId:  "service_bazaar",
-    templateId: "template_7kiw3sb",
+    templateId: "template_8wtc9vk",
     publicKey:  "M-eHZGppCNRyWiLMi",
   },
   // Codes secrets — jamais affichés dans l'UI
@@ -26,8 +26,8 @@ const CONFIG = {
   ],
   plans: [
     {
-      id:"plan_free", name:"Gratuit (basique)", subtitle:"Accès de base à la plateforme",
-      price:"0€", period:"/mois", searches:5, color:"#6d2f2f", highlight:false,
+      id:"plan_free", name:"Free", subtitle:"Accès de base à la plateforme",
+      price:"0€", period:"/mois", searches:5, color:"#6b7280", highlight:false,
       features:[
         {ok:true,  text:"5 recherches / jour"},
         {ok:false, text:"Accès API"},
@@ -36,37 +36,37 @@ const CONFIG = {
       ]
     },
     {
-      id:"plan_starter", name:"Bronze", subtitle:"Intelligence essentielle pour débutants",
-      price:"2.99€", period:"/mois", searches:15, color:"#ffbb00", highlight:false,
+      id:"plan_starter", name:"Starter", subtitle:"Intelligence essentielle pour débutants",
+      price:"2.99€", period:"/mois", searches:20, color:"#7b6ef6", highlight:false,
       features:[
-        {ok:true,  text:"15 recherches / jour"},
-        {ok:true,  text:"Rôle discord : Inclus"},
+        {ok:true,  text:"20 recherches / jour"},
+        {ok:true,  text:"Accès API : Inclus"},
         {ok:true,  text:"0.15€ / recherche"},
         {ok:true,  text:"Accès items Premium ⭐"},
         {ok:true,  text:"Support prioritaire"},
       ]
     },
     {
-      id:"plan_pro", name:"Diamant (BEST)", subtitle:"Capacités avancées pour les professionnels",
-      price:"7.99€", period:"/mois", searches:30, color:"#39c0ff", highlight:true,
+      id:"plan_pro", name:"Pro", subtitle:"Capacités avancées pour les professionnels",
+      price:"7.99€", period:"/mois", searches:50, color:"#7b6ef6", highlight:true,
       features:[
-        {ok:true,  text:"30 recherches / jour"},
-        {ok:true,  text:"Rôle discord : Inclus"},
-        {ok:true,  text:"Accès produits/shop Premium ⭐"},
+        {ok:true,  text:"50 recherches / jour"},
+        {ok:true,  text:"Accès API : Inclus"},
+        {ok:true,  text:"0.16€ / recherche"},
+        {ok:true,  text:"Accès items Premium ⭐"},
         {ok:true,  text:"Fonctionnalités avancées"},
         {ok:true,  text:"Support VIP Discord"},
-        {ok:true,  text:"-25% sur la Boutique"},
       ]
     },
     {
-      id:"plan_lifetime", name:"Emeraude (BEST)", subtitle:"Accès illimité à vie",
-      price:"19.99€", period:"/LIFETIME", searches:999999, color:"#56ff80", highlight:true,
+      id:"plan_lifetime", name:"Lifetime", subtitle:"Accès illimité à vie",
+      price:"19.99€", period:"une fois", searches:999999, color:"#10b981", highlight:false,
       features:[
         {ok:true,  text:"Recherches illimitées"},
-        {ok:true,  text:"Rôle discord : Inclus"},
+        {ok:true,  text:"Accès API : Inclus"},
         {ok:true,  text:"Coût par recherche : 0€"},
-        {ok:true,  text:"Accès produits/shop Premium ⭐"},
-        {ok:true,  text:"-50% sur la Boutique"},
+        {ok:true,  text:"Tous les items Premium ⭐"},
+        {ok:true,  text:"-35% sur la Boutique"},
         {ok:true,  text:"Support VIP Discord"},
       ]
     },

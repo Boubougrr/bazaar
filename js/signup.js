@@ -60,7 +60,7 @@ export default async function handler(req, res) {
       // Send email via EmailJS
       const ejPayload = {
         service_id:  process.env.EMAILJS_SERVICE  || 'service_bazaar',
-        template_id: process.env.EMAILJS_TEMPLATE || 'template_7kiw3sb',
+        template_id: process.env.EMAILJS_TEMPLATE || 'template_8wtc9vk',
         user_id:     process.env.EMAILJS_KEY      || 'M-eHZGppCNRyWiLMi',
         template_params: {
           to_email: email,
