@@ -153,14 +153,28 @@ async function api(path, body){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   loadSettings();
   const saved = localStorage.getItem('bzr_session');
   if(saved && saved !== 'undefined'){ 
     try{ 
-      currentUser=JSON.parse(saved); 
-      if(currentUser && currentUser.email) bootApp(); 
-      else localStorage.removeItem('bzr_session');
+      const sessionUser = JSON.parse(saved); 
+      if(sessionUser && sessionUser.id){
+        // Re-fetch fresh data from server to catch DB changes (pseudo, credits, etc.)
+        try {
+          const res = await api('get-user', { user_id: sessionUser.id });
+          saveSession(res.user);
+          currentUser = res.user;
+        } catch(e) {
+          // If server fetch fails, fallback to saved session but notify if needed
+          console.warn('Re-fetch failed, using cached session');
+          currentUser = sessionUser;
+        }
+        if(currentUser && currentUser.email) bootApp(); 
+        else localStorage.removeItem('bzr_session');
+      } else {
+        localStorage.removeItem('bzr_session');
+      }
     }catch(e){ localStorage.removeItem('bzr_session'); } 
   }
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
@@ -298,24 +312,12 @@ function openProfile(section){
 function renderStats(box){
   if(!currentUser)return;
   const left=getCreditsLeft();
-  const now=new Date();
-  const wk=`w_${now.getFullYear()}_${getWeek(now)}`;
-  const mk=`m_${now.getFullYear()}_${now.getMonth()}`;
-  const timeOn=Math.floor((Date.now()-sessionStart)/60000);
   box.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    ${sRow('👤','Pseudo',currentUser.pseudo||'—')}
-    ${sRow('✉','Email',currentUser.email)}
-    ${sRow('📅','Inscrit le',currentUser.joined_at?new Date(currentUser.joined_at).toLocaleDateString('fr-FR'):'—')}
-    ${sRow('🕐','Dernière connexion',currentUser.last_login?new Date(currentUser.last_login).toLocaleDateString('fr-FR'):'—')}
-    ${sRow('⏱','Session',timeOn+'min')}
-    ${sRow('🔑','Connexions',currentUser.login_count||1)}
-    ${sRow('🔍','Recherches / 24h',currentUser.credits_used||0)}
-    ${sRow('📊','Cette semaine',(currentUser.week_searches||{})[wk]||0)}
-    ${sRow('📈','Ce mois',(currentUser.month_searches||{})[mk]||0)}
-    ${sRow('🔎','Total',currentUser.total_searches||0)}
-    ${sRow('💛','Crédits restants',left+' / '+(currentUser.credits_max||5))}
-    ${sRow('🏅','Rang',getRank(currentUser.total_searches||0))}
-    ${sRow('📦','Plan',currentUser.plan||'standard')}
+    ${sRow('👤','Pseudo',esc(currentUser.pseudo||'—'))}
+    ${sRow('✉','Email',esc(currentUser.email))}
+    ${sRow('💛','Crédits / Jour',left+' / '+(currentUser.credits_max||5))}
+    ${sRow('📦','Plan',esc(currentUser.plan||'standard'))}
+    ${sRow('🔎','Total Searches',currentUser.total_searches||0)}
     ${sRow('👑','VIP',currentUser.vip_active?'✓ Actif':'✗ Inactif')}
   </div>`;
 }
@@ -445,14 +447,23 @@ async function doSearch(){
   if(!q){notify('Entrez une cible.',true);return;}
   const type=searchMode==='auto'?detectType(q):(document.getElementById('search-type')?.value||'username');
   const labels={phone:'📱 Téléphone',mail:'✉ Email',username:'👤 Username',discord:'💬 Discord ID',ip:'🌐 IP'};
-  try{
-    const res=await api('search',{user_id:currentUser.id});
-    currentUser.credits_used=(currentUser.credits_max||5)-res.credits_left;
-    if(res.exhausted_at)currentUser.credits_exhausted_at=res.exhausted_at;
-    saveSession(currentUser); updateCreditsUI();
-  }catch(e){notify(e.message,true);return;}
+  
   const btn=document.getElementById('search-btn');
-  btn.disabled=true; searchCooldown=true; cooldownEnd=Date.now()+60000;
+  btn.disabled=true;
+  
+  try{
+    const res=await api('search',{user_id:currentUser.id, query:q, type:type});
+    if(res.user) {
+      saveSession(res.user);
+      updateCreditsUI();
+    }
+  }catch(e){
+    notify(e.message,true);
+    btn.disabled=false;
+    return;
+  }
+  
+  searchCooldown=true; cooldownEnd=Date.now()+60000;
   const loadDiv=document.getElementById('search-loading'),fillEl=document.getElementById('search-fill'),loadTxt=document.getElementById('search-loading-text');
   const msgs=['Interrogation des sources OSINT…','Agrégation des données…','Analyse en cours…','Vérification des résultats…','Finalisation…'];
   loadDiv.className='search-loading show';

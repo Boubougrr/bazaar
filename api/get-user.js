@@ -1,6 +1,5 @@
-// api/login.js — Vercel Serverless Function
+// api/get-user.js
 import { createClient } from '@supabase/supabase-js';
-import bcrypt from 'bcryptjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,40 +8,32 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Champs manquants.' });
+  const { user_id } = req.body;
+  if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
   const { data: user, error } = await supabase
     .from('users')
     .select('*')
-    .eq('email', email)
+    .eq('id', user_id)
     .single();
 
-  if (error || !user) return res.status(400).json({ error: 'Compte introuvable.' });
+  if (error || !user) return res.status(401).json({ error: 'Session invalide.' });
   if (user.is_banned)  return res.status(403).json({ error: 'Compte suspendu.' });
 
-  // Verify password
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) return res.status(400).json({ error: 'Mot de passe incorrect.' });
-
-  // Update last_login + login_count
-  const updateFields = {
-    last_login: new Date().toISOString(),
-    login_count: (user.login_count || 0) + 1
-  };
-
   // ── AUTO RESET CREDITS ──
+  let finalUser = user;
   if (user.credits_exhausted_at) {
     const resetAt = new Date(user.credits_exhausted_at).getTime() + 24 * 3600 * 1000;
     if (Date.now() >= resetAt) {
-      updateFields.credits_used = 0;
-      updateFields.credits_exhausted_at = null;
+      const { data: resetUser } = await supabase.from('users').update({
+        credits_used: 0,
+        credits_exhausted_at: null
+      }).eq('id', user.id).select('*').single();
+      if (resetUser) finalUser = resetUser;
     }
   }
 
-  const { data: updatedUser } = await supabase.from('users').update(updateFields).eq('id', user.id).select('*').single();
-
-  return res.json({ ok: true, user: safeUser(updatedUser || user) });
+  return res.json({ ok: true, user: safeUser(finalUser) });
 }
 
 function safeUser(u) {
