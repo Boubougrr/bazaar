@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr" data-lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bazaar Services</title>
+<link rel="icon" type="image/png" href="logo/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script>document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U'))e.preventDefault();});</script>
+</head>
+<body>
+<div id="cursor"></div>
+<canvas id="bg-canvas"></canvas>
+<div class="dot-bg"></div><div class="dot-bg-right"></div>
+<div id="notif" class="notif"></div>
+
+<!-- ═══ SETTINGS MODAL ═══ -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <h2 data-i18n="settings">Paramètres</h2>
+      <button class="modal-close-btn" onclick="closeSettings()">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+
+      <div class="setting-group">
+        <div class="setting-label" data-i18n="language">Langue</div>
+        <div class="setting-options">
+          <button class="setting-btn active" id="lang-fr" onclick="setLang('fr')">🇫🇷 Français</button>
+          <button class="setting-btn" id="lang-en" onclick="setLang('en')">🇬🇧 English</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label" data-i18n="theme">Thème</div>
+        <div class="setting-options">
+          <button class="setting-btn active" id="theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
+          <button class="setting-btn" id="theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label" data-i18n="cursor">Curseur</div>
+        <div class="setting-options">
+          <button class="setting-btn active" id="cursor-on" onclick="setCursor(true)">✓ Activé</button>
+          <button class="setting-btn" id="cursor-off" onclick="setCursor(false)">✕ Désactivé</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label" data-i18n="animations">Animations</div>
+        <div class="setting-options">
+          <button class="setting-btn active" id="anim-on" onclick="setAnim(true)">✓ Activées</button>
+          <button class="setting-btn" id="anim-off" onclick="setAnim(false)">✕ Désactivées</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label" data-i18n="searchMode">Mode recherche</div>
+        <div class="setting-options">
+          <button class="setting-btn active" id="sm-auto" onclick="setDefaultSearchMode('auto')">Auto</button>
+          <button class="setting-btn" id="sm-manual" onclick="setDefaultSearchMode('manual')">Manuel</button>
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-label">Version</div>
+        <div style="font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace;padding:4px 0">Bazaar v2.0 · 2026</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLOATING GEAR (auth screen) -->
+<div class="auth-gear-wrap" id="auth-gear-wrap">
+  <button class="gear-btn" onclick="toggleAuthGear()" title="Paramètres">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <div id="auth-gear-dropdown">
+    <div class="dd-label">Langue</div>
+    <div class="dd-item" onclick="setLang('fr')"><span id="ag-fr" class="dd-check">✓</span>🇫🇷 Français</div>
+    <div class="dd-item" onclick="setLang('en')"><span id="ag-en" class="dd-check" style="opacity:0">✓</span>🇬🇧 English</div>
+    <div class="dd-sep"></div>
+    <div class="dd-label">Thème</div>
+    <div class="dd-item" onclick="setTheme('dark')"><span id="ag-dark" class="dd-check">✓</span>🌙 Sombre</div>
+    <div class="dd-item" onclick="setTheme('darker')"><span id="ag-darker" class="dd-check" style="opacity:0">✓</span>⬛ Ultra-sombre</div>
+  </div>
+</div>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-outer">
+    <div class="auth-left">
+      <div class="auth-left-logo">BAZ<span>AAR</span></div>
+      <div class="auth-left-tagline">
+        <h2>Intelligence OSINT pour les professionnels</h2>
+        <p>Recherchez des informations sur n'importe quelle cible — email, téléphone, IP, Discord ID — en quelques secondes.</p>
+      </div>
+      <div class="auth-left-stats">
+        <div class="auth-stat"><img src="logo/loupe.png" alt=""><div class="auth-stat-text"><strong>47 sources</strong>OSINT en temps réel</div></div>
+        <div class="auth-stat"><img src="logo/discord.png" alt=""><div class="auth-stat-text"><strong>Serveur actif</strong>Support Discord 7j/7</div></div>
+        <div class="auth-stat"><img src="logo/ltc.png" alt=""><div class="auth-stat-text"><strong>LTC &amp; PayPal F&F</strong>Paiement anonyme</div></div>
+        <div class="auth-stat"><img src="logo/tools.png" alt=""><div class="auth-stat-text"><strong>Outils gratuits</strong>Téléchargeables</div></div>
+      </div>
+    </div>
+    <div class="auth-right">
+      <div class="auth-tabs">
+        <div class="auth-tab active" onclick="switchAuthTab('login')" data-i18n="login">Se connecter</div>
+        <div class="auth-tab" onclick="switchAuthTab('signup')" data-i18n="signup">Créer un compte</div>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="auth-form active" id="auth-login">
+        <h3 data-i18n="welcomeBack">Bon retour</h3>
+        <p class="auth-sub" data-i18n="loginSub">Connectez-vous pour accéder à la plateforme.</p>
+        <label class="lbl" data-i18n="email">Email</label>
+        <div class="inp-icon-wrap"><img class="inp-icon" src="logo/mail.png" alt=""><input class="inp" type="email" id="login-email" placeholder="vous@domaine.com" autocomplete="email"></div>
+        <label class="lbl" data-i18n="password">Mot de passe</label>
+        <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doLogin()" data-i18n="loginBtn">Se connecter</button>
+        <p class="auth-note" id="login-note"></p>
+        <div class="auth-divider"><span data-i18n="or">ou</span></div>
+        <p style="text-align:center;font-size:12px;color:var(--text3)" data-i18n="noAccount">Pas encore de compte ? <span style="color:var(--accent);font-weight:700" onclick="switchAuthTab('signup')">Créer un compte</span></p>
+      </div>
+
+      <!-- SIGNUP -->
+      <div class="auth-form" id="auth-signup">
+        <div id="signup-step1" style="display:block">
+          <h3 data-i18n="createAccount">Créer un compte</h3>
+          <p class="auth-sub" data-i18n="signupSub">Rejoignez Bazaar — gratuit, rapide, sécurisé.</p>
+          <label class="lbl" data-i18n="pseudo">Pseudo</label>
+          <div class="inp-icon-wrap"><img class="inp-icon" src="logo/user.png" alt=""><input class="inp" type="text" id="signup-pseudo" placeholder="MonPseudo" maxlength="20" autocomplete="username"></div>
+          <label class="lbl" data-i18n="email">Email</label>
+          <div class="inp-icon-wrap"><img class="inp-icon" src="logo/mail.png" alt=""><input class="inp" type="email" id="signup-email" placeholder="vous@domaine.com" autocomplete="email"></div>
+          <label class="lbl" data-i18n="password">Mot de passe</label>
+          <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="signup-password" placeholder="Min. 8 caractères" autocomplete="new-password"></div>
+          <label class="lbl" data-i18n="confirmPassword">Confirmer le mot de passe</label>
+          <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="signup-confirm" placeholder="Répétez le mot de passe" autocomplete="new-password"></div>
+          <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doSignup()" data-i18n="createBtn">Créer mon compte</button>
+          <p class="auth-note" id="signup-note"></p>
+          <div class="auth-divider"><span data-i18n="or">ou</span></div>
+          <p style="text-align:center;font-size:12px;color:var(--text3)" data-i18n="hasAccount">Déjà un compte ? <span style="color:var(--accent);font-weight:700" onclick="switchAuthTab('login')">Se connecter</span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROFILE MODAL ═══ -->
+<div class="modal-bg" id="profile-modal">
+  <div class="modal-box">
+    <div class="modal-header"><h2>Mon profil</h2><button class="modal-close-btn" onclick="closeProfile()">✕</button></div>
+    <div id="profile-content"></div>
+  </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="main-screen" style="display:none;flex-direction:column;min-height:100vh;position:relative;z-index:1">
+  <nav>
+    <a class="nav-logo" onclick="gotoPage('home')">BAZAAR</a>
+    <div class="nav-links">
+      <span class="nav-link active"  onclick="gotoPage('home')">    <img src="logo/home.png"    alt=""><span data-i18n="home">Accueil</span></span>
+      <span class="nav-link"         onclick="gotoPage('shop')">    <img src="logo/dollars.png" alt=""><span data-i18n="shop">Boutique</span></span>
+      <span class="nav-link"         onclick="gotoPage('tools')">   <img src="logo/tools.png"   alt=""><span>Tools</span></span>
+      <span class="nav-link"         onclick="gotoPage('subs')">    <img src="logo/coins.png"   alt=""><span data-i18n="subs">Abonnements</span></span>
+      <span class="nav-link"         onclick="gotoPage('features')"><img src="logo/fonction.png"alt=""><span data-i18n="features">Fonctionnalités</span></span>
+      <span class="nav-link"         onclick="gotoPage('contact')"> <img src="logo/mail.png"    alt=""><span data-i18n="contact">Contact</span></span>
+      <span class="nav-link"         onclick="gotoPage('about')">   <img src="logo/user.png"    alt=""><span data-i18n="about">À propos</span></span>
+    </div>
+    <div class="nav-right">
+      <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="nav-discord"><img src="logo/discord.png" alt="">Discord</a>
+      <div class="credits-pill" title="Cliquer pour recharger"><img src="logo/coins.png" alt=""><span id="sq-left">5</span>&nbsp;<span data-i18n="credits">crédits</span></div>
+      <!-- Gear settings dropdown -->
+      <div class="gear-wrap" id="gear-wrap">
+        <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <div id="gear-dropdown">
+          <div class="dd-label">Langue</div>
+          <div class="dd-item" onclick="setLang('fr')"><span id="g-fr" class="dd-check">✓</span>🇫🇷 Français</div>
+          <div class="dd-item" onclick="setLang('en')"><span id="g-en" class="dd-check" style="opacity:0">✓</span>🇬🇧 English</div>
+          <div class="dd-sep"></div>
+          <div class="dd-label">Thème</div>
+          <div class="dd-item" onclick="setTheme('dark')"><span id="g-dark" class="dd-check">✓</span>🌙 Sombre</div>
+          <div class="dd-item" onclick="setTheme('darker')"><span id="g-darker" class="dd-check" style="opacity:0">✓</span>⬛ Ultra-sombre</div>
+          <div class="dd-sep"></div>
+          <div class="dd-label">Curseur</div>
+          <div class="dd-item" onclick="setCursor(true)"><span id="g-cur-on" class="dd-check">✓</span>Activé</div>
+          <div class="dd-item" onclick="setCursor(false)"><span id="g-cur-off" class="dd-check" style="opacity:0">✓</span>Désactivé</div>
+          <div class="dd-sep"></div>
+          <div class="dd-label">Mode recherche</div>
+          <div class="dd-item" onclick="setDefaultSearchMode('auto')"><span id="g-sm-auto" class="dd-check">✓</span>Auto-détection</div>
+          <div class="dd-item" onclick="setDefaultSearchMode('manual')"><span id="g-sm-manual" class="dd-check" style="opacity:0">✓</span>Manuel</div>
+        </div>
+      </div>
+      <div class="user-menu-wrap">
+        <div class="user-menu-btn" onclick="toggleDropdown()">
+          <img src="logo/user.png" alt="">
+          <span id="user-name-nav">—</span>
+          <span class="arr">▾</span>
+        </div>
+        <div id="user-dropdown">
+          <div class="dd-label">Mon compte</div>
+          <div class="dd-item" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
+          <div class="dd-item" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
+          <div class="dd-item" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
+          <div class="dd-item" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
+          <div class="dd-sep"></div>
+          <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
+          <div class="dd-item" onclick="openSettings()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Paramètres
+          </div>
+          <div class="dd-sep"></div>
+          <div class="dd-item red" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="main-content">
+      <div class="hero">
+        <h1>BAZAAR</h1>
+        <h2 style="font-size:clamp(17px,2.4vw,26px);font-weight:600;color:var(--text2);margin-bottom:16px;letter-spacing:-.3px">
+          La plateforme OSINT pour <span class="hero-type-text" id="hero-type">les enquêtes.</span><span class="hero-cursor"></span>
+        </h2>
+        <p data-i18n="heroSub">Nom, email, téléphone, IP, Discord ID — croisez des millions d'enregistrements en quelques secondes.</p>
+        <div class="hero-btns">
+          <button class="btn btn-primary" onclick="document.getElementById('search-input').focus()">🔍 <span data-i18n="startSearch">Commencer une recherche</span></button>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord"><img src="logo/discord.png" alt=""><span data-i18n="joinDiscord">Rejoindre le Discord</span></a>
+        </div>
+        <div class="hero-features">
+          <div class="hero-feature"><img src="logo/ltc.png" alt="">Crypto anonyme</div>
+          <div class="hero-feature"><img src="logo/paypal.png" alt="">PayPal F&F</div>
+          <div class="hero-feature"><img src="logo/discord.png" alt="">Support Discord</div>
+          <div class="hero-feature"><img src="logo/tools.png" alt="">Outils gratuits</div>
+        </div>
+      </div>
+
+      <div class="search-panel">
+        <div class="search-mode-tabs">
+          <div class="mode-tab active" data-mode="auto" onclick="setSearchMode('auto')">Auto-détection</div>
+          <div class="mode-tab" data-mode="manual" onclick="setSearchMode('manual')">Manuel</div>
+        </div>
+        <div class="sel-row" id="manual-select-row" style="display:none">
+          <label>Type</label>
+          <div class="sel-inner">
+            <img class="sel-icon" id="sel-icon-img" src="logo/phone.png" alt="">
+            <select class="type-select" id="search-type" onchange="updateSelIcon()">
+              <option value="phone"    data-icon="logo/phone.png">Téléphone</option>
+              <option value="mail"     data-icon="logo/mail.png">Email</option>
+              <option value="username" data-icon="logo/user.png">Username</option>
+              <option value="discord"  data-icon="logo/discord.png">Discord ID</option>
+              <option value="ip"       data-icon="logo/ip.png">Adresse IP</option>
+            </select>
+          </div>
+        </div>
+        <div class="search-row">
+          <input class="search-input" id="search-input" placeholder="Entrez une cible (auto-détection du type)…">
+          <button class="btn btn-primary" id="search-btn" onclick="doSearch()">Rechercher</button>
+        </div>
+        <div class="search-footer">
+          <p>Crédits restants : <span id="sr-left">5</span></p>
+          <p id="sr-reset" style="display:none">Reset dans : <span id="sr-timer" style="color:var(--white);font-weight:700"></span></p>
+        </div>
+        <div class="search-loading" id="search-loading">
+          <div class="search-loading-bar"><div class="search-loading-fill" id="search-fill"></div></div>
+          <div class="search-loading-text" id="search-loading-text">Interrogation des sources OSINT…</div>
+        </div>
+        <div class="search-cooldown" id="search-cooldown"></div>
+      </div>
+
+      <div id="quota-warn" class="quota-warn" style="display:none">
+        <p>⛔ Quota épuisé</p><div class="quota-timer" id="quota-timer">—</div>
+      </div>
+      <div class="results-wrap" id="results-wrap"></div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon"><img src="logo/discord.png" alt=""></div><div><span class="stat-num">Actif</span><div class="stat-label">Serveur Discord</div><a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="stat-link">Rejoindre ↗</a></div></div>
+        <div class="stat-card"><div class="stat-icon"><img src="logo/loupe.png" alt=""></div><div><span class="stat-num">47</span><div class="stat-label">Sources OSINT</div></div></div>
+        <div class="stat-card"><div class="stat-icon"><img src="logo/tools.png" alt=""></div><div><span class="stat-num">99.2%</span><div class="stat-label">Uptime</div></div></div>
+        <div class="stat-card"><div class="stat-icon"><img src="logo/dollars.png" alt=""></div><div><span class="stat-num">+5</span><div class="stat-label">Payment Methods</div><a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="stat-link">Buy in Discord ↗</a></div></div>
+      </div>
+
+      <div class="how-section">
+        <div class="sec-title">Comment ça marche</div>
+        <p class="sec-sub">De l'inscription à votre première recherche en moins de 2 minutes.</p>
+        <div class="how-steps">
+          <div class="how-step" data-num="1"><div class="how-step-icon"><img src="logo/mail.png" style="width:24px;height:24px"></div><h4>1. Créez votre compte</h4><p>Renseignez votre email, pseudo et mot de passe. Création instantanée, aucune vérification requise.</p></div>
+          <div class="how-step" data-num="2"><div class="how-step-icon"><img src="logo/pass.png" style="width:24px;height:24px"></div><h4>2. Connectez-vous</h4><p>Utilisez votre email et mot de passe. Session persistante — reconnexion automatique à chaque visite.</p></div>
+          <div class="how-step" data-num="3"><div class="how-step-icon"><img src="logo/loupe.png" style="width:24px;height:24px"></div><h4>3. Lancez une recherche</h4><p>Entrez n'importe quelle cible. Mode auto-détection ou manuel — résultats en quelques secondes.</p></div>
+        </div>
+      </div>
+
+      <div style="background:linear-gradient(135deg,rgba(88,101,242,.1),rgba(88,101,242,.03));border:1px solid rgba(88,101,242,.18);border-radius:var(--r2);padding:26px 30px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
+        <div><h3 style="font-size:17px;font-weight:800;color:var(--white);margin-bottom:4px">Rejoignez notre communauté</h3><p style="font-size:13px;color:var(--text2)">Support, annonces, codes et bien plus sur notre Discord.</p></div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="font-size:14px;padding:12px 22px"><img src="logo/discord.png" alt="">discord.gg/ssYFSXRGPP</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="page" id="page-shop">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/dollars.png" alt="">Boutique</h1><p>Comptes et services premium. Paiement via Discord.</p></div>
+      <div class="shop-filters">
+        <button class="filter-btn active" data-filter="Discord"  onclick="renderShop('Discord')"><img src="logo/discord.png" alt="">Discord</button>
+        <button class="filter-btn"        data-filter="Compte"   onclick="renderShop('Compte')"><img src="logo/user.png" alt="">Comptes</button>
+        <button class="filter-btn"        data-filter="Boost"    onclick="renderShop('Boost')"><img src="logo/boost.png" alt="">Boost</button>
+        <button class="filter-btn"        data-filter="Sécurité" onclick="renderShop('Sécurité')"><img src="logo/ip.png" alt="">Sécurité</button>
+        <button class="filter-btn"        data-filter="Premium"  onclick="renderShop('Premium')">👑 Premium</button>
+      </div>
+      <div class="cards-grid" id="shop-grid"></div>
+      <div class="payment-info-box">
+        <h4>💳 Accepted Payment Methods</h4>
+        <p><strong>PayPal</strong> (Friends &amp; Family only) &nbsp;·&nbsp; <strong>LTC</strong> (Litecoin)</p>
+        <p><strong>Currency:</strong> EUR (€) only</p>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">
+          <p class="warn">⚠️ Payments in USD not accepted due to conversion fees.</p>
+          <p class="warn">⚠️ PayPal F&amp;F mandatory — Goods &amp; Services refused.</p>
+          <p>• <strong>PayPal :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></p>
+          <p>• <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></p>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="margin-top:12px;display:inline-flex"><img src="logo/discord.png" alt="">Créer un ticket</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div class="page" id="page-tools">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/tools.png" alt="">Tools</h1><p>Outils OSINT &amp; packs téléchargeables.</p></div>
+      <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:var(--r);padding:12px 17px;margin-bottom:18px"><p style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:0">✓ Tous les outils standards sont gratuits et téléchargeables directement.</p></div>
+      <div class="cards-grid" id="tools-grid"></div>
+    </div>
+  </div>
+
+  <!-- SUBS -->
+  <div class="page" id="page-subs">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/coins.png" alt="">Abonnements</h1><p>Choisissez le plan qui vous convient.</p></div>
+      <div class="plans-wrapper"><div class="plans-grid" id="plans-grid"></div></div>
+      <div class="info-card" style="margin-top:22px;max-width:520px">
+        <h3>Comment s'abonner ?</h3>
+        <p>Ouvrez un <strong>ticket</strong> sur Discord et un admin configurera votre accès sous 24h.</p>
+        <p>• Paiement LTC ou PayPal F&amp;F uniquement (EUR)</p>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px"><img src="logo/discord.png" alt="">Ouvrir un ticket Discord</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <div class="page" id="page-features">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/fonction.png" alt="">Fonctionnalités</h1><p>Capacités de la plateforme.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;margin-bottom:22px">
+        <div class="info-card"><h3>Recherche OSINT</h3><p>Multi-sources : Phone, Email, Username, Discord ID, IP. 47 sources en temps réel.</p></div>
+        <div class="info-card"><h3>Auto-détection</h3><p>Le moteur détecte automatiquement le type de cible saisie.</p></div>
+        <div class="info-card"><h3>Sécurité 60s</h3><p>Délai de 60 secondes entre chaque recherche pour protéger la plateforme.</p></div>
+        <div class="info-card"><h3>Crédits 24h</h3><p>Crédits réinitialisés 24h après épuisement. Rechargeable via Discord (0.25€/crédit).</p></div>
+        <div class="info-card"><h3>Multi-langue</h3><p>Interface disponible en Français et Anglais. Changez dans Paramètres.</p></div>
+        <div class="info-card"><h3>Multi-paiement</h3><p>LTC et PayPal F&amp;F en EUR. Paysafecard via Discord.</p></div>
+      </div>
+      <div class="info-card" style="max-width:440px">
+        <h3>Crédits de recherche</h3>
+        <p>• <strong>Standard :</strong> 5 crédits / 24h</p>
+        <p>• <strong>Starter :</strong> 20 crédits / 24h</p>
+        <p>• <strong>Pro :</strong> 50 crédits / 24h</p>
+        <p>• <strong>Lifetime :</strong> illimités</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:4px">Recharge : 1 crédit = 0.25€ via Discord</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTACT -->
+  <div class="page" id="page-contact">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/mail.png" alt="">Contact</h1><p>Support &amp; assistance.</p></div>
+      <div class="contact-grid">
+        <div class="info-card">
+          <h3>Discord officiel</h3>
+          <p>Notre serveur Discord est le principal canal de support.</p>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:10px"><img src="logo/discord.png" alt="">Rejoindre le serveur</a>
+          <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;margin-top:12px;margin-bottom:0;font-weight:700">discord.gg/ssYFSXRGPP</p>
+        </div>
+        <div class="info-card">
+          <h3>Temps de réponse</h3>
+          <p>• Discord : &lt; 2 heures</p>
+          <p>• Commandes : 1–24 heures</p>
+          <p>• Support technique : 24–48 heures</p>
+          <p style="margin-top:10px;font-size:12px;color:var(--text3);margin-bottom:0">Disponible 7j/7</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="page" id="page-about">
+    <div class="main-content">
+      <div class="page-header"><h1><img src="logo/user.png" alt="">À propos</h1><p>Bazaar Services — 2026</p></div>
+      <div class="info-card" style="margin-bottom:12px"><h3>Qui sommes-nous ?</h3><p>Bazaar est une plateforme OSINT fondée en 2026 par une équipe passionnée de cybersécurité.</p><p style="font-size:12px;color:var(--text3);margin-bottom:0">⚠️ Usage légal et éthique uniquement.</p></div>
+      <div class="info-card" style="margin-bottom:12px"><h3>Fondateurs</h3><div class="team-grid" id="founders-grid"></div></div>
+      <div class="info-card"><h3>Paiement &amp; Commandes</h3>
+        <p>Tous les achats via Discord — ouvrez un ticket.</p>
+        <p>• <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span> <button class="ltc-copy" onclick="copyLTC()" style="margin-left:6px">Copier</button></p>
+        <p>• <strong>PayPal F&amp;F :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></p>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px"><img src="logo/discord.png" alt="">Rejoindre &amp; Commander</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <div class="footer-logo">BAZAAR</div>
+        <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6">Plateforme OSINT — 2026<br>Usage légal uniquement.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigation</h4>
+        <a onclick="gotoPage('home')">Accueil</a><a onclick="gotoPage('shop')">Boutique</a><a onclick="gotoPage('tools')">Tools</a><a onclick="gotoPage('subs')">Abonnements</a><a onclick="gotoPage('features')">Fonctionnalités</a><a onclick="gotoPage('contact')">Contact</a><a onclick="gotoPage('about')">À propos</a>
+      </div>
+      <div class="footer-col">
+        <h4>Communauté</h4>
+        <p>Support, codes promo et news sur notre Discord.</p>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="footer-discord"><img src="logo/discord.png" alt=""><span>discord.gg/ssYFSXRGPP</span></a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Bazaar Services — Boubou · flux.3d · ZIamana</p>
+      <p>LTC : <span style="font-family:'JetBrains Mono',monospace;color:var(--yellow);font-size:11px">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></p>
+    </div>
+  </footer>
+</div>
+
+<!-- ITEM VIEW -->
+<div id="item-view">
+  <div class="iv-inner">
+    <button class="iv-back" onclick="closeItemView()">← Retour</button>
+    <div class="iv-hero"><div class="iv-img" id="iv-img"></div><div class="iv-meta"><div class="iv-cat" id="iv-cat"></div><h1 id="iv-name"></h1><p class="iv-desc" id="iv-desc"></p></div></div>
+    <div class="iv-price-box">
+      <div class="iv-price-row"><div><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:5px">Prix</div><div class="iv-price" id="iv-price"></div></div></div>
+      <div id="iv-free-section" style="display:none"><button class="btn btn-green" style="width:100%;font-size:14px;padding:14px" onclick="downloadTool()">⬇ Télécharger gratuitement</button></div>
+      <div id="iv-pay-section">
+        <div class="pay-section"><h4>Accepted payment methods</h4><div class="pay-methods"><div class="pay-method"><img src="logo/ltc.png" alt="">LTC</div><div class="pay-method"><img src="logo/paypal.png" alt="">PayPal F&amp;F</div><div class="pay-method"><img src="logo/paysafecard.png" alt="">Paysafecard</div></div></div>
+        <div class="iv-discord-box"><p>Pour finaliser votre achat, rejoignez notre Discord et créez un ticket. Livraison sous 24h.</p><a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex"><img src="logo/discord.png" alt="">Rejoindre &amp; Commander</a><div class="ltc-addr"><span>LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span><button class="ltc-copy" onclick="copyLTC()">Copier</button></div></div>
+        <button class="btn btn-white" style="width:100%;font-size:14px;padding:14px" onclick="window.open('https://discord.gg/ssYFSXRGPP','_blank')">Commander via Discord</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
