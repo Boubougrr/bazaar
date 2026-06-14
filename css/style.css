@@ -345,3 +345,43 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 @media(max-width:1100px){.plans-grid{grid-template-columns:1fr 1fr;}.auth-left{display:none;}.auth-right{width:100%;border-radius:20px;border:1px solid var(--border2);}}
 @media(max-width:900px){.stats-row{grid-template-columns:1fr 1fr;}.how-steps,.two-col,.plans-grid,.contact-grid{grid-template-columns:1fr;}.footer-inner{grid-template-columns:1fr;}.footer-bottom{flex-direction:column;align-items:flex-start;}}
 @media(max-width:600px){nav{padding:0 12px;}.main-content{padding:22px 14px;}.hero h1{font-size:36px;}.search-panel{padding:18px 16px;}.auth-right{padding:32px 24px;}}
+
+/* ── SETTINGS BUTTON ── */
+.auth-settings-btn{position:absolute;top:20px;right:20px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;color:var(--text2);width:36px;height:36px;display:flex;align-items:center;justify-content:center;transition:all .16s;}
+.auth-settings-btn:hover{border-color:var(--accent);color:var(--white);}
+.auth-right{position:relative;}
+.nav-settings-btn{background:var(--panel);border:1px solid var(--border2);border-radius:8px;color:var(--text2);width:34px;height:34px;display:flex;align-items:center;justify-content:center;transition:all .16s;flex-shrink:0;}
+.nav-settings-btn:hover{border-color:var(--accent);color:var(--white);}
+
+/* ── SETTINGS MODAL CONTENT ── */
+.setting-group{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
+.setting-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:10px;}
+.setting-options{display:flex;gap:6px;flex-wrap:wrap;}
+.setting-btn{background:var(--panel);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-size:12px;font-weight:600;padding:7px 14px;transition:all .16s;}
+.setting-btn:hover{border-color:var(--border2);color:var(--text);}
+.setting-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* ── ULTRA DARK THEME ── */
+body.theme-darker{--bg:#020204;--bg2:#06060a;--bg3:#0a0a0e;--panel:#0e0e14;--panel2:#121218;--border:#18182a;--border2:#202030;}
+
+/* ── GEAR DROPDOWN ── */
+.gear-wrap,.auth-gear-wrap{position:relative;}
+.auth-gear-wrap{position:fixed;top:16px;right:16px;z-index:1001;}
+.gear-btn{
+  width:36px;height:36px;background:var(--panel);border:1px solid var(--border2);
+  border-radius:9px;color:var(--text2);display:flex;align-items:center;justify-content:center;
+  transition:all .16s;
+}
+.gear-btn:hover{border-color:var(--accent);color:var(--white);transform:rotate(30deg);}
+#gear-dropdown,#auth-gear-dropdown{
+  display:none;position:absolute;top:calc(100% + 6px);right:0;width:210px;
+  background:var(--panel2);border:1px solid var(--border2);border-radius:var(--r2);
+  padding:6px;z-index:700;box-shadow:0 12px 40px rgba(0,0,0,.75);animation:fadeUp .15s ease;
+}
+#gear-dropdown.open,#auth-gear-dropdown.open{display:block;}
+.dd-check{display:inline-block;width:16px;color:var(--accent);font-size:11px;font-weight:700;margin-right:4px;flex-shrink:0;}
+/* Remove old settings modal (no longer used) */
+#settings-modal{display:none!important;}
+/* Remove auth-settings-btn styles (no longer needed) */
+.auth-settings-btn{display:none!important;}
+.nav-settings-btn{display:none!important;}

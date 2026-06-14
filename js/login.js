@@ -19,38 +19,22 @@ function safeUser(u) {
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-
   try {
     const { email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: 'Champs manquants.' });
-
     const { data: user, error } = await sb.from('users').select('*').eq('email', email).single();
     if (error || !user) return res.status(400).json({ error: 'Compte introuvable.' });
     if (user.is_banned) return res.status(403).json({ error: 'Compte suspendu.' });
-
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(400).json({ error: 'Mot de passe incorrect.' });
-
-    // Auto-reset credits if 24h passed
-    let updates = {
-      last_login: new Date().toISOString(),
-      login_count: (user.login_count || 0) + 1,
-    };
+    let updates = { last_login: new Date().toISOString(), login_count: (user.login_count||0)+1 };
     if (user.credits_exhausted_at) {
       const elapsed = Date.now() - new Date(user.credits_exhausted_at).getTime();
-      if (elapsed >= 24 * 3600 * 1000) {
-        updates.credits_used = 0;
-        updates.credits_exhausted_at = null;
-        user.credits_used = 0;
-        user.credits_exhausted_at = null;
-      }
+      if (elapsed >= 24*3600*1000) { updates.credits_used=0; updates.credits_exhausted_at=null; user.credits_used=0; user.credits_exhausted_at=null; }
     }
-
     await sb.from('users').update(updates).eq('id', user.id);
-
     return res.json({ ok: true, user: safeUser({ ...user, ...updates }) });
   } catch (e) {
-    console.error('login error:', e);
     return res.status(500).json({ error: 'Erreur serveur: ' + (e.message || String(e)) });
   }
 }
