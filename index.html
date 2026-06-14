@@ -74,18 +74,9 @@
 
 <!-- FLOATING GEAR (auth screen) -->
 <div class="auth-gear-wrap" id="auth-gear-wrap">
-  <button class="gear-btn" onclick="toggleAuthGear()" title="Paramètres">
+  <button class="gear-btn" onclick="openSettings()" title="Paramètres">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
   </button>
-  <div id="auth-gear-dropdown">
-    <div class="dd-label">Langue</div>
-    <div class="dd-item" onclick="setLang('fr')"><span id="ag-fr" class="dd-check">✓</span>🇫🇷 Français</div>
-    <div class="dd-item" onclick="setLang('en')"><span id="ag-en" class="dd-check" style="opacity:0">✓</span>🇬🇧 English</div>
-    <div class="dd-sep"></div>
-    <div class="dd-label">Thème</div>
-    <div class="dd-item" onclick="setTheme('dark')"><span id="ag-dark" class="dd-check">✓</span>🌙 Sombre</div>
-    <div class="dd-item" onclick="setTheme('darker')"><span id="ag-darker" class="dd-check" style="opacity:0">✓</span>⬛ Ultra-sombre</div>
-  </div>
 </div>
 
 <!-- ═══ AUTH SCREEN ═══ -->
@@ -176,23 +167,6 @@
         <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
-        <div id="gear-dropdown">
-          <div class="dd-label">Langue</div>
-          <div class="dd-item" onclick="setLang('fr')"><span id="g-fr" class="dd-check">✓</span>🇫🇷 Français</div>
-          <div class="dd-item" onclick="setLang('en')"><span id="g-en" class="dd-check" style="opacity:0">✓</span>🇬🇧 English</div>
-          <div class="dd-sep"></div>
-          <div class="dd-label">Thème</div>
-          <div class="dd-item" onclick="setTheme('dark')"><span id="g-dark" class="dd-check">✓</span>🌙 Sombre</div>
-          <div class="dd-item" onclick="setTheme('darker')"><span id="g-darker" class="dd-check" style="opacity:0">✓</span>⬛ Ultra-sombre</div>
-          <div class="dd-sep"></div>
-          <div class="dd-label">Curseur</div>
-          <div class="dd-item" onclick="setCursor(true)"><span id="g-cur-on" class="dd-check">✓</span>Activé</div>
-          <div class="dd-item" onclick="setCursor(false)"><span id="g-cur-off" class="dd-check" style="opacity:0">✓</span>Désactivé</div>
-          <div class="dd-sep"></div>
-          <div class="dd-label">Mode recherche</div>
-          <div class="dd-item" onclick="setDefaultSearchMode('auto')"><span id="g-sm-auto" class="dd-check">✓</span>Auto-détection</div>
-          <div class="dd-item" onclick="setDefaultSearchMode('manual')"><span id="g-sm-manual" class="dd-check" style="opacity:0">✓</span>Manuel</div>
-        </div>
       </div>
       <div class="user-menu-wrap">
         <div class="user-menu-btn" onclick="toggleDropdown()">

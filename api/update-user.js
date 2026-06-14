@@ -15,8 +15,25 @@ export default async function handler(req, res) {
   if (pseudo && pseudo.length >= 2) update.pseudo = pseudo;
   if (Object.keys(update).length === 0) return res.status(400).json({ error: 'Rien à mettre à jour.' });
 
-  const { data } = await supabase.from('users').update(update).eq('id', user_id)
-    .select('id,email,pseudo,plan,credits_max,credits_used,vip_active,total_searches,login_count,joined_at,last_login,last_verif,week_searches,month_searches,credits_exhausted_at').single();
+  const { data } = await supabase.from('users').update(update).eq('id', user_id).select('*').single();
 
-  return res.json({ ok: true, user: data });
+  return res.json({ ok: true, user: safeUser(data) });
+}
+
+function safeUser(u) {
+  if (!u) return null;
+  return {
+    id: u.id, email: u.email, pseudo: u.pseudo,
+    plan: u.plan || 'standard', 
+    credits_max: u.credits_max || 5,
+    credits_used: u.credits_used || 0, 
+    credits_exhausted_at: u.credits_exhausted_at,
+    vip_active: u.vip_active || false, 
+    total_searches: u.total_searches || 0,
+    login_count: u.login_count || 1, 
+    joined_at: u.joined_at,
+    last_login: u.last_login,
+    week_searches: u.week_searches || {}, 
+    month_searches: u.month_searches || {},
+  };
 }

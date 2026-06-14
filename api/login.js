@@ -26,23 +26,27 @@ export default async function handler(req, res) {
   if (!valid) return res.status(400).json({ error: 'Mot de passe incorrect.' });
 
   // Update last_login + login_count
-  await supabase.from('users').update({
+  const { data: updatedUser } = await supabase.from('users').update({
     last_login: new Date().toISOString(),
     login_count: (user.login_count || 0) + 1
-  }).eq('id', user.id);
+  }).eq('id', user.id).select('*').single();
 
-  return res.json({ ok: true, user: safeUser(user) });
+  return res.json({ ok: true, user: safeUser(updatedUser || user) });
 }
 
 function safeUser(u) {
   return {
     id: u.id, email: u.email, pseudo: u.pseudo,
-    plan: u.plan, credits_max: u.credits_max,
-    credits_used: u.credits_used,
+    plan: u.plan || 'standard', 
+    credits_max: u.credits_max || 5,
+    credits_used: u.credits_used || 0, 
     credits_exhausted_at: u.credits_exhausted_at,
-    vip_active: u.vip_active, total_searches: u.total_searches,
-    login_count: u.login_count, joined_at: u.joined_at,
-    last_login: u.last_login, last_verif: u.last_verif,
-    week_searches: u.week_searches, month_searches: u.month_searches,
+    vip_active: u.vip_active || false, 
+    total_searches: u.total_searches || 0,
+    login_count: u.login_count || 1, 
+    joined_at: u.joined_at,
+    last_login: u.last_login,
+    week_searches: u.week_searches || {}, 
+    month_searches: u.month_searches || {},
   };
 }

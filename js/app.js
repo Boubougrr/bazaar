@@ -54,24 +54,26 @@ function saveSettings(){ localStorage.setItem('bzr_settings', JSON.stringify(set
 
 function applySettings(){
   document.body.classList.toggle('theme-darker', settings.theme === 'darker');
-  cursorEl.style.display = settings.cursor ? 'block' : 'none';
+  document.body.classList.toggle('custom-cursor', settings.cursor);
   applyLang(settings.lang);
-  // Update gear checkmarks - nav
-  ['g-fr','g-en'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.opacity='0';});
-  const glang=document.getElementById('g-'+settings.lang);if(glang)glang.style.opacity='1';
-  ['g-dark','g-darker'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.opacity='0';});
-  const gtheme=document.getElementById('g-'+settings.theme);if(gtheme)gtheme.style.opacity='1';
-  const gcuron=document.getElementById('g-cur-on'),gcuroff=document.getElementById('g-cur-off');
-  if(gcuron)gcuron.style.opacity=settings.cursor?'1':'0';
-  if(gcuroff)gcuroff.style.opacity=settings.cursor?'0':'1';
-  const gsmauto=document.getElementById('g-sm-auto'),gsmman=document.getElementById('g-sm-manual');
-  if(gsmauto)gsmauto.style.opacity=settings.searchMode==='auto'?'1':'0';
-  if(gsmman)gsmman.style.opacity=settings.searchMode==='manual'?'1':'0';
-  // Update auth gear checkmarks
-  ['ag-fr','ag-en'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.opacity='0';});
-  const aglang=document.getElementById('ag-'+settings.lang);if(aglang)aglang.style.opacity='1';
-  ['ag-dark','ag-darker'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.opacity='0';});
-  const agtheme=document.getElementById('ag-'+settings.theme);if(agtheme)agtheme.style.opacity='1';
+  // Update setting buttons active state in modal
+  document.querySelectorAll('.setting-btn').forEach(btn => {
+    const id = btn.id;
+    if(id === 'lang-' + settings.lang) btn.classList.add('active');
+    else if(id.startsWith('lang-')) btn.classList.remove('active');
+    
+    if(id === 'theme-' + settings.theme) btn.classList.add('active');
+    else if(id.startsWith('theme-')) btn.classList.remove('active');
+    
+    if(id === 'cursor-' + (settings.cursor ? 'on' : 'off')) btn.classList.add('active');
+    else if(id.startsWith('cursor-')) btn.classList.remove('active');
+    
+    if(id === 'anim-' + (settings.anim ? 'on' : 'off')) btn.classList.add('active');
+    else if(id.startsWith('anim-')) btn.classList.remove('active');
+    
+    if(id === 'sm-' + settings.searchMode) btn.classList.add('active');
+    else if(id.startsWith('sm-')) btn.classList.remove('active');
+  });
 }
 
 function applyLang(lang){
@@ -92,20 +94,15 @@ function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySe
 function openSettings(){
   document.getElementById('user-dropdown')?.classList.remove('open');
   document.querySelector('.user-menu-btn')?.classList.remove('open');
+  document.getElementById('gear-dropdown')?.classList.remove('open');
+  document.getElementById('auth-gear-dropdown')?.classList.remove('open');
   applySettings();
   document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
 
-function toggleGear(){
-  const dd=document.getElementById('gear-dropdown');
-  const open=dd.classList.toggle('open');
-  // close user dropdown
-  if(open){document.getElementById('user-dropdown')?.classList.remove('open');document.querySelector('.user-menu-btn')?.classList.remove('open');}
-}
-function toggleAuthGear(){
-  document.getElementById('auth-gear-dropdown')?.classList.toggle('open');
-}
+function toggleGear(){ openSettings(); }
+function toggleAuthGear(){ openSettings(); }
 
 // ── CURSOR ────────────────────────────────────────────────────
 const cursorEl = document.getElementById('cursor');
@@ -159,7 +156,13 @@ async function api(path, body){
 window.addEventListener('load', () => {
   loadSettings();
   const saved = localStorage.getItem('bzr_session');
-  if(saved){ try{ currentUser=JSON.parse(saved); bootApp(); }catch(e){ localStorage.removeItem('bzr_session'); } }
+  if(saved && saved !== 'undefined'){ 
+    try{ 
+      currentUser=JSON.parse(saved); 
+      if(currentUser && currentUser.email) bootApp(); 
+      else localStorage.removeItem('bzr_session');
+    }catch(e){ localStorage.removeItem('bzr_session'); } 
+  }
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
   document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
   // Apply default search mode from settings
@@ -167,11 +170,13 @@ window.addEventListener('load', () => {
 });
 
 function bootApp(){
+  if(!currentUser) return;
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('main-screen').style.display='flex';
-  document.getElementById('user-name-nav').textContent=currentUser.pseudo||currentUser.email.split('@')[0];
+  const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
+  document.getElementById('user-name-nav').textContent = name;
   startResetTimer(); updateCreditsUI();
-  notify('👋 Bienvenue, '+(currentUser.pseudo||currentUser.email.split('@')[0])+'!');
+  notify('👋 Bienvenue, ' + name + '!');
 }
 
 function saveSession(u){ currentUser=u; localStorage.setItem('bzr_session',JSON.stringify(u)); }

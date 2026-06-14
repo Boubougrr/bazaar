@@ -1,9 +1,10 @@
 :root{--bg:#0b0c12;--bg2:#0f1018;--bg3:#13141e;--panel:#161720;--panel2:#1c1d2a;--border:#1e2030;--border2:#262840;--accent:#7b6ef6;--accent2:#5b4fd4;--text:#e8e9f5;--text2:#8890b0;--text3:#40445a;--white:#ffffff;--green:#4ade80;--yellow:#fbbf24;--red:#f87171;--blue:#60a5fa;--r:10px;--r2:14px;--r3:18px;}
 *{margin:0;padding:0;box-sizing:border-box;}
-*,*::before,*::after{cursor:none!important;}
+body.custom-cursor, body.custom-cursor *, body.custom-cursor *::before, body.custom-cursor *::after { cursor: none !important; }
 
 /* CURSOR — instant, no smooth, always on top */
-#cursor{width:14px;height:14px;background:rgba(255,255,255,.9);border-radius:50%;position:fixed;pointer-events:none;z-index:2147483647!important;transform:translate(-50%,-50%);mix-blend-mode:difference;top:0;left:0;}
+#cursor{display:none;width:14px;height:14px;background:rgba(255,255,255,.9);border-radius:50%;position:fixed;pointer-events:none;z-index:2147483647!important;transform:translate(-50%,-50%);mix-blend-mode:difference;top:0;left:0;}
+body.custom-cursor #cursor{display:block;}
 #cursor.hover{width:22px;height:22px;opacity:.5;}
 #cursor.click{width:9px;height:9px;}
 
@@ -347,11 +348,7 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 @media(max-width:600px){nav{padding:0 12px;}.main-content{padding:22px 14px;}.hero h1{font-size:36px;}.search-panel{padding:18px 16px;}.auth-right{padding:32px 24px;}}
 
 /* ── SETTINGS BUTTON ── */
-.auth-settings-btn{position:absolute;top:20px;right:20px;background:var(--panel);border:1px solid var(--border2);border-radius:8px;color:var(--text2);width:36px;height:36px;display:flex;align-items:center;justify-content:center;transition:all .16s;}
-.auth-settings-btn:hover{border-color:var(--accent);color:var(--white);}
 .auth-right{position:relative;}
-.nav-settings-btn{background:var(--panel);border:1px solid var(--border2);border-radius:8px;color:var(--text2);width:34px;height:34px;display:flex;align-items:center;justify-content:center;transition:all .16s;flex-shrink:0;}
-.nav-settings-btn:hover{border-color:var(--accent);color:var(--white);}
 
 /* ── SETTINGS MODAL CONTENT ── */
 .setting-group{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;}
@@ -380,8 +377,3 @@ body.theme-darker{--bg:#020204;--bg2:#06060a;--bg3:#0a0a0e;--panel:#0e0e14;--pan
 }
 #gear-dropdown.open,#auth-gear-dropdown.open{display:block;}
 .dd-check{display:inline-block;width:16px;color:var(--accent);font-size:11px;font-weight:700;margin-right:4px;flex-shrink:0;}
-/* Remove old settings modal (no longer used) */
-#settings-modal{display:none!important;}
-/* Remove auth-settings-btn styles (no longer needed) */
-.auth-settings-btn{display:none!important;}
-.nav-settings-btn{display:none!important;}

@@ -21,7 +21,6 @@ const CONFIG = {
   },
   founders: [
     { name:"Boubou",  role:"Founder",    discord:"france.eu",     gunslol:"https://guns.lol/boubou_",  gunslolLabel:"guns.lol/boubou_"  },
-    { name:"flux.3d", role:"Co-Founder", discord:"flux.3d.",      gunslol:"https://guns.lol/flux3d.",  gunslolLabel:"guns.lol/flux3d."  },
     { name:"ZIamana", role:"Co-Founder", discord:"canalisation_", gunslol:"https://guns.lol/ziamana",  gunslolLabel:"guns.lol/ziamana"  },
   ],
   plans: [
