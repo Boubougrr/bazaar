@@ -56,23 +56,25 @@ function applySettings(){
   document.body.classList.toggle('theme-darker', settings.theme === 'darker');
   document.body.classList.toggle('custom-cursor', settings.cursor);
   applyLang(settings.lang);
-  // Update setting buttons active state in modal
+  
+  // Update ALL setting buttons (modal + settings page)
   document.querySelectorAll('.setting-btn').forEach(btn => {
     const id = btn.id;
-    if(id === 'lang-' + settings.lang) btn.classList.add('active');
-    else if(id.startsWith('lang-')) btn.classList.remove('active');
+    // Check for both p- (page) and normal prefixes if they exist
+    if(id.includes('lang-' + settings.lang)) btn.classList.add('active');
+    else if(id.includes('lang-')) btn.classList.remove('active');
     
-    if(id === 'theme-' + settings.theme) btn.classList.add('active');
-    else if(id.startsWith('theme-')) btn.classList.remove('active');
+    if(id.includes('theme-' + settings.theme)) btn.classList.add('active');
+    else if(id.includes('theme-')) btn.classList.remove('active');
     
-    if(id === 'cursor-' + (settings.cursor ? 'on' : 'off')) btn.classList.add('active');
-    else if(id.startsWith('cursor-')) btn.classList.remove('active');
+    if(id.includes('cursor-' + (settings.cursor ? 'on' : 'off'))) btn.classList.add('active');
+    else if(id.includes('cursor-')) btn.classList.remove('active');
     
-    if(id === 'anim-' + (settings.anim ? 'on' : 'off')) btn.classList.add('active');
-    else if(id.startsWith('anim-')) btn.classList.remove('active');
+    if(id.includes('anim-' + (settings.anim ? 'on' : 'off'))) btn.classList.add('active');
+    else if(id.includes('anim-')) btn.classList.remove('active');
     
-    if(id === 'sm-' + settings.searchMode) btn.classList.add('active');
-    else if(id.startsWith('sm-')) btn.classList.remove('active');
+    if(id.includes('sm-' + settings.searchMode)) btn.classList.add('active');
+    else if(id.includes('sm-')) btn.classList.remove('active');
   });
 }
 
@@ -92,12 +94,7 @@ function setAnim(v){ settings.anim=v; saveSettings(); applySettings(); }
 function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySettings(); setSearchMode(m); }
 
 function openSettings(){
-  document.getElementById('user-dropdown')?.classList.remove('open');
-  document.querySelector('.user-menu-btn')?.classList.remove('open');
-  document.getElementById('gear-dropdown')?.classList.remove('open');
-  document.getElementById('auth-gear-dropdown')?.classList.remove('open');
-  applySettings();
-  document.getElementById('settings-modal').classList.add('open');
+  gotoPage('settings');
 }
 function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
 
@@ -160,37 +157,61 @@ window.addEventListener('load', async () => {
     try{ 
       const sessionUser = JSON.parse(saved); 
       if(sessionUser && sessionUser.id){
-        // Re-fetch fresh data from server to catch DB changes (pseudo, credits, etc.)
         try {
           const res = await api('get-user', { user_id: sessionUser.id });
           saveSession(res.user);
           currentUser = res.user;
         } catch(e) {
-          // If server fetch fails, fallback to saved session but notify if needed
           console.warn('Re-fetch failed, using cached session');
           currentUser = sessionUser;
         }
-        if(currentUser && currentUser.email) bootApp(); 
-        else localStorage.removeItem('bzr_session');
-      } else {
-        localStorage.removeItem('bzr_session');
       }
     }catch(e){ localStorage.removeItem('bzr_session'); } 
   }
+  
+  bootApp(); // Always call to setup initial UI state
+
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
   document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
-  // Apply default search mode from settings
   setSearchMode(settings.searchMode);
 });
 
 function bootApp(){
-  if(!currentUser) return;
-  document.getElementById('auth-screen').style.display='none';
+  const navAuth = document.getElementById('nav-auth-only');
+  const navLogin = document.getElementById('nav-login-btn');
+  const badge = document.getElementById('dev-badge');
+  const mainScreen = document.getElementById('main-screen');
+
+  if(mainScreen) mainScreen.style.display='flex';
+
+  if(!currentUser) {
+    if(navAuth) navAuth.style.display='none';
+    if(navLogin) navLogin.style.display='block';
+    if(badge) badge.style.display='none';
+    // Optionally keep auth screen closed initially so they see the home page
+    return;
+  }
+  
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('auth-gear-wrap').style.display='none';
   document.getElementById('main-screen').style.display='flex';
+  
+  if(navAuth) navAuth.style.display='contents';
+  if(navLogin) navLogin.style.display='none';
+  
   const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
   document.getElementById('user-name-nav').textContent = name;
+  
+  // DEV BADGE
+  if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
+  
   startResetTimer(); updateCreditsUI();
   notify('👋 Bienvenue, ' + name + '!');
+}
+
+function copyIvId(){
+  const id = document.getElementById('iv-id')?.textContent;
+  if(id) navigator.clipboard.writeText(id).then(()=>notify('✓ ID copié !'));
 }
 
 function saveSession(u){ currentUser=u; localStorage.setItem('bzr_session',JSON.stringify(u)); }
@@ -213,7 +234,9 @@ async function doLogin(){
     const res=await api('login',{email,password:pass});
     saveSession(res.user);
     setAuthNote('login-note','✓ Connecté !','ok');
-    setTimeout(bootApp,400);
+    setTimeout(() => {
+      bootApp();
+    }, 400);
   }catch(e){ setAuthNote('login-note',e.message,'err'); }
 }
 
@@ -312,13 +335,15 @@ function openProfile(section){
 function renderStats(box){
   if(!currentUser)return;
   const left=getCreditsLeft();
+  const creditsStr = currentUser.role === 'dev' ? 'Illimités' : (left+' / '+(currentUser.credits_max||5));
   box.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     ${sRow('👤','Pseudo',esc(currentUser.pseudo||'—'))}
     ${sRow('✉','Email',esc(currentUser.email))}
-    ${sRow('💛','Crédits / Jour',left+' / '+(currentUser.credits_max||5))}
+    ${sRow('💛','Crédits / Jour',creditsStr)}
     ${sRow('📦','Plan',esc(currentUser.plan||'standard'))}
     ${sRow('🔎','Total Searches',currentUser.total_searches||0)}
-    ${sRow('👑','VIP',currentUser.vip_active?'✓ Actif':'✗ Inactif')}
+    ${sRow('👑','Role',esc(currentUser.role==='dev'?'FOUNDER':currentUser.role))}
+    ${currentUser.role === 'dev' ? sRow('🌐','Last IP',esc(currentUser.last_ip)) : ''}
   </div>`;
 }
 function sRow(i,l,v){return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${i} ${l}</div><div style="font-size:13px;font-weight:700;color:var(--text)">${v}</div></div>`;}
@@ -334,7 +359,8 @@ async function saveNewPseudo(){
     const res=await api('update-user',{user_id:currentUser.id,pseudo:p});
     saveSession({...currentUser,...res.user});
     document.getElementById('user-name-nav').textContent=p;
-    setNote('pm-note','✓ Mis à jour !','ok'); setTimeout(closeProfile,900);
+    setNote('pm-note','✓ Mis à jour !','ok'); 
+    setTimeout(() => { location.reload(); }, 1200);
   }catch(e){setNote('pm-note',e.message,'err');}
 }
 
@@ -376,10 +402,15 @@ async function applyCoupon(){
 
 // ── NAV ───────────────────────────────────────────────────────
 function gotoPage(name){
+  // Check if unauthenticated and trying to search
+  if(!currentUser && name === 'home') {
+    // allow home but doSearch will block
+  }
+  
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   document.getElementById('page-'+name)?.classList.add('active');
-  const pages=['home','shop','tools','subs','features','contact','about'];
+  const pages=['home','shop','tools','subs','features','contact','about','settings'];
   const idx=pages.indexOf(name);
   if(idx>=0)document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
   window.scrollTo(0,0);
@@ -392,7 +423,8 @@ function getCreditsLeft(){
 }
 function updateCreditsUI(){
   const left=getCreditsLeft();
-  ['sq-left','sr-left'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=left;});
+  const display = (currentUser && currentUser.role === 'dev') ? '∞' : left;
+  ['sq-left','sr-left'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=display;});
 }
 function startResetTimer(){
   setInterval(()=>{
@@ -441,8 +473,9 @@ function detectType(q){
 }
 
 async function doSearch(){
-  if(searchCooldown){notify(`⏳ Attendez encore ${Math.ceil((cooldownEnd-Date.now())/1000)}s.`,true);return;}
-  if(getCreditsLeft()<=0){notify('⛔ Plus de crédits — rechargez via Discord',true);return;}
+  if(!currentUser) { notify('🔑 Veuillez vous connecter pour rechercher.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden'); return; }
+  if(searchCooldown && currentUser.role !== 'dev'){notify(`⏳ Attendez encore ${Math.ceil((cooldownEnd-Date.now())/1000)}s.`,true);return;}
+  if(getCreditsLeft()<=0 && currentUser.role !== 'dev'){notify('⛔ Plus de crédits — rechargez via Discord',true);return;}
   const q=document.getElementById('search-input').value.trim();
   if(!q){notify('Entrez une cible.',true);return;}
   const type=searchMode==='auto'?detectType(q):(document.getElementById('search-type')?.value||'username');
@@ -491,11 +524,12 @@ function noRes(q){return`<div class="result-item"><h4>Aucun résultat</h4><p>Auc
 // ── RENDER ────────────────────────────────────────────────────
 function renderShop(filter='Discord'){
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-filter')===filter));
-  const vip=currentUser&&currentUser.vip_active;
+  const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
   const items=CONFIG.shop.filter(i=>i.category===filter);
-  document.getElementById('shop-grid').innerHTML=items.map(item=>{
+  const grid = document.getElementById('shop-grid');
+  grid.innerHTML=items.map((item, idx)=>{
     const locked=item.premium&&!vip;
-    return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
+    return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
       <div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.premium?'<span class="premium-crown">👑</span>':''}${locked?'<div class="lock-overlay">🔒</div>':''}</div>
       <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?'Contenu réservé.':item.desc.substring(0,80)+'…'}</p></div>
       <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">Voir</button></div>
@@ -504,19 +538,20 @@ function renderShop(filter='Discord'){
 }
 
 function renderTools(){
-  const vip=currentUser&&currentUser.vip_active;
+  const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
   const visible=CONFIG.tools.filter(i=>!i.vip||(i.vip&&vip));
   const locked=CONFIG.tools.filter(i=>i.vip&&!vip);
-  document.getElementById('tools-grid').innerHTML=[
-    ...visible.map(item=>`<div class="item-card${item.vip?' premium-card':''}" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.vip?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="card-free">✓ Gratuit</span><button class="btn-sm">Télécharger</button></div></div>`),
-    ...locked.map(item=>`<div class="item-card premium-card locked-card" onclick="notifyVipRequired()"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}<div class="lock-overlay">🔒</div></div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Contenu réservé.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Voir</button></div></div>`)
+  const grid = document.getElementById('tools-grid');
+  grid.innerHTML=[
+    ...visible.map((item, idx)=>`<div class="item-card${item.vip?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.vip?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="card-free">✓ Gratuit</span><button class="btn-sm">Télécharger</button></div></div>`),
+    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}<div class="lock-overlay">🔒</div></div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Contenu réservé.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Voir</button></div></div>`)
   ].join('');
 }
 
 function renderPlans(){
   const c=document.getElementById('plans-grid');if(!c)return;
-  c.innerHTML=CONFIG.plans.map(p=>`
-    <div class="plan-card${p.highlight?' plan-highlight':''}">
+  c.innerHTML=CONFIG.plans.map((p, idx)=>`
+    <div class="plan-card${p.highlight?' plan-highlight':''}" style="animation:fadeUp .4s ease forwards; animation-delay:${idx*60}ms">
       ${p.highlight?'<div class="plan-best">👑 BEST VALUE</div>':''}
       <div class="plan-name" style="color:${p.color}">${p.name}</div>
       <div class="plan-subtitle">${p.subtitle}</div>
@@ -524,15 +559,15 @@ function renderPlans(){
       <div class="plan-searches-badge">${p.searches>=999999?'Illimitées':p.searches} recherches/jour</div>
       <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
       <ul class="plan-features">${p.features.map(f=>`<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span>${f.text}</li>`).join('')}</ul>
-      <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}"><img src="logo/discord.png" alt="">${p.price==='0€'?'Plan actuel':'S\'abonner'}</a>
+      <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?'Plan actuel':'S\'abonner'}</a>
       <p class="plan-ticket-note">Ouvrez un ticket Discord pour activer</p>
     </div>`).join('');
 }
 
 function renderFounders(){
   const c=document.getElementById('founders-grid');if(!c)return;
-  c.innerHTML=CONFIG.founders.map(f=>`
-    <div class="team-card"><span class="t-crown">👑</span><div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
+  c.innerHTML=CONFIG.founders.map((f, idx)=>`
+    <div class="team-card" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*50}ms"><span class="t-crown">👑</span><div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
     <div class="t-links" style="margin-top:10px">
       <a href="https://discord.com/users/" target="_blank" class="t-link"><img src="logo/discord.png" alt="">${f.discord}</a>
       <a href="${f.gunslol}" target="_blank" class="t-link"><img src="logo/gunslol.png" alt="">${f.gunslolLabel}</a>
@@ -545,6 +580,7 @@ function openItem(id,src){
   const item=src==='shop'?CONFIG.shop.find(i=>i.id===id):CONFIG.tools.find(i=>i.id===id);
   if(!item)return;currentItemForDl=item;
   document.getElementById('iv-name').textContent=item.name;
+  document.getElementById('iv-id').textContent=item.id;
   document.getElementById('iv-cat').textContent=(item.category||'').toUpperCase();
   document.getElementById('iv-desc').textContent=item.desc;
   document.getElementById('iv-img').innerHTML=item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:`<span style="font-size:58px">${item.icon}</span>`;

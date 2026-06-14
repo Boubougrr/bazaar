@@ -18,7 +18,15 @@ export default async function handler(req, res) {
     .single();
 
   if (error || !user) return res.status(401).json({ error: 'Session invalide.' });
-  if (user.is_banned)  return res.status(403).json({ error: 'Compte suspendu.' });
+  
+  // ── BAN CHECK ──
+  if (user.is_banned) {
+    if (!user.ban_expires_at) return res.status(403).json({ error: 'Compte suspendu définitivement.' });
+    if (new Date() < new Date(user.ban_expires_at)) {
+      const remaining = Math.ceil((new Date(user.ban_expires_at) - new Date()) / 3600000);
+      return res.status(403).json({ error: `Compte suspendu. Expire dans ${remaining}h.` });
+    }
+  }
 
   // ── AUTO RESET CREDITS ──
   let finalUser = user;
@@ -50,5 +58,7 @@ function safeUser(u) {
     last_login: u.last_login,
     week_searches: u.week_searches || {}, 
     month_searches: u.month_searches || {},
+    role: u.role || 'user',
+    last_ip: u.last_ip || 'N/A'
   };
 }

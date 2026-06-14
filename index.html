@@ -157,38 +157,44 @@
       <span class="nav-link"         onclick="gotoPage('features')"><img src="logo/fonction.png"alt=""><span data-i18n="features">Fonctionnalités</span></span>
       <span class="nav-link"         onclick="gotoPage('contact')"> <img src="logo/mail.png"    alt=""><span data-i18n="contact">Contact</span></span>
       <span class="nav-link"         onclick="gotoPage('about')">   <img src="logo/user.png"    alt=""><span data-i18n="about">À propos</span></span>
+      <span class="nav-link"         onclick="gotoPage('settings')"><img src="logo/fonction.png" alt=""><span data-i18n="settings">Paramètres</span></span>
     </div>
     <div class="nav-right">
+      <div id="dev-badge" class="dev-badge" style="display:none">STAFF</div>
       <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="nav-discord"><img src="logo/discord.png" alt="">Discord</a>
-      <div class="credits-pill" title="Cliquer pour recharger"><img src="logo/coins.png" alt=""><span id="sq-left">5</span>&nbsp;<span data-i18n="credits">crédits</span></div>
-      <!-- Gear settings dropdown -->
-      <div class="gear-wrap" id="gear-wrap">
-        <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
-      </div>
-      <div class="user-menu-wrap">
-        <div class="user-menu-btn" onclick="toggleDropdown()">
-          <img src="logo/user.png" alt="">
-          <span id="user-name-nav">—</span>
-          <span class="arr">▾</span>
+      <div id="nav-auth-only" style="display:contents">
+        <div class="credits-pill" title="Cliquer pour recharger"><img src="logo/coins.png" alt=""><span id="sq-left">5</span>&nbsp;<span data-i18n="credits">crédits</span></div>
+        <!-- Gear settings dropdown -->
+        <div class="gear-wrap" id="gear-wrap">
+          <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
         </div>
-        <div id="user-dropdown">
-          <div class="dd-label">Mon compte</div>
-          <div class="dd-item" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
-          <div class="dd-item" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
-          <div class="dd-item" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
-          <div class="dd-item" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
-          <div class="dd-sep"></div>
-          <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
-          <div class="dd-item" onclick="openSettings()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Paramètres
+        <div class="user-menu-wrap">
+          <div class="user-menu-btn" onclick="toggleDropdown()">
+            <img src="logo/user.png" alt="">
+            <span id="user-name-nav">—</span>
+            <span class="arr">▾</span>
           </div>
-          <div class="dd-sep"></div>
-          <div class="dd-item red" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
+          <div id="user-dropdown">
+            <div class="dd-label">Mon compte</div>
+            <div class="dd-item" id="dd-pseudo" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
+
+            <div class="dd-item" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
+            <div class="dd-item" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
+            <div class="dd-item" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
+            <div class="dd-sep"></div>
+            <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
+            <div class="dd-item" onclick="openSettings()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              Paramètres
+            </div>
+            <div class="dd-sep"></div>
+            <div class="dd-item red" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
+          </div>
         </div>
       </div>
+      <button id="nav-login-btn" class="btn btn-outline" style="padding:6px 14px; font-size:12px" onclick="document.getElementById('auth-screen').classList.remove('hidden')">Se connecter</button>
     </div>
   </nav>
 
@@ -327,9 +333,9 @@
 
   <!-- FEATURES -->
   <div class="page" id="page-features">
-    <div class="main-content">
-      <div class="page-header"><h1><img src="logo/fonction.png" alt="">Fonctionnalités</h1><p>Capacités de la plateforme.</p></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;margin-bottom:22px">
+    <div class="main-content" style="align-items:center">
+      <div class="page-header" style="text-align:center"><h1><img src="logo/fonction.png" alt="">Fonctionnalités</h1><p>Capacités de la plateforme.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;margin-bottom:22px;width:100%;max-width:900px">
         <div class="info-card"><h3>Recherche OSINT</h3><p>Multi-sources : Phone, Email, Username, Discord ID, IP. 47 sources en temps réel.</p></div>
         <div class="info-card"><h3>Auto-détection</h3><p>Le moteur détecte automatiquement le type de cible saisie.</p></div>
         <div class="info-card"><h3>Sécurité 60s</h3><p>Délai de 60 secondes entre chaque recherche pour protéger la plateforme.</p></div>
@@ -350,9 +356,9 @@
 
   <!-- CONTACT -->
   <div class="page" id="page-contact">
-    <div class="main-content">
-      <div class="page-header"><h1><img src="logo/mail.png" alt="">Contact</h1><p>Support &amp; assistance.</p></div>
-      <div class="contact-grid">
+    <div class="main-content" style="align-items:center; justify-content:center">
+        <div class="page-header" style="text-align:center"><h1><img src="logo/mail.png" alt="">Contact</h1><p>Support &amp; assistance.</p></div>
+        <div class="contact-grid">
         <div class="info-card">
           <h3>Discord officiel</h3>
           <p>Notre serveur Discord est le principal canal de support.</p>
@@ -372,15 +378,75 @@
 
   <!-- ABOUT -->
   <div class="page" id="page-about">
-    <div class="main-content">
-      <div class="page-header"><h1><img src="logo/user.png" alt="">À propos</h1><p>Bazaar Services — 2026</p></div>
-      <div class="info-card" style="margin-bottom:12px"><h3>Qui sommes-nous ?</h3><p>Bazaar est une plateforme OSINT fondée en 2026 par une équipe passionnée de cybersécurité.</p><p style="font-size:12px;color:var(--text3);margin-bottom:0">⚠️ Usage légal et éthique uniquement.</p></div>
-      <div class="info-card" style="margin-bottom:12px"><h3>Fondateurs</h3><div class="team-grid" id="founders-grid"></div></div>
-      <div class="info-card"><h3>Paiement &amp; Commandes</h3>
+    <div class="main-content" style="align-items:center">
+      <div class="page-header" style="text-align:center"><h1><img src="logo/user.png" alt="">À propos</h1><p>Bazaar Services — 2026</p></div>
+      <div class="info-card" style="margin-bottom:12px;width:100%;max-width:800px"><h3>Qui sommes-nous ?</h3><p>Bazaar est une plateforme OSINT fondée en 2026 par une équipe passionnée de cybersécurité.</p><p style="font-size:12px;color:var(--text3);margin-bottom:0">⚠️ Usage légal et éthique uniquement.</p></div>
+      <div class="info-card" style="margin-bottom:12px;width:100%;max-width:800px"><h3>Fondateurs</h3><div class="team-grid" id="founders-grid" style="justify-content:center"></div></div>
+      <div class="info-card" style="width:100%;max-width:800px"><h3>Paiement &amp; Commandes</h3>
         <p>Tous les achats via Discord — ouvrez un ticket.</p>
         <p>• <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span> <button class="ltc-copy" onclick="copyLTC()" style="margin-left:6px">Copier</button></p>
         <p>• <strong>PayPal F&amp;F :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></p>
         <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px"><img src="logo/discord.png" alt="">Rejoindre &amp; Commander</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="main-content">
+      <div class="page-header"><h1>⚙ Paramètres</h1><p>Personnalisez votre expérience sur Bazaar.</p></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px">
+        
+        <div class="info-card">
+          <h3>Apparence</h3>
+          <div class="setting-group-v">
+            <div class="setting-label">Thème de l'interface</div>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
+              <button class="setting-btn" id="p-theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
+            </div>
+          </div>
+          <div class="setting-group-v">
+            <div class="setting-label">Langue</div>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-lang-fr" onclick="setLang('fr')">🇫🇷 Français</button>
+              <button class="setting-btn" id="p-lang-en" onclick="setLang('en')">🇬🇧 English</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Interaction</h3>
+          <div class="setting-group-v">
+            <div class="setting-label">Curseur personnalisé</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Active ou désactive le cercle blanc qui suit votre souris.</p>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-cursor-on" onclick="setCursor(true)">✓ Activé</button>
+              <button class="setting-btn" id="p-cursor-off" onclick="setCursor(false)">✕ Désactivé</button>
+            </div>
+          </div>
+          <div class="setting-group-v">
+            <div class="setting-label">Animations</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Désactiver pour une navigation plus sobre et rapide.</p>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-anim-on" onclick="setAnim(true)">✓ Activées</button>
+              <button class="setting-btn" id="p-anim-off" onclick="setAnim(false)">✕ Désactivées</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Recherche</h3>
+          <div class="setting-group-v">
+            <div class="setting-label">Mode par défaut</div>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">L'auto-détection tente de trouver le type de votre cible.</p>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-sm-auto" onclick="setDefaultSearchMode('auto')">Auto-détection</button>
+              <button class="setting-btn" id="p-sm-manual" onclick="setDefaultSearchMode('manual')">Manuel</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -412,7 +478,7 @@
 <div id="item-view">
   <div class="iv-inner">
     <button class="iv-back" onclick="closeItemView()">← Retour</button>
-    <div class="iv-hero"><div class="iv-img" id="iv-img"></div><div class="iv-meta"><div class="iv-cat" id="iv-cat"></div><h1 id="iv-name"></h1><p class="iv-desc" id="iv-desc"></p></div></div>
+    <div class="iv-hero"><div class="iv-img" id="iv-img"></div><div class="iv-meta"><div class="iv-cat" id="iv-cat"></div><h1 id="iv-name"></h1><p class="iv-desc" id="iv-desc"></p><div id="iv-id-wrap" style="margin-top:8px;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace">ID: <span id="iv-id" style="color:var(--accent);font-weight:700"></span> <button class="ltc-copy" onclick="copyIvId()" style="margin-left:6px;padding:2px 6px">Copier</button></div></div></div>
     <div class="iv-price-box">
       <div class="iv-price-row"><div><div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:5px">Prix</div><div class="iv-price" id="iv-price"></div></div></div>
       <div id="iv-free-section" style="display:none"><button class="btn btn-green" style="width:100%;font-size:14px;padding:14px" onclick="downloadTool()">⬇ Télécharger gratuitement</button></div>
