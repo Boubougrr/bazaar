@@ -1,0 +1,12 @@
+/* Signup Button "Crossed Out" / Disabled state */
+.btn-primary:disabled {
+  background: var(--bg3)!important;
+  color: var(--text3)!important;
+  cursor: not-allowed!important;
+  transform: none !important;
+  box-shadow: none !important;
+  position: relative;
+  text-decoration: line-through;
+  border: 1px solid var(--red)!important;
+  opacity: 0.6;
+}

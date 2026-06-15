@@ -143,12 +143,24 @@ document.addEventListener('mouseout',  e => { if(e.target.closest(hQ)) cursorEl.
 
 // ── API HELPER ────────────────────────────────────────────────
 async function api(path, body){
-  const r = await fetch('/api/'+path, {
-    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
-  });
-  const data = await r.json();
-  if(!r.ok) throw new Error(data.error || 'Erreur serveur');
-  return data;
+  try {
+    const r = await fetch('/api/'+path, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+    });
+    const text = await r.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      console.error('API Response was not JSON:', text);
+      throw new Error('Erreur serveur (Réponse invalide).');
+    }
+    if(!r.ok) throw new Error(data.error || 'Erreur serveur');
+    return data;
+  } catch(e) {
+    console.error('API Fetch failed:', e);
+    throw e;
+  }
 }
 
 // ── INIT ──────────────────────────────────────────────────────
@@ -172,6 +184,7 @@ window.addEventListener('load', async () => {
   }
   
   bootApp(); // Always call to setup initial UI state
+  generateCaptcha(); initAuthEvents();
 
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
   document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
@@ -310,7 +323,61 @@ async function doLogin(){
   }catch(e){ setAuthNote('login-note',e.message,'err'); }
 }
 
+// ── CAPTCHA GAME ──────────────────────────────────────────────
 let captchaSolved = false;
+function generateCaptcha() {
+  const game = document.getElementById('captcha-game');
+  if(!game) return;
+  game.innerHTML = '';
+  captchaSolved = false;
+  updateSignupBtn();
+  
+  const shapes = ['square', 'square', 'square', 'triangle'];
+  shapes.sort(() => Math.random() - 0.5);
+  
+  shapes.forEach(type => {
+    const el = document.createElement('div');
+    el.className = `captcha-shape ${type}`;
+    el.onclick = () => {
+      if(type === 'triangle') {
+        captchaSolved = true;
+        document.getElementById('captcha-status').textContent = '✓ Vérification réussie !';
+        document.getElementById('captcha-status').style.color = 'var(--green)';
+        game.style.opacity = '0.5';
+        game.style.pointerEvents = 'none';
+      } else {
+        notify('❌ Raté ! Réessayez.', true);
+        generateCaptcha();
+      }
+      updateSignupBtn();
+    };
+    game.appendChild(el);
+  });
+}
+
+function updateSignupBtn() {
+  const btn = document.querySelector('#auth-signup .btn-primary');
+  const rules = document.getElementById('signup-accept-rules')?.checked;
+  if(btn) {
+    btn.disabled = !rules || !captchaSolved;
+  }
+}
+
+function initAuthEvents() {
+  const rulesCheck = document.getElementById('signup-accept-rules');
+  if(rulesCheck) rulesCheck.onchange = updateSignupBtn;
+  
+  const signupBtn = document.querySelector('#auth-signup .btn-primary');
+  if(signupBtn) {
+    signupBtn.onclick = (e) => {
+      const rules = document.getElementById('signup-accept-rules')?.checked;
+      if(!rules) { notify('⚠️ Vous devez accepter les règles.', true); return; }
+      if(!captchaSolved) { notify('⚠️ Veuillez compléter le mini-jeu de sécurité.', true); return; }
+      doSignup();
+    };
+  }
+}
+
 function toggleCaptcha() {
   captchaSolved = !captchaSolved;
   document.getElementById('captcha-check').style.display = captchaSolved ? 'block' : 'none';
@@ -362,7 +429,7 @@ async function doSignup(){
   if(pass.length<8){setAuthNote('signup-note','Mot de passe trop court (min 8 caractères).','err');return;}
   if(pass!==confirm){setAuthNote('signup-note','Les mots de passe ne correspondent pas.','err');return;}
   if(!acceptRules){setAuthNote('signup-note','Veuillez accepter les règles.','err');return;}
-  if(!captchaSolved){setAuthNote('signup-note','Veuillez valider le captcha.','err');return;}
+  if(!captchaSolved){setAuthNote('signup-note','Veuillez compléter le mini-jeu.','err');return;}
 
   setAuthNote('signup-note','Création du compte…','inf');
   try{
