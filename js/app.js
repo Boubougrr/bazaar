@@ -94,7 +94,7 @@ function setAnim(v){ settings.anim=v; saveSettings(); applySettings(); }
 function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySettings(); setSearchMode(m); }
 
 function openSettings(){
-  gotoPage('settings');
+  document.getElementById('settings-modal').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
 
@@ -106,6 +106,8 @@ const cursorEl = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
   cursorEl.style.left = e.clientX + 'px';
   cursorEl.style.top  = e.clientY + 'px';
+  document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+  document.documentElement.style.setProperty('--my', e.clientY + 'px');
 }, { passive: true });
 document.addEventListener('mousedown', () => cursorEl.classList.add('click'));
 document.addEventListener('mouseup',   () => cursorEl.classList.remove('click'));
@@ -184,11 +186,39 @@ function bootApp(){
 
   if(mainScreen) mainScreen.style.display='flex';
 
+  // Handle Guest Mode UI
   if(!currentUser) {
     if(navAuth) navAuth.style.display='none';
     if(navLogin) navLogin.style.display='block';
     if(badge) badge.style.display='none';
-    // Optionally keep auth screen closed initially so they see the home page
+    
+    // Disable Search UI for guests
+    const sBtn = document.getElementById('search-btn');
+    const sInp = document.getElementById('search-input');
+    const sMsg = document.getElementById('search-guest-msg');
+    if(sBtn) { sBtn.disabled = true; sBtn.style.opacity = '0.5'; }
+    if(sInp) { sInp.disabled = true; sInp.style.background = 'rgba(248,113,113,0.05)'; sInp.style.borderColor = 'rgba(248,113,113,0.2)'; }
+    if(sMsg) sMsg.style.display = 'block';
+
+    // Disable other tabs for guests
+    ['shop','tools','subs','features','contact','about','settings'].forEach(id => {
+      const el = document.getElementById('nav-'+id);
+      if(el) {
+        el.classList.add('locked-nav');
+        el.setAttribute('onclick', "notify('🔑 Connexion requise pour accéder à cette section.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
+        el.style.textDecoration = 'line-through';
+        el.style.opacity = '0.5';
+        // Add lock icon if not already there
+        if(!el.querySelector('.nav-lock')) {
+          const lock = document.createElement('span');
+          lock.className = 'nav-lock';
+          lock.innerHTML = ' 🔒';
+          lock.style.fontSize = '10px';
+          el.appendChild(lock);
+        }
+      }
+    });
+    
     return;
   }
   
@@ -202,11 +232,51 @@ function bootApp(){
   const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
   document.getElementById('user-name-nav').textContent = name;
   
-  // DEV BADGE
+  // Re-enable Search UI for logged in users
+  const sBtn = document.getElementById('search-btn');
+  const sInp = document.getElementById('search-input');
+  const sMsg = document.getElementById('search-guest-msg');
+  if(sBtn) { sBtn.disabled = false; sBtn.style.opacity = '1'; }
+  if(sInp) { sInp.disabled = false; sInp.style.background = ''; sInp.style.borderColor = ''; }
+  if(sMsg) sMsg.style.display = 'none';
+
+  // Restore other tabs
+  ['shop','tools','subs','features','contact','about','settings'].forEach(id => {
+    const el = document.getElementById('nav-'+id);
+    if(el) {
+      el.classList.remove('locked-nav');
+      el.setAttribute('onclick', `gotoPage('${id}')`);
+      el.style.textDecoration = 'none';
+      el.style.opacity = '1';
+      el.querySelector('.nav-lock')?.remove();
+    }
+  });
+
+  // DEV BADGE & FOUNDER COLOR
   if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
+  applyUserStyling();
   
   startResetTimer(); updateCreditsUI();
   notify('👋 Bienvenue, ' + name + '!');
+  loadReviews();
+}
+
+function applyUserStyling() {
+  const nameNav = document.getElementById('user-name-nav');
+  if(!nameNav || !currentUser) return;
+  if(currentUser.email === 'phoenix.guecko@gmail.com') {
+    nameNav.style.background = 'linear-gradient(90deg, #ff4d4d, #ff0000)';
+    nameNav.style.webkitBackgroundClip = 'text';
+    nameNav.style.webkitTextFillColor = 'transparent';
+    nameNav.style.fontWeight = '900';
+    nameNav.title = 'Founder';
+  } else if(currentUser.email === 'veritysuite@gmail.com') {
+    nameNav.style.background = 'linear-gradient(90deg, #ff7e5f, #feb47b)';
+    nameNav.style.webkitBackgroundClip = 'text';
+    nameNav.style.webkitTextFillColor = 'transparent';
+    nameNav.style.fontWeight = '900';
+    nameNav.title = 'Co-Founder';
+  }
 }
 
 function copyIvId(){
@@ -240,19 +310,63 @@ async function doLogin(){
   }catch(e){ setAuthNote('login-note',e.message,'err'); }
 }
 
+let captchaSolved = false;
+function toggleCaptcha() {
+  captchaSolved = !captchaSolved;
+  document.getElementById('captcha-check').style.display = captchaSolved ? 'block' : 'none';
+  document.getElementById('captcha-box').style.borderColor = captchaSolved ? 'var(--accent)' : 'var(--border2)';
+}
+
+function checkPassStrength() {
+  const p = document.getElementById('signup-password').value;
+  const wrap = document.getElementById('pass-strength-wrap');
+  if(!p) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  
+  const rules = {
+    len: p.length >= 8,
+    up: /[A-Z]/.test(p),
+    low: /[a-z]/.test(p),
+    num: /[0-9]/.test(p)
+  };
+  
+  let score = 0;
+  for(let k in rules) {
+    const el = document.getElementById('rule-'+k);
+    if(rules[k]) { el.style.color = 'var(--green)'; score++; }
+    else el.style.color = 'var(--text3)';
+  }
+  
+  const bar = document.getElementById('pass-strength-bar');
+  const lbl = document.getElementById('pass-strength-label');
+  const pct = (score / 4) * 100;
+  bar.style.width = pct + '%';
+  
+  if(score <= 1) { bar.style.background = 'var(--red)'; lbl.textContent = 'Very Weak'; lbl.style.color = 'var(--red)'; }
+  else if(score <= 2) { bar.style.background = 'var(--yellow)'; lbl.textContent = 'Weak'; lbl.style.color = 'var(--yellow)'; }
+  else if(score <= 3) { bar.style.background = 'var(--blue)'; lbl.textContent = 'Medium'; lbl.style.color = 'var(--blue)'; }
+  else { bar.style.background = 'var(--green)'; lbl.textContent = 'Strong'; lbl.style.color = 'var(--green)'; }
+}
+
 // ── SIGNUP ────────────────────────────────────────────────────
 async function doSignup(){
   const pseudo=document.getElementById('signup-pseudo').value.trim();
   const email=document.getElementById('signup-email').value.trim();
   const pass=document.getElementById('signup-password').value;
   const confirm=document.getElementById('signup-confirm').value;
+  const acceptRules = document.getElementById('signup-accept-rules').checked;
+  const acceptEmails = document.getElementById('signup-accept-emails').checked;
+
   if(pseudo.length<2){setAuthNote('signup-note','Pseudo trop court.','err');return;}
   if(!email.includes('@')){setAuthNote('signup-note','Email invalide.','err');return;}
   if(pass.length<8){setAuthNote('signup-note','Mot de passe trop court (min 8 caractères).','err');return;}
   if(pass!==confirm){setAuthNote('signup-note','Les mots de passe ne correspondent pas.','err');return;}
+  if(!acceptRules){setAuthNote('signup-note','Veuillez accepter les règles.','err');return;}
+  if(!captchaSolved){setAuthNote('signup-note','Veuillez valider le captcha.','err');return;}
+
   setAuthNote('signup-note','Création du compte…','inf');
   try{
-    const res=await api('signup',{email,pseudo,password:pass});
+    const res=await api('signup',{email,pseudo,password:pass, accept_emails: acceptEmails});
     saveSession(res.user);
     setAuthNote('signup-note','✓ Compte créé !','ok');
     setTimeout(bootApp,400);
@@ -301,6 +415,8 @@ function openProfile(section){
   if(section==='pseudo'){
     box.innerHTML=`<label class="lbl">Nouveau pseudo</label>
       <div class="inp-icon-wrap"><img class="inp-icon" src="logo/user.png" alt=""><input class="inp" type="text" id="pm-pseudo" placeholder="MonPseudo" maxlength="20" value="${esc(currentUser.pseudo||'')}"></div>
+      <label class="lbl">Mot de passe actuel</label>
+      <div class="inp-icon-wrap"><img class="inp-icon" src="logo/pass.png" alt=""><input class="inp" type="password" id="pm-pseudo-pass" placeholder="••••••••"></div>
       <button class="btn btn-primary" style="width:100%" onclick="saveNewPseudo()">Enregistrer</button>
       <p class="modal-note" id="pm-note"></p>`;
   } else if(section==='password'){
@@ -354,9 +470,11 @@ function closeProfile(){document.getElementById('profile-modal').classList.remov
 
 async function saveNewPseudo(){
   const p=document.getElementById('pm-pseudo')?.value.trim();
+  const pass=document.getElementById('pm-pseudo-pass')?.value;
   if(!p||p.length<2){setNote('pm-note','Pseudo trop court.','err');return;}
+  if(!pass){setNote('pm-note','Mot de passe requis.','err');return;}
   try{
-    const res=await api('update-user',{user_id:currentUser.id,pseudo:p});
+    const res=await api('update-user',{user_id:currentUser.id,pseudo:p,verify_password:pass});
     saveSession({...currentUser,...res.user});
     document.getElementById('user-name-nav').textContent=p;
     setNote('pm-note','✓ Mis à jour !','ok'); 
@@ -539,12 +657,12 @@ function renderShop(filter='Discord'){
 
 function renderTools(){
   const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
-  const visible=CONFIG.tools.filter(i=>!i.vip||(i.vip&&vip));
-  const locked=CONFIG.tools.filter(i=>i.vip&&!vip);
+  const visible=CONFIG.tools.filter(i=>i.category==='FreeTools' || (i.category==='Tools' && vip));
+  const locked=CONFIG.tools.filter(i=>i.category==='Tools' && !vip);
   const grid = document.getElementById('tools-grid');
   grid.innerHTML=[
-    ...visible.map((item, idx)=>`<div class="item-card${item.vip?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.vip?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="card-free">✓ Gratuit</span><button class="btn-sm">Télécharger</button></div></div>`),
-    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}<div class="lock-overlay">🔒</div></div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Contenu réservé.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Voir</button></div></div>`)
+    ...visible.map((item, idx)=>`<div class="item-card${item.category==='Tools'?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.category==='Tools'?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="${item.category==='Tools'?'premium-price':'card-free'}">${item.category==='Tools'?'Premium':'✓ Gratuit'}</span><button class="btn-sm">Voir</button></div></div>`),
+    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="lock-overlay">🔒</div><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Outil payant. Abonnement requis.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Débloquer</button></div></div>`)
   ].join('');
 }
 
@@ -567,11 +685,14 @@ function renderPlans(){
 function renderFounders(){
   const c=document.getElementById('founders-grid');if(!c)return;
   c.innerHTML=CONFIG.founders.map((f, idx)=>`
-    <div class="team-card" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*50}ms"><span class="t-crown">👑</span><div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
-    <div class="t-links" style="margin-top:10px">
-      <a href="https://discord.com/users/" target="_blank" class="t-link"><img src="logo/discord.png" alt="">${f.discord}</a>
-      <a href="${f.gunslol}" target="_blank" class="t-link"><img src="logo/gunslol.png" alt="">${f.gunslolLabel}</a>
-    </div></div>`).join('');
+    <div class="team-card" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*50}ms">
+      <img src="${f.img}" class="team-img" alt="${f.name}">
+      <div class="t-name">${f.name}</div><div class="t-role">${f.role}</div>
+      <div class="t-links" style="margin-top:10px">
+        <a href="https://discord.com/users/" target="_blank" class="t-link"><img src="logo/discord.png" alt="">${f.discord}</a>
+        <a href="${f.gunslol}" target="_blank" class="t-link"><img src="logo/gunslol.png" alt="">${f.gunslolLabel}</a>
+      </div>
+    </div>`).join('');
 }
 
 function notifyVipRequired(){notify('🔒 Accès restreint — entrez votre code VIP dans le menu profil',true);}
@@ -579,20 +700,42 @@ function notifyVipRequired(){notify('🔒 Accès restreint — entrez votre code
 function openItem(id,src){
   const item=src==='shop'?CONFIG.shop.find(i=>i.id===id):CONFIG.tools.find(i=>i.id===id);
   if(!item)return;currentItemForDl=item;
-  document.getElementById('iv-name').textContent=item.name;
-  document.getElementById('iv-id').textContent=item.id;
-  document.getElementById('iv-cat').textContent=(item.category||'').toUpperCase();
-  document.getElementById('iv-desc').textContent=item.desc;
-  document.getElementById('iv-img').innerHTML=item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:`<span style="font-size:58px">${item.icon}</span>`;
-  const pe=document.getElementById('iv-price');
-  if(src==='tools'){pe.textContent='✓ Gratuit';pe.className='iv-price free';}
-  else{pe.textContent=item.price;pe.className='iv-price'+(item.premium?' premium-price':'');}
-  document.getElementById('iv-free-section').style.display=src==='tools'?'block':'none';
-  document.getElementById('iv-pay-section').style.display=src==='shop'?'block':'none';
-  document.getElementById('item-view').classList.add('open');
-  window.scrollTo(0,0);
+  const box = document.getElementById('item-modal-content');
+  box.innerHTML = `
+    <div style="padding:20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <h2 style="font-size:18px;font-weight:800;color:var(--white)">Détails de l'item</h2>
+      <button class="modal-close-btn" onclick="closeItemView()">✕</button>
+    </div>
+    <div style="padding:24px">
+      <div style="display:flex;gap:20px;margin-bottom:20px">
+        <div style="width:100px;height:100px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          ${item.icon.startsWith('logo/')?`<img src="${item.icon}" style="width:50px;height:50px">`:`<span style="font-size:40px">${item.icon}</span>`}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:4px">${item.category}</div>
+          <h1 style="font-size:20px;font-weight:900;color:var(--white);margin-bottom:8px">${item.name}</h1>
+          <p style="font-size:13px;color:var(--text2);line-height:1.6">${item.desc}</p>
+        </div>
+      </div>
+      <div style="background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Prix</div><div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?'GRATUIT':item.price}</div></div>
+          ${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()">Télécharger</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord"><img src="logo/discord.png" alt="">Commander</a>`}
+        </div>
+        ${src==='shop' ? `
+        <div style="border-top:1px solid var(--border);padding-top:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Paiements acceptés</div>
+          <div style="display:flex;gap:8px">
+            <div class="pay-method" style="padding:6px 10px;font-size:11px;border-radius:6px;background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><img src="logo/ltc.png" style="width:14px;height:14px">LTC</div>
+            <div class="pay-method" style="padding:6px 10px;font-size:11px;border-radius:6px;background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><img src="logo/paypal.png" style="width:14px;height:14px">PayPal</div>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('item-modal').classList.add('open');
 }
-function closeItemView(){document.getElementById('item-view').classList.remove('open');}
+function closeItemView(){document.getElementById('item-modal').classList.remove('open');}
 function downloadTool(){
   if(!currentItemForDl)return;
   const blob=new Blob([currentItemForDl.dlContent||`=== ${currentItemForDl.name} ===\ndiscord.gg/ssYFSXRGPP`],{type:'text/plain;charset=utf-8'});
@@ -610,6 +753,64 @@ function processNotif(){
   clearTimeout(el._t);el._t=setTimeout(()=>{el.className='notif';setTimeout(processNotif,300);},2800);
 }
 
+// ── REVIEWS ──────────────────────────────────────────────────
+let reviewStars = 5;
+function openReviewModal() {
+  if(!currentUser) { notify('🔑 Connectez-vous pour laisser un avis.', true); return; }
+  document.getElementById('review-pseudo').value = currentUser.pseudo;
+  document.getElementById('review-modal').classList.add('open');
+  setReviewStars(5);
+}
+function closeReviewModal() { document.getElementById('review-modal').classList.remove('open'); }
+function setReviewStars(n) {
+  reviewStars = n;
+  document.getElementById('review-stars-val').textContent = n + '/5';
+  document.querySelectorAll('.star-btn').forEach((s, i) => {
+    s.style.color = i < n ? 'var(--yellow)' : 'var(--text3)';
+  });
+}
+async function submitReview() {
+  const text = document.getElementById('review-text').value.trim();
+  if(text.length < 5) { setNote('review-note', 'Avis trop court.', 'err'); return; }
+  setNote('review-note', 'Envoi…', 'inf');
+  try {
+    await api('submit-review', { user_id: currentUser.id, text, stars: reviewStars, pseudo: currentUser.pseudo });
+    setNote('review-note', '✓ Avis envoyé !', 'ok');
+    setTimeout(() => { closeReviewModal(); loadReviews(); }, 1200);
+  } catch(e) { setNote('review-note', e.message, 'err'); }
+}
+async function loadReviews() {
+  try {
+    const res = await api('get-reviews', {});
+    const m = document.getElementById('reviews-marquee');
+    if(!m) return;
+    if(!res.reviews || res.reviews.length === 0) {
+      m.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">Aucun avis pour le moment.</div>';
+      return;
+    }
+    // Duplicate for infinite scroll
+    const items = [...res.reviews, ...res.reviews];
+    m.innerHTML = items.map(r => `
+      <div class="review-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-weight:700;color:var(--white);font-size:13px">${esc(r.pseudo)}</span>
+          <span style="color:var(--yellow);font-size:11px">${'★'.repeat(r.stars)}</span>
+        </div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px">${esc(r.text)}</p>
+        <div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
+        ${(currentUser && currentUser.role === 'dev') ? `<button onclick="deleteReview('${r.id}')" style="background:none;border:none;color:var(--red);font-size:10px;margin-top:5px;cursor:pointer">Supprimer</button>` : ''}
+      </div>
+    `).join('');
+  } catch(e) { console.error('Reviews load failed', e); }
+}
+async function deleteReview(id) {
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await api('delete-review', { user_id: currentUser.id, review_id: id });
+    notify('✓ Avis supprimé');
+    loadReviews();
+  } catch(e) { notify(e.message, true); }
+}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify('✓ Adresse LTC copiée !'));}
 

@@ -31,7 +31,7 @@ export default async function handler(req, res) {
   // ── AUTO RESET CREDITS ──
   let finalUser = user;
   if (user.credits_exhausted_at) {
-    const resetAt = new Date(user.credits_exhausted_at).getTime() + 24 * 3600 * 1000;
+    const resetAt = new Date(user.credits_exhausted_at).getTime() + 48 * 3600 * 1000;
     if (Date.now() >= resetAt) {
       const { data: resetUser } = await supabase.from('users').update({
         credits_used: 0,
