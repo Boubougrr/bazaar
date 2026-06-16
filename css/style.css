@@ -403,16 +403,14 @@ textarea.inp{resize:vertical;min-height:90px;}
 footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(--bg2);position:relative;z-index:1;margin-top:auto;}
 .footer-inner{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;gap:40px;align-items:flex-start;flex-wrap:wrap;}
 .footer-info{flex: 1; min-width: 250px;}
-.footer-nav-links{display:flex; gap: 80px; flex: 2; min-width: 300px; justify-content: center;}
-.footer-links-grid{display:grid; grid-template-columns: repeat(2, 1fr); gap: 8px 40px;}
-.footer-col{min-width: 150px;}
+.footer-nav-links{display:flex; gap: 40px; flex: 2; min-width: 300px; justify-content: center; align-items: flex-start;}
+.footer-links-grid{display:grid; grid-template-columns: repeat(2, 1fr); gap: 6px 30px;}
+.footer-col{min-width: 150px; display: flex; flex-direction: column; align-items: center; text-align: center;}
 .footer-logo{font-size:24px;font-weight:950;color:var(--white);letter-spacing:3px;margin-bottom:12px;}
 .footer-col h4{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--white);margin-bottom:16px;position:relative;display:inline-block;}
-.footer-col h4::after{content:'';position:absolute;bottom:-4px;left:0;width:20px;height:2px;background:var(--accent);}
+.footer-col h4::after{content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);width:20px;height:2px;background:var(--accent);}
 .footer-col a{color:var(--text2);text-decoration:none;font-size:13px;display:block;margin-bottom:8px;transition:all .16s;cursor:pointer;}
 .footer-col a:hover{color:var(--accent);transform:translateX(5px);}
-.footer-discord{display:inline-flex;align-items:center;gap:10px;background:#5865f2;border-radius:10px;padding:12px 20px;color:#fff!important;font-size:14px;font-weight:700;text-decoration:none;transition:all .2s;box-shadow:0 4px 15px rgba(88,101,242,0.3);}
-.footer-discord:hover{background:#4a57e0;transform:translateY(-2px);box-shadow:0 6px 20px rgba(88,101,242,0.4);}
 .footer-bottom{max-width:1400px;margin:40px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
 .footer-bottom p{font-size:12px;color:var(--text3);font-weight:500;}
 
