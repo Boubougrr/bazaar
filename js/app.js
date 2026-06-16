@@ -164,114 +164,128 @@ async function api(path, body){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
-window.addEventListener('load', async () => {
-  loadSettings();
-  const saved = localStorage.getItem('bzr_session');
-  if(saved && saved !== 'undefined'){ 
-    try{ 
-      const sessionUser = JSON.parse(saved); 
-      if(sessionUser && sessionUser.id){
-        try {
-          const res = await api('get-user', { user_id: sessionUser.id });
-          saveSession(res.user);
-          currentUser = res.user;
-        } catch(e) {
-          console.warn('Re-fetch failed, using cached session');
-          currentUser = sessionUser;
-        }
-      }
-    }catch(e){ localStorage.removeItem('bzr_session'); } 
+async function initApp() {
+  try {
+    loadSettings();
+  } catch(e) { console.error('Settings load failed', e); }
+
+  // 1. Initial UI Boot (Show screen immediately)
+  try {
+    const saved = localStorage.getItem('bzr_session');
+    if(saved && saved !== 'undefined'){
+      try { currentUser = JSON.parse(saved); } catch(e) { console.error('Session parse failed', e); }
+    }
+  } catch(e) { console.error('LocalStorage access failed', e); }
+  
+  bootApp(); // Show UI now
+
+  // 2. Background Re-auth (Update session if possible)
+  if(currentUser && currentUser.id){
+    try {
+      const res = await api('get-user', { user_id: currentUser.id });
+      saveSession(res.user);
+      currentUser = res.user;
+      bootApp(); // Refresh UI with fresh data
+    } catch(e) {
+      console.warn('Re-fetch failed, using cached session');
+    }
   }
   
-  bootApp(); // Always call to setup initial UI state
-  generateCaptcha(); initAuthEvents();
+  try {
+    generateCaptcha(); initAuthEvents();
+    renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
+    document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
+    setSearchMode(settings.searchMode);
+  } catch(e) { console.error('Post-boot init failed', e); }
+}
 
-  renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
-  document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
-  setSearchMode(settings.searchMode);
-});
+if(document.readyState === 'complete') initApp();
+else window.addEventListener('load', initApp);
 
 function bootApp(){
-  const navAuth = document.getElementById('nav-auth-only');
-  const navLogin = document.getElementById('nav-login-btn');
-  const badge = document.getElementById('dev-badge');
-  const mainScreen = document.getElementById('main-screen');
+  try {
+    const navAuth = document.getElementById('nav-auth-only');
+    const navLogin = document.getElementById('nav-login-btn');
+    const badge = document.getElementById('dev-badge');
+    const mainScreen = document.getElementById('main-screen');
 
-  if(mainScreen) mainScreen.style.display='flex';
+    if(mainScreen) mainScreen.style.display='flex';
 
-  // Handle Guest Mode UI
-  if(!currentUser) {
-    if(navAuth) navAuth.style.display='none';
-    if(navLogin) navLogin.style.display='block';
-    if(badge) badge.style.display='none';
+    // Handle Guest Mode UI
+    if(!currentUser) {
+      if(navAuth) navAuth.style.display='none';
+      if(navLogin) navLogin.style.display='block';
+      if(badge) badge.style.display='none';
+      
+      // Disable Search UI for guests
+      const sBtn = document.getElementById('search-btn');
+      const sInp = document.getElementById('search-input');
+      const sMsg = document.getElementById('search-guest-msg');
+      if(sBtn) { sBtn.disabled = true; sBtn.style.opacity = '0.5'; }
+      if(sInp) { sInp.disabled = true; sInp.style.background = 'rgba(248,113,113,0.05)'; sInp.style.borderColor = 'rgba(248,113,113,0.2)'; }
+      if(sMsg) sMsg.style.display = 'block';
+
+      // Disable other tabs for guests
+      ['shop','tools','subs','features','contact','about','settings'].forEach(id => {
+        const el = document.getElementById('nav-'+id);
+        if(el) {
+          el.classList.add('locked-nav');
+          el.setAttribute('onclick', "notify('🔑 Connexion requise pour accéder à cette section.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
+          el.style.textDecoration = 'line-through';
+          el.style.opacity = '0.5';
+          // Add lock icon if not already there
+          if(!el.querySelector('.nav-lock')) {
+            const lock = document.createElement('span');
+            lock.className = 'nav-lock';
+            lock.innerHTML = ' 🔒';
+            lock.style.fontSize = '10px';
+            el.appendChild(lock);
+          }
+        }
+      });
+      
+      return;
+    }
     
-    // Disable Search UI for guests
+    document.getElementById('auth-screen')?.classList.add('hidden');
+    const gearWrap = document.getElementById('auth-gear-wrap');
+    if(gearWrap) gearWrap.style.display='none';
+    
+    if(navAuth) navAuth.style.display='contents';
+    if(navLogin) navLogin.style.display='none';
+    
+    const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
+    const nameEl = document.getElementById('user-name-nav');
+    if(nameEl) nameEl.textContent = name;
+    
+    // Re-enable Search UI for logged in users
     const sBtn = document.getElementById('search-btn');
     const sInp = document.getElementById('search-input');
     const sMsg = document.getElementById('search-guest-msg');
-    if(sBtn) { sBtn.disabled = true; sBtn.style.opacity = '0.5'; }
-    if(sInp) { sInp.disabled = true; sInp.style.background = 'rgba(248,113,113,0.05)'; sInp.style.borderColor = 'rgba(248,113,113,0.2)'; }
-    if(sMsg) sMsg.style.display = 'block';
+    if(sBtn) { sBtn.disabled = false; sBtn.style.opacity = '1'; }
+    if(sInp) { sInp.disabled = false; sInp.style.background = ''; sInp.style.borderColor = ''; }
+    if(sMsg) sMsg.style.display = 'none';
 
-    // Disable other tabs for guests
+    // Restore other tabs
     ['shop','tools','subs','features','contact','about','settings'].forEach(id => {
       const el = document.getElementById('nav-'+id);
       if(el) {
-        el.classList.add('locked-nav');
-        el.setAttribute('onclick', "notify('🔑 Connexion requise pour accéder à cette section.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
-        el.style.textDecoration = 'line-through';
-        el.style.opacity = '0.5';
-        // Add lock icon if not already there
-        if(!el.querySelector('.nav-lock')) {
-          const lock = document.createElement('span');
-          lock.className = 'nav-lock';
-          lock.innerHTML = ' 🔒';
-          lock.style.fontSize = '10px';
-          el.appendChild(lock);
-        }
+        el.classList.remove('locked-nav');
+        el.setAttribute('onclick', `gotoPage('${id}')`);
+        el.style.textDecoration = 'none';
+        el.style.opacity = '1';
+        el.querySelector('.nav-lock')?.remove();
       }
     });
+
+    // DEV BADGE & FOUNDER COLOR
+    if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
+    applyUserStyling();
     
-    return;
-  }
-  
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('auth-gear-wrap').style.display='none';
-  document.getElementById('main-screen').style.display='flex';
-  
-  if(navAuth) navAuth.style.display='contents';
-  if(navLogin) navLogin.style.display='none';
-  
-  const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
-  document.getElementById('user-name-nav').textContent = name;
-  
-  // Re-enable Search UI for logged in users
-  const sBtn = document.getElementById('search-btn');
-  const sInp = document.getElementById('search-input');
-  const sMsg = document.getElementById('search-guest-msg');
-  if(sBtn) { sBtn.disabled = false; sBtn.style.opacity = '1'; }
-  if(sInp) { sInp.disabled = false; sInp.style.background = ''; sInp.style.borderColor = ''; }
-  if(sMsg) sMsg.style.display = 'none';
-
-  // Restore other tabs
-  ['shop','tools','subs','features','contact','about','settings'].forEach(id => {
-    const el = document.getElementById('nav-'+id);
-    if(el) {
-      el.classList.remove('locked-nav');
-      el.setAttribute('onclick', `gotoPage('${id}')`);
-      el.style.textDecoration = 'none';
-      el.style.opacity = '1';
-      el.querySelector('.nav-lock')?.remove();
-    }
-  });
-
-  // DEV BADGE & FOUNDER COLOR
-  if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
-  applyUserStyling();
-  
-  startResetTimer(); updateCreditsUI();
-  notify('👋 Bienvenue, ' + name + '!');
-  loadReviews();
+    startResetTimer(); updateCreditsUI();
+    notify('👋 Bienvenue, ' + name + '!');
+    loadReviews();
+  } catch(e) { console.error('bootApp crashed', e); }
 }
 
 function applyUserStyling() {

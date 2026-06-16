@@ -9,4 +9,5 @@
   text-decoration: line-through;
   border: 1px solid var(--red)!important;
   opacity: 0.6;
+  pointer-events: auto!important;
 }
