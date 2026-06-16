@@ -51,9 +51,9 @@ nav{display:flex;align-items:center;padding:0 24px;height:64px;background:rgba(1
 .nav-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
 .btn{border-radius:14px;font-weight:800;letter-spacing:0.3px;padding:12px 24px;}
 .user-menu-btn{border-radius:14px;padding:8px 16px;background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);}
-.credits-pill{border-radius:14px;padding:6px 14px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);color:var(--yellow);font-family:'Inter',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px;}
+.credits-pill{border-radius:14px;padding:6px 12px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.1);color:var(--yellow);font-family:'Inter',sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;gap:3px;}
 .credits-pill span{color:var(--yellow);font-weight:700;}
-.credits-pill:hover{border-color:var(--yellow);}
+.credits-pill img{width:14px;height:14px;margin-right:2px;}
 
 /* REVIEWS MARQUEE */
 .reviews-marquee-wrap{overflow:hidden;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:var(--r2);padding:20px 0;margin-top:10px;mask-image:linear-gradient(90deg,transparent,black 10%,black 90%,transparent);}
@@ -79,6 +79,24 @@ nav{display:flex;align-items:center;padding:0 24px;height:64px;background:rgba(1
 .nav-discord{display:flex;align-items:center;gap:6px;background:#5865f2;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;text-decoration:none;white-space:nowrap;transition:all .16s;}
 .nav-discord:hover{background:#4a57e0;transform:translateY(-1px);}
 .nav-discord img{width:15px;height:15px;}
+/* GUEST LOGIN BTN */
+#nav-login-btn {
+  background: rgba(74, 222, 128, 0.1) !important;
+  color: #4ade80 !important;
+  border: 2px solid #4ade80 !important;
+  font-weight: 900 !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.2);
+  transition: all 0.3s ease;
+}
+#nav-login-btn:hover {
+  background: #4ade80 !important;
+  color: #0b0c12 !important;
+  box-shadow: 0 0 25px rgba(74, 222, 128, 0.5);
+  transform: translateY(-2px) scale(1.05);
+}
+
 .user-menu-wrap{position:relative;}
 .user-menu-btn{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--text);transition:all .16s;white-space:nowrap;}
 .user-menu-btn:hover{background:var(--panel2);}
@@ -401,28 +419,30 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 @media(max-width:900px){.stats-row{grid-template-columns:1fr 1fr;}.how-steps,.two-col,.plans-grid,.contact-grid{grid-template-columns:1fr;}.footer-inner{grid-template-columns:1fr;}.footer-bottom{flex-direction:column;align-items:flex-start;}}
 @media(max-width:600px){nav{padding:0 12px;}.main-content{padding:22px 14px;}.hero h1{font-size:36px;}.search-panel{padding:18px 16px;}.auth-right{padding:32px 24px;}}
 
-/* Rotating White Line Effect */
+/* Rotating Glow Border Effect */
 .item-card, .plan-card, .info-card, .stat-card, .how-step, .auth-outer, .modal-box {
   position: relative;
-  z-index: 1;
-  overflow: visible; /* Changed to visible for better effect */
 }
 
 .item-card::before, .plan-card::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -1.5px;
-  background: conic-gradient(from var(--a, 0deg), transparent 60%, rgba(255,255,255,0.4) 80%, rgba(255,255,255,0.8) 95%, transparent 100%);
-  z-index: -1;
+  background: conic-gradient(from var(--a, 0deg), transparent 65%, #fff 85%, #fff 95%, transparent 100%);
   border-radius: inherit;
-  animation: borderRotate 3s linear infinite;
+  z-index: -1;
+  padding: 1.5px;
+  animation: borderRotate 3.5s linear infinite;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.4s ease;
   pointer-events: none;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 
 .item-card:hover::before, .plan-card:hover::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
-  opacity: 1;
+  opacity: 0.9;
 }
 
 @property --a {

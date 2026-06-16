@@ -92,9 +92,12 @@
       </div>
       <div class="auth-left-stats">
         <div class="auth-stat"><img src="logo/loupe.png" alt=""><div class="auth-stat-text"><strong>47 sources</strong>OSINT en temps réel</div></div>
-        <div class="auth-stat"><img src="logo/discord.png" alt=""><div class="auth-stat-text"><strong>Serveur actif</strong>Support Discord 7j/7</div></div>
-        <div class="auth-stat"><img src="logo/ltc.png" alt=""><div class="auth-stat-text"><strong>LTC &amp; PayPal F&F</strong>Paiement anonyme</div></div>
-        <div class="auth-stat"><img src="logo/tools.png" alt=""><div class="auth-stat-text"><strong>Outils gratuits</strong>Téléchargeables</div></div>
+        <div class="auth-stat"><img src="logo/discord.png" alt=""><div class="auth-stat-text"><strong>Support 7j/7</strong>Par Boubou &amp; ZIamana</div></div>
+        <div class="auth-stat"><img src="logo/ltc.png" alt=""><div class="auth-stat-text"><strong>Paiements</strong>LTC, PayPal, PSC &amp; Crypto</div></div>
+      </div>
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-top:auto">
+        <h4 style="font-size:12px;color:var(--white);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">À propos des créateurs</h4>
+        <p style="font-size:12px;color:var(--text2);line-height:1.6">Fondé par une équipe de passionnés de cybersécurité, Bazaar est la solution ultime pour vos enquêtes numériques. Nous acceptons de nombreux moyens de paiement pour garantir votre anonymat et votre confort.</p>
       </div>
     </div>
     <div class="auth-right">
@@ -253,7 +256,7 @@
             <div class="dd-sep"></div>
             <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
             <div class="dd-item" onclick="openSettings()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <img src="logo/fonction.png" alt="" style="width:14px;height:14px">
               Paramètres
             </div>
             <div class="dd-sep"></div>
@@ -276,6 +279,7 @@
         <p data-i18n="heroSub">Nom, email, téléphone, IP, Discord ID — croisez des millions d'enregistrements en quelques secondes.</p>
         <div class="hero-btns">
           <button class="btn btn-primary" onclick="document.getElementById('search-input').focus()">🔍 <span data-i18n="startSearch">Commencer une recherche</span></button>
+          <button class="btn btn-outline" onclick="document.querySelector('.reviews-section').scrollIntoView({behavior:'smooth'})">⭐ Avis Clients</button>
           <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord"><img src="logo/discord.png" alt=""><span data-i18n="joinDiscord">Rejoindre le Discord</span></a>
         </div>
         <div class="hero-features">
@@ -351,10 +355,11 @@
       </div>
 
       <!-- REVIEWS -->
-      <div class="reviews-section" style="margin-top:20px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px">
-          <div><div class="sec-title">Avis clients</div><p class="sec-sub">Ce que nos utilisateurs disent de Bazaar.</p></div>
-          <button class="btn btn-outline" style="padding:6px 14px;font-size:12px" onclick="openReviewModal()">Laisser un avis</button>
+      <div class="reviews-section" style="margin-top:20px; text-align: center;">
+        <div style="margin-bottom:30px">
+          <div class="sec-title">Avis clients</div>
+          <p class="sec-sub">Ce que nos utilisateurs disent de Bazaar.</p>
+          <button class="btn btn-primary" style="margin-top:10px; padding:10px 30px" onclick="openReviewModal()">⭐ LAISSER UN AVIS ⭐</button>
         </div>
         <div class="reviews-marquee-wrap">
           <div class="reviews-marquee" id="reviews-marquee">
