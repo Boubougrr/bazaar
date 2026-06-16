@@ -326,6 +326,20 @@
         <div class="search-cooldown" id="search-cooldown"></div>
       </div>
 
+      <!-- REVIEWS SECTION EXACTLY HERE -->
+      <div class="reviews-section" style="margin:40px 0; text-align: center;">
+        <div style="margin-bottom:20px">
+          <div class="sec-title">Avis clients</div>
+          <p class="sec-sub" style="margin-bottom:15px">Ce que nos utilisateurs disent de Bazaar.</p>
+          <button class="btn btn-primary" style="padding:10px 30px" onclick="openReviewModal()">⭐ LAISSER UN AVIS ⭐</button>
+        </div>
+        <div class="reviews-marquee-wrap">
+          <div class="reviews-marquee" id="reviews-marquee">
+            <!-- Loaded via JS -->
+          </div>
+        </div>
+      </div>
+
       <div id="quota-warn" class="quota-warn" style="display:none">
         <p>⛔ Quota épuisé</p><div class="quota-timer" id="quota-timer">—</div>
       </div>
@@ -351,21 +365,6 @@
       <div style="background:linear-gradient(135deg,rgba(88,101,242,.1),rgba(88,101,242,.03));border:1px solid rgba(88,101,242,.18);border-radius:var(--r2);padding:26px 30px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:30px">
         <div><h3 style="font-size:17px;font-weight:800;color:var(--white);margin-bottom:4px">Rejoignez notre communauté</h3><p style="font-size:13px;color:var(--text2)">Support, annonces, codes et bien plus sur notre Discord.</p></div>
         <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="font-size:14px;padding:12px 22px"><img src="logo/discord.png" alt="">discord.gg/ssYFSXRGPP</a>
-      </div>
-
-      <!-- REVIEWS -->
-      <div class="reviews-section" style="margin-top:20px; text-align: center;">
-        <div style="margin-bottom:30px">
-          <div class="sec-title">Avis clients</div>
-          <p class="sec-sub">Ce que nos utilisateurs disent de Bazaar.</p>
-          <button class="btn btn-primary" style="margin-top:10px; padding:10px 30px" onclick="openReviewModal()">⭐ LAISSER UN AVIS ⭐</button>
-        </div>
-        <div class="reviews-marquee-wrap">
-          <div class="reviews-marquee" id="reviews-marquee">
-            <!-- Loaded via JS -->
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -569,20 +568,36 @@
 
   <footer>
     <div class="footer-inner">
-      <div>
+      <div class="footer-info">
         <div class="footer-logo">BAZAAR</div>
-        <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6">Plateforme OSINT — 2026<br>Usage légal uniquement.</p>
+        <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6">Plateforme OSINT — 2026<br>Usage légal uniquement.<br>All rights reserved.</p>
       </div>
-      <div class="footer-col">
-        <h4>Navigation</h4>
-        <a onclick="gotoPage('home')">Accueil</a><a onclick="gotoPage('shop')">Boutique</a><a onclick="gotoPage('tools')">Tools</a><a onclick="gotoPage('subs')">Abonnements</a><a onclick="gotoPage('features')">Fonctionnalités</a><a onclick="gotoPage('contact')">Contact</a><a onclick="gotoPage('about')">À propos</a>
-      </div>
-      <div class="footer-col">
-        <h4>Communauté</h4>
-        <p>Support, codes promo et news sur notre Discord.</p>
-        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="footer-discord"><img src="logo/discord.png" alt=""><span>discord.gg/ssYFSXRGPP</span></a>
+      
+      <div class="footer-nav-links">
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <div class="footer-links-grid">
+            <a onclick="gotoPage('home')">Accueil</a>
+            <a onclick="gotoPage('shop')">Boutique</a>
+            <a onclick="gotoPage('tools')">Tools</a>
+            <a onclick="gotoPage('subs')">Abonnements</a>
+            <a onclick="gotoPage('features')">Fonctionnalités</a>
+            <a onclick="gotoPage('contact')">Contact</a>
+            <a onclick="gotoPage('about')">À propos</a>
+          </div>
+        </div>
+        
+        <div class="footer-col">
+          <h4>Communauté</h4>
+          <p style="margin-bottom:10px">Support & News sur Discord.</p>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="footer-discord">
+            <img src="logo/discord.png" alt="">
+            <span>discord.gg/ssYFSXRGPP</span>
+          </a>
+        </div>
       </div>
     </div>
+    
     <div class="footer-bottom">
       <p>© 2026 Bazaar Services — Boubou · ZIamana</p>
       <p>LTC : <span style="font-family:'JetBrains Mono',monospace;color:var(--yellow);font-size:11px">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></p>

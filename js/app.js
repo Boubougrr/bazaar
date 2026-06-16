@@ -177,7 +177,7 @@ async function initApp() {
     }
   } catch(e) { console.error('LocalStorage access failed', e); }
   
-  bootApp(); // Show UI now
+  bootApp(true); // Show UI now (silent)
 
   // 2. Background Re-auth (Update session if possible)
   if(currentUser && currentUser.id){
@@ -185,7 +185,7 @@ async function initApp() {
       const res = await api('get-user', { user_id: currentUser.id });
       saveSession(res.user);
       currentUser = res.user;
-      bootApp(); // Refresh UI with fresh data
+      bootApp(); // Refresh UI with fresh data (not silent)
     } catch(e) {
       console.warn('Re-fetch failed, using cached session');
     }
@@ -202,7 +202,7 @@ async function initApp() {
 if(document.readyState === 'complete') initApp();
 else window.addEventListener('load', initApp);
 
-function bootApp(){
+function bootApp(silent = false){
   try {
     const navAuth = document.getElementById('nav-auth-only');
     const navLogin = document.getElementById('nav-login-btn');
@@ -284,7 +284,7 @@ function bootApp(){
     applyUserStyling();
     
     startResetTimer(); updateCreditsUI();
-    notify('👋 Bienvenue, ' + name + '!');
+    if(!silent) notify('👋 Bienvenue, ' + name + '!');
     loadReviews();
   } catch(e) { console.error('bootApp crashed', e); }
 }
@@ -886,8 +886,18 @@ async function loadReviews() {
       m.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">Aucun avis pour le moment.</div>';
       return;
     }
-    // Duplicate for seamless scroll
-    const items = [...res.reviews, ...res.reviews, ...res.reviews];
+    
+    // Create the items array
+    let items = res.reviews;
+    // Only repeat if needed for the infinite loop effect (need enough to cover width)
+    if(items.length > 0 && items.length < 15) {
+      let repeated = [];
+      while(repeated.length < 30) {
+        repeated = [...repeated, ...items];
+      }
+      items = repeated;
+    }
+    
     m.innerHTML = items.map(r => `
       <div class="review-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
