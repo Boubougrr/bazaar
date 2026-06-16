@@ -800,12 +800,17 @@ function openItem(id,src){
         </div>
       </div>
       <div style="background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-          <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase">Prix</div><div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?'GRATUIT':item.price}</div></div>
-          ${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()">Télécharger</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord"><img src="logo/discord.png" alt="">Commander</a>`}
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Prix</div>
+            <div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?'GRATUIT':item.price}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            ${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()" style="padding:10px 20px">Télécharger</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="padding:10px 20px"><img src="logo/discord.png" alt="">Commander</a>`}
+          </div>
         </div>
         ${src==='shop' ? `
-        <div style="border-top:1px solid var(--border);padding-top:16px">
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px">
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">Paiements acceptés</div>
           <div style="display:flex;gap:8px">
             <div class="pay-method" style="padding:6px 10px;font-size:11px;border-radius:6px;background:var(--bg2);border:1px solid var(--border2);display:flex;align-items:center;gap:6px"><img src="logo/ltc.png" style="width:14px;height:14px">LTC</div>

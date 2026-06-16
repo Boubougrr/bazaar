@@ -20,8 +20,8 @@ const CONFIG = {
     vip:    "BAZAAR-VIP2565",
   },
   founders: [
-    { name:"Boubou",  role:"Founder",    discord:"ps0.",       gunslol:"https://guns.lol/ps0",    gunslolLabel:"guns.lol/ps0",   img:"logo/boubou.jpg" },
-    { name:"ZIamana", role:"Co-Founder", discord:"canalisation_", gunslol:"https://guns.lol/ziamana",  gunslolLabel:"guns.lol/ziamana", img:"logo/ziamana.png" },
+    { name:"Boubou",  role:"Founder",    discord:"france.eu",       gunslol:"https://guns.lol/ps0",    gunslolLabel:"guns.lol/ps0",   img:"logo/boubou.jpg" },
+    { name:"ZIamana", role:"Co-Founder", discord:"canalisation_", gunslol:"https://guns.lol/ziamana",  gunslolLabel:"guns.lol/ziamana", img:"logo/ziamna.png" },
   ],
   plans: [
     {
