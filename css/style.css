@@ -423,8 +423,10 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
   position: relative;
   overflow: hidden;
 }
+.plan-card { overflow: visible !important; }
+.plan-card-body { position: relative; overflow: hidden; border-radius: var(--r2); display: flex; flex-direction: column; gap: 14px; padding: 0; height: 100%; width: 100%; }
 
-.item-card::before, .plan-card::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
+.item-card::before, .plan-card-body::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
   content: "";
   position: absolute;
   inset: -2px;
@@ -438,9 +440,10 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
+  z-index: 5;
 }
 
-.item-card:hover::before, .plan-card:hover::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
+.item-card:hover::before, .plan-card:hover .plan-card-body::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
   opacity: 1;
 }
 
@@ -453,6 +456,20 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 @keyframes borderRotate {
   from { --a: 0deg; }
   to { --a: 360deg; }
+}
+
+/* PREMIUM SHINE */
+.plan-highlight .plan-card-body::after{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(120deg, transparent, rgba(251,191,36,0.1), rgba(251,191,36,0.2), transparent);
+  animation:shine 4s infinite;
+  pointer-events:none;
+  z-index: 4;
+}
+@keyframes shine{
+  0%{left:-100%}
+  30%{left:150%}
+  100%{left:150%}
 }
 
 /* Fix for white background on email inputs (browser autocomplete) */
