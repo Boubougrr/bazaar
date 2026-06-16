@@ -859,15 +859,24 @@ function setReviewStars(n) {
   });
 }
 async function submitReview() {
+  const btn = document.querySelector('#review-modal .btn-primary');
   const text = document.getElementById('review-text').value.trim();
   if(text.length < 5) { setNote('review-note', 'Avis trop court.', 'err'); return; }
+  
+  if(btn.disabled) return;
+  btn.disabled = true;
   setNote('review-note', 'Envoi…', 'inf');
+  
   try {
     await api('submit-review', { user_id: currentUser.id, text, stars: reviewStars, pseudo: currentUser.pseudo });
     setNote('review-note', '✓ Avis envoyé !', 'ok');
-    setTimeout(() => { closeReviewModal(); loadReviews(); }, 1200);
-  } catch(e) { setNote('review-note', e.message, 'err'); }
+    setTimeout(() => { closeReviewModal(); loadReviews(); btn.disabled = false; }, 1200);
+  } catch(e) { 
+    setNote('review-note', e.message, 'err'); 
+    btn.disabled = false;
+  }
 }
+
 async function loadReviews() {
   try {
     const res = await api('get-reviews', {});
@@ -877,8 +886,8 @@ async function loadReviews() {
       m.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">Aucun avis pour le moment.</div>';
       return;
     }
-    // Duplicate for infinite scroll
-    const items = [...res.reviews, ...res.reviews];
+    // Duplicate for seamless scroll
+    const items = [...res.reviews, ...res.reviews, ...res.reviews];
     m.innerHTML = items.map(r => `
       <div class="review-card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -887,7 +896,6 @@ async function loadReviews() {
         </div>
         <p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px">${esc(r.text)}</p>
         <div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
-        ${(currentUser && currentUser.role === 'dev') ? `<button onclick="deleteReview('${r.id}')" style="background:none;border:none;color:var(--red);font-size:10px;margin-top:5px;cursor:pointer">Supprimer</button>` : ''}
       </div>
     `).join('');
   } catch(e) { console.error('Reviews load failed', e); }
