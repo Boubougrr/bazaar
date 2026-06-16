@@ -213,6 +213,7 @@ function bootApp(){
 
     // Handle Guest Mode UI
     if(!currentUser) {
+      document.getElementById('auth-screen')?.classList.add('hidden');
       if(navAuth) navAuth.style.display='none';
       if(navLogin) navLogin.style.display='block';
       if(badge) badge.style.display='none';

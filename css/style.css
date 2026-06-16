@@ -44,7 +44,7 @@ nav{display:flex;align-items:center;padding:0 24px;height:64px;background:rgba(1
 .nav-links{display:flex;gap:6px;}
 .nav-link{padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;letter-spacing:0.2px;}
 .nav-link.active{background:rgba(123,110,246,0.1);color:var(--accent);border-color:rgba(123,110,246,0.2);}
-.nav-right{gap:12px;}
+.nav-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
 .btn{border-radius:14px;font-weight:800;letter-spacing:0.3px;padding:12px 24px;}
 .user-menu-btn{border-radius:14px;padding:8px 16px;background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);}
 .credits-pill{border-radius:14px;padding:6px 14px;background:rgba(251,191,36,0.05);border-color:rgba(251,191,36,0.1);color:var(--yellow);}
@@ -478,7 +478,8 @@ input:-webkit-autofill:active {
 
 /* Landing Page Flow */
 #auth-screen{transition:opacity .4s, visibility .4s;}
-#auth-screen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+#auth-screen.hidden{display:none !important;opacity:0;visibility:hidden;pointer-events:none;}
+.hidden{display:none !important;}
 
 
 /* ── GEAR DROPDOWN ── */
