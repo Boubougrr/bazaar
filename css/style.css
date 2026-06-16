@@ -40,10 +40,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-
 
 /* NAV */
 nav{display:flex;align-items:center;padding:0 24px;height:64px;background:rgba(11,12,18,.8);border-bottom:1px solid rgba(255,255,255,.05);position:sticky;top:0;z-index:500;backdrop-filter:blur(24px);gap:12px;margin:12px 24px;border-radius:20px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 10px 30px rgba(0,0,0,0.3);}
-.nav-logo{font-size:22px;font-weight:950;color:var(--white);letter-spacing:2px;margin-right:24px;}
-.nav-links{display:flex;gap:6px;}
-.nav-link{padding:8px 14px;border-radius:12px;font-size:13px;font-weight:700;letter-spacing:0.2px;}
-.nav-link.active{background:rgba(123,110,246,0.1);color:var(--accent);border-color:rgba(123,110,246,0.2);}
+.nav-logo{font-size:22px;font-weight:950;color:var(--white);letter-spacing:2px;margin-right:24px;cursor:pointer;}
+.nav-links{display:flex;gap:4px;align-items:center;flex-wrap:nowrap;}
+.nav-link{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:10px;font-size:13px;font-weight:700;letter-spacing:0.1px;color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap;outline:none;-webkit-tap-highlight-color:transparent;}
+.nav-link img{width:16px;height:16px;object-fit:contain;opacity:.7;transition:opacity .2s;}
+.nav-link:hover{background:rgba(255,255,255,0.03);color:var(--white);}
+.nav-link:hover img{opacity:1;}
+.nav-link.active{background:rgba(123,110,246,0.1);color:var(--accent);border:1px solid rgba(123,110,246,0.2);}
+.nav-link.active img{opacity:1;filter:drop-shadow(0 0 4px var(--accent));}
 .nav-right{display:flex;align-items:center;gap:12px;margin-left:auto;}
 .btn{border-radius:14px;font-weight:800;letter-spacing:0.3px;padding:12px 24px;}
 .user-menu-btn{border-radius:14px;padding:8px 16px;background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.08);}
@@ -360,11 +364,17 @@ textarea.inp{resize:vertical;min-height:90px;}
 
 /* PREMIUM SHINE */
 .plan-highlight::after{
-  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
-  background:linear-gradient(45deg, transparent, rgba(251,191,36,.05), transparent);
-  transform:rotate(45deg);animation:shine 6s infinite;pointer-events:none;
+  content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg, transparent, rgba(251,191,36,.1), transparent);
+  transform:skewX(-25deg);
+  animation:shine 4s infinite;
+  pointer-events:none;
 }
-@keyframes shine{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}
+@keyframes shine{
+  0%{left:-100%}
+  20%{left:200%}
+  100%{left:200%}
+}
 
 /* MORE REFINED HOVERS */
 .item-card:hover{border-color:var(--accent);transform:translateY(-5px) scale(1.01);box-shadow:0 15px 35px rgba(0,0,0,.6);}
@@ -393,15 +403,21 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 .item-card, .plan-card, .info-card, .stat-card, .how-step, .auth-outer, .modal-box {
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
 
 .item-card::before, .plan-card::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
   content: '';
   position: absolute;
-  inset: -1.5px;
-  background: conic-gradient(from 0deg, transparent 70%, #fff 80%, #fff 95%, transparent 100%);
+  inset: 0;
+  background: conic-gradient(from var(--a, 0deg), transparent 70%, rgba(255,255,255,0.4) 85%, rgba(255,255,255,0.6) 95%, transparent 100%);
   z-index: -1;
   border-radius: inherit;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   animation: borderRotate 4s linear infinite;
   opacity: 0;
   transition: opacity 0.3s;
@@ -409,12 +425,18 @@ footer{border-top:1px solid var(--border);padding:28px 40px;background:var(--bg2
 }
 
 .item-card:hover::before, .plan-card:hover::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
-  opacity: 0.8;
+  opacity: 1;
+}
+
+@property --a {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 
 @keyframes borderRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from { --a: 0deg; }
+  to { --a: 360deg; }
 }
 
 /* Fix for white background on email inputs (browser autocomplete) */
