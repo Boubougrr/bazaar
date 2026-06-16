@@ -193,7 +193,11 @@ async function initApp() {
   
   try {
     generateCaptcha(); initAuthEvents();
-    renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
+    try { renderShop('Discord'); } catch(e) { console.error('Shop render failed', e); }
+    try { renderTools(); } catch(e) { console.error('Tools render failed', e); }
+    try { renderFounders(); } catch(e) { console.error('Founders render failed', e); }
+    try { renderPlans(); } catch(e) { console.error('Plans render failed', e); }
+    
     document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
     setSearchMode(settings.searchMode);
   } catch(e) { console.error('Post-boot init failed', e); }
@@ -887,14 +891,10 @@ async function loadReviews() {
       return;
     }
     
-    // Create the items array
     let items = res.reviews;
-    // Only repeat if needed for the infinite loop effect (need enough to cover width)
-    if(items.length > 0 && items.length < 15) {
+    if(items.length > 0 && items.length < 10) {
       let repeated = [];
-      while(repeated.length < 30) {
-        repeated = [...repeated, ...items];
-      }
+      while(repeated.length < 20) { repeated = [...repeated, ...items]; }
       items = repeated;
     }
     
