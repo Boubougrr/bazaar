@@ -284,74 +284,38 @@ function renderStats(box){
   const u = currentUser;
   box.innerHTML=`<div style="padding:24px">
     <h3 style="color:#fff;margin-bottom:16px">Mes Statistiques</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
       <div class="info-card"><h4>Crédits</h4><p>${u.credits_max - u.credits_used} / ${u.credits_max}</p></div>
-      <div class="info-card"><h4>Rôle</h4><p>${u.role === 'dev' ? 'STAFF' : (u.vip_active ? 'VIP' : 'Membre')}</p></div>
+      <div class="info-card"><h4>Rang</h4><p>${u.role === 'dev' ? 'STAFF' : (u.vip_active ? 'VIP' : 'Membre')}</p></div>
       <div class="info-card"><h4>Recherches</h4><p>${u.total_searches || 0}</p></div>
-      <div class="info-card"><h4>Inscrit le</h4><p>${new Date(u.created_at).toLocaleDateString()}</p></div>
+      <div class="info-card"><h4>Connexions</h4><p>${u.login_count || 1}</p></div>
+      <div class="info-card"><h4>Inscrit le</h4><p>${new Date(u.joined_at || u.created_at).toLocaleDateString()}</p></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px">
+      <h4 style="color:var(--white);font-size:12px;margin-bottom:8px">Information Plan</h4>
+      <p style="font-size:13px;color:var(--text2)">Votre compte est actuellement sur le plan <strong style="color:var(--accent)">${(u.plan || 'standard').toUpperCase()}</strong>.</p>
     </div>
   </div>`;
 }
-
-function renderCreditsInfo(box){
-  box.innerHTML=`<div style="padding:24px;text-align:center">
-    <img src="logo/coins.png" style="width:60px;margin-bottom:16px">
-    <h3 style="color:#fff;margin-bottom:8px">Acheter des crédits</h3>
-    <p style="color:var(--text2);font-size:14px;margin-bottom:16px">1 Crédit = 0.25€</p>
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
-      <p style="font-size:13px;color:var(--text2);line-height:1.6">• Les crédits sont ajoutés manuellement.<br>• Paiement via PayPal, LTC ou PSC.<br>• Ouvrez un ticket sur notre Discord.</p>
-    </div>
-    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%">Ouvrir un ticket Discord</a>
-  </div>`;
-}
-
-function renderChangePseudo(box){
-  box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer le pseudo</h3>
-    <label class="lbl">Nouveau pseudo</label>
-    <input class="inp" id="new-pseudo" placeholder="MonNouveauPseudo">
-    <label class="lbl">Mot de passe actuel</label>
-    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('pseudo')">Mettre à jour</button>
-  </div>`;
-}
-
-function renderChangePassword(box){
-  box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer le mot de passe</h3>
-    <label class="lbl">Nouveau mot de passe</label>
-    <input class="inp" type="password" id="new-pass" placeholder="••••••••">
-    <label class="lbl">Confirmer mot de passe</label>
-    <input class="inp" type="password" id="confirm-new-pass" placeholder="••••••••">
-    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
-    <label class="lbl">Ancien mot de passe</label>
-    <input class="inp" type="password" id="old-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('password')">Mettre à jour</button>
-  </div>`;
-}
-
-function renderChangeEmail(box){
-  box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer l'email</h3>
-    <label class="lbl">Nouvel email</label>
-    <input class="inp" type="email" id="new-email" placeholder="nouveau@domaine.com">
-    <label class="lbl">Mot de passe actuel</label>
-    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('email')">Mettre à jour</button>
-  </div>`;
-}
-
-function renderApplyCoupon(box){
-  box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Appliquer un coupon</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Entrez un code promo ou VIP pour l'activer sur votre compte.</p>
-    <input class="inp" id="coupon-code" placeholder="BAZAAR-XXXX">
-    <button class="btn btn-primary" style="width:100%" onclick="applyCoupon()">Activer le code</button>
-  </div>`;
-}
-
 async function updateUserField(field){
-  notify('Fonctionnalité en cours de déploiement...', true);
+  const body = { user_id: currentUser.id };
+  if(field === 'pseudo') {
+    body.pseudo = document.getElementById('new-pseudo').value.trim();
+    body.verify_password = document.getElementById('confirm-pass').value;
+  } else if(field === 'email') {
+    body.email = document.getElementById('new-email').value.trim();
+    body.verify_password = document.getElementById('confirm-pass').value;
+  } else if(field === 'password') {
+    const np = document.getElementById('new-pass').value;
+    const cp = document.getElementById('confirm-new-pass').value;
+    if(np !== cp) return notify('Les mots de passe ne correspondent pas.', true);
+    body.new_password = np;
+    body.verify_password = document.getElementById('old-pass').value;
+  }
+  try {
+    const res = await api('update-user', body);
+    saveSession(res.user); notify('✓ Changement effectué !'); closeProfile(); bootApp(true);
+  } catch(e) { notify(e.message, true); }
 }
 async function applyCoupon(){
   const code = document.getElementById('coupon-code').value.trim();
