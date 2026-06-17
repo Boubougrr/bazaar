@@ -149,7 +149,7 @@ async function initApp() {
     const saved = localStorage.getItem('bzr_session');
     if(saved && saved !== 'undefined'){ currentUser = JSON.parse(saved); }
   } catch(e) {}
-  
+
   bootApp(true);
 
   if(currentUser && currentUser.id){
@@ -159,11 +159,16 @@ async function initApp() {
       bootApp(true);
     } catch(e) {}
   }
-  
+
   generateCaptcha(); initAuthEvents();
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
-  document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
+  document.querySelector('.credits-pill')?.addEventListener('click', () => openProfile('credits'));
   setSearchMode(settings.searchMode);
+
+  // Splash Loader (1.5s)
+  setTimeout(() => {
+    document.getElementById('app-loader')?.classList.add('hidden');
+  }, 1500);
 }
 
 if(document.readyState === 'complete') initApp();
@@ -264,21 +269,100 @@ function logout(){ localStorage.removeItem('bzr_session'); location.reload(); }
 
 function toggleDropdown(){ document.getElementById('user-dropdown').classList.toggle('open'); }
 
-function openCreditsModal(){ document.getElementById('profile-modal').classList.add('open'); }
-
 function openProfile(section){
   const box=document.getElementById('profile-content');
-  if(section==='stats'){ renderStats(box); }
+  if(section==='stats') renderStats(box);
+  else if(section==='credits') renderCreditsInfo(box);
+  else if(section==='pseudo') renderChangePseudo(box);
+  else if(section==='password') renderChangePassword(box);
+  else if(section==='email') renderChangeEmail(box);
+  else if(section==='coupon') renderApplyCoupon(box);
   document.getElementById('profile-modal').classList.add('open');
 }
 
 function renderStats(box){
-  const left=getCreditsLeft();
-  box.innerHTML=`<div style="padding:20px;color:#fff">Credits: ${left}</div>`;
+  const u = currentUser;
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Mes Statistiques</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="info-card"><h4>Crédits</h4><p>${u.credits_max - u.credits_used} / ${u.credits_max}</p></div>
+      <div class="info-card"><h4>Rôle</h4><p>${u.role === 'dev' ? 'STAFF' : (u.vip_active ? 'VIP' : 'Membre')}</p></div>
+      <div class="info-card"><h4>Recherches</h4><p>${u.total_searches || 0}</p></div>
+      <div class="info-card"><h4>Inscrit le</h4><p>${new Date(u.created_at).toLocaleDateString()}</p></div>
+    </div>
+  </div>`;
+}
+
+function renderCreditsInfo(box){
+  box.innerHTML=`<div style="padding:24px;text-align:center">
+    <img src="logo/coins.png" style="width:60px;margin-bottom:16px">
+    <h3 style="color:#fff;margin-bottom:8px">Acheter des crédits</h3>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:16px">1 Crédit = 0.25€</p>
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">• Les crédits sont ajoutés manuellement.<br>• Paiement via PayPal, LTC ou PSC.<br>• Ouvrez un ticket sur notre Discord.</p>
+    </div>
+    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%">Ouvrir un ticket Discord</a>
+  </div>`;
+}
+
+function renderChangePseudo(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer le pseudo</h3>
+    <label class="lbl">Nouveau pseudo</label>
+    <input class="inp" id="new-pseudo" placeholder="MonNouveauPseudo">
+    <label class="lbl">Mot de passe actuel</label>
+    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('pseudo')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderChangePassword(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer le mot de passe</h3>
+    <label class="lbl">Nouveau mot de passe</label>
+    <input class="inp" type="password" id="new-pass" placeholder="••••••••">
+    <label class="lbl">Confirmer mot de passe</label>
+    <input class="inp" type="password" id="confirm-new-pass" placeholder="••••••••">
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <label class="lbl">Ancien mot de passe</label>
+    <input class="inp" type="password" id="old-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('password')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderChangeEmail(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer l'email</h3>
+    <label class="lbl">Nouvel email</label>
+    <input class="inp" type="email" id="new-email" placeholder="nouveau@domaine.com">
+    <label class="lbl">Mot de passe actuel</label>
+    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('email')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderApplyCoupon(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Appliquer un coupon</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Entrez un code promo ou VIP pour l'activer sur votre compte.</p>
+    <input class="inp" id="coupon-code" placeholder="BAZAAR-XXXX">
+    <button class="btn btn-primary" style="width:100%" onclick="applyCoupon()">Activer le code</button>
+  </div>`;
+}
+
+async function updateUserField(field){
+  notify('Fonctionnalité en cours de déploiement...', true);
+}
+async function applyCoupon(){
+  const code = document.getElementById('coupon-code').value.trim();
+  if(!code) return notify('Entrez un code.', true);
+  try {
+    const res = await api('coupon', { user_id: currentUser.id, code });
+    saveSession(res.user); notify('✓ Code activé !'); closeProfile(); bootApp(true);
+  } catch(e) { notify(e.message, true); }
 }
 
 function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
-
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
