@@ -33,37 +33,14 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
 .plan-card { overflow: visible !important; }
 .plan-card-body { position: relative; overflow: hidden; border-radius: var(--r2); display: flex; flex-direction: column; gap: 14px; padding: 0; height: 100%; width: 100%; }
 
-/* PREMIUM SHINE (Strict Clipping) */
-.plan-highlight .plan-card-body {
-  overflow: hidden !important;
-  position: relative;
-}
-.plan-highlight .plan-card-body::after{
-  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.15), transparent);
-  animation:shineEffect 3s infinite linear;
-  pointer-events:none;
-  z-index: 2;
-}
-@keyframes shineEffect {
-  0% { left: -100%; }
-  30% { left: 100%; }
-  100% { left: 100%; }
-}
-
-/* ROTATING BORDER (Enhanced Visibility) */
+/* ROTATING BORDER */
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
 }
 
-.item-card, .plan-card-body, .info-card, .stat-card, .how-step, .auth-outer, .modal-box {
-  position: relative;
-  z-index: 1;
-}
-
-.item-card::before, .plan-card-body::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
+.item-card::before, .plan-card-body:not(.plan-highlight-body)::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
   content: '';
   position: absolute;
   inset: -2px;
@@ -77,10 +54,10 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  z-index: 10; /* Above background, but masked out from content area */
+  z-index: 10;
 }
 
-.item-card:hover::before, .plan-card:hover .plan-card-body::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
+.item-card:hover::before, .plan-card:hover .plan-card-body:not(.plan-highlight-body)::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
   opacity: 1;
 }
 
