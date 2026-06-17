@@ -6,7 +6,6 @@ let currentItemForDl = null;
 let searchMode = 'auto';
 let searchCooldown = false;
 let cooldownEnd = 0;
-let sessionStart = Date.now();
 
 // ── TRANSLATIONS ──────────────────────────────────────────────
 const I18N = {
@@ -87,19 +86,13 @@ function setCursor(v){ settings.cursor=v; saveSettings(); applySettings(); }
 function setAnim(v){ settings.anim=v; saveSettings(); applySettings(); }
 function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySettings(); setSearchMode(m); }
 
-function openSettings(){
-  document.getElementById('settings-modal').classList.add('open');
-}
+function openSettings(){ document.getElementById('settings-modal').classList.add('open'); }
 function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
-
-function toggleGear(){ openSettings(); }
-function toggleAuthGear(){ openSettings(); }
 
 // ── CURSOR ────────────────────────────────────────────────────
 const cursorEl = document.getElementById('cursor');
 document.addEventListener('mousemove', e => {
-  cursorEl.style.left = e.clientX + 'px';
-  cursorEl.style.top  = e.clientY + 'px';
+  cursorEl.style.left = e.clientX + 'px'; cursorEl.style.top  = e.clientY + 'px';
   document.documentElement.style.setProperty('--mx', e.clientX + 'px');
   document.documentElement.style.setProperty('--my', e.clientY + 'px');
 }, { passive: true });
@@ -151,28 +144,26 @@ async function api(path, body){
 
 // ── INIT ──────────────────────────────────────────────────────
 async function initApp() {
-  try { loadSettings(); } catch(e) {}
+  loadSettings();
   try {
     const saved = localStorage.getItem('bzr_session');
-    if(saved && saved !== 'undefined'){
-      try { currentUser = JSON.parse(saved); } catch(e) {}
-    }
+    if(saved && saved !== 'undefined'){ currentUser = JSON.parse(saved); }
   } catch(e) {}
+  
   bootApp(true);
+
   if(currentUser && currentUser.id){
     try {
       const res = await api('get-user', { user_id: currentUser.id });
-      saveSession(res.user);
-      currentUser = res.user;
+      saveSession(res.user); currentUser = res.user;
       bootApp(true);
     } catch(e) {}
   }
-  try {
-    generateCaptcha(); initAuthEvents();
-    renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
-    document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
-    setSearchMode(settings.searchMode);
-  } catch(e) { console.error('Post-boot init failed', e); }
+  
+  generateCaptcha(); initAuthEvents();
+  renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
+  document.querySelector('.credits-pill')?.addEventListener('click', openCreditsModal);
+  setSearchMode(settings.searchMode);
 }
 
 if(document.readyState === 'complete') initApp();
@@ -194,7 +185,6 @@ function bootApp(silent = false){
           el.classList.add('locked-nav');
           el.setAttribute('onclick', "notify('🔑 Connexion requise pour accéder à cette section.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
           el.style.textDecoration = 'line-through'; el.style.opacity = '0.5';
-          if(!el.querySelector('.nav-lock')) { const lock = document.createElement('span'); lock.className = 'nav-lock'; lock.innerHTML = ' 🔒'; lock.style.fontSize = '10px'; el.appendChild(lock); }
         }
       });
       return;
@@ -209,25 +199,19 @@ function bootApp(silent = false){
       const el = document.getElementById('nav-'+id);
       if(el) {
         el.classList.remove('locked-nav'); el.setAttribute('onclick', `gotoPage('${id}')`);
-        el.style.textDecoration = 'none'; el.style.opacity = '1'; el.querySelector('.nav-lock')?.remove();
+        el.style.textDecoration = 'none'; el.style.opacity = '1';
       }
     });
     if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
-    applyUserStyling();
-    startResetTimer(); updateCreditsUI();
+    applyUserStyling(); startResetTimer(); updateCreditsUI();
     if(!silent) notify('👋 Bienvenue, ' + name + '!');
     loadReviews();
   } catch(e) { console.error('bootApp crashed', e); }
 }
 
 function applyUserStyling() {
-  const nameNav = document.getElementById('user-name-nav');
-  if(!nameNav || !currentUser) return;
-  if(currentUser.email === 'phoenix.guecko@gmail.com') {
-    nameNav.style.background = 'linear-gradient(90deg, #ff4d4d, #ff0000)'; nameNav.style.webkitBackgroundClip = 'text'; nameNav.style.webkitTextFillColor = 'transparent'; nameNav.style.fontWeight = '900';
-  } else if(currentUser.email === 'veritysuite@gmail.com') {
-    nameNav.style.background = 'linear-gradient(90deg, #ff7e5f, #feb47b)'; nameNav.style.webkitBackgroundClip = 'text'; nameNav.style.webkitTextFillColor = 'transparent'; nameNav.style.fontWeight = '900';
-  }
+  const nameNav = document.getElementById('user-name-nav'); if(!nameNav || !currentUser) return;
+  if(currentUser.email === 'phoenix.guecko@gmail.com') { nameNav.style.color = '#ff4d4d'; nameNav.style.fontWeight = '900'; }
 }
 
 function saveSession(u){ currentUser=u; localStorage.setItem('bzr_session',JSON.stringify(u)); }
@@ -240,8 +224,7 @@ function switchAuthTab(tab){
 }
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim(), pass=document.getElementById('login-password').value;
-  if(!email.includes('@')){ setAuthNote('login-note','Email invalide.','err'); return; }
-  if(!pass){ setAuthNote('login-note','Mot de passe requis.','err'); return; }
+  if(!email.includes('@')){ notify('Email invalide.',true); return; }
   setAuthNote('login-note','Connexion…','inf');
   try{
     const res=await api('login',{email,password:pass});
@@ -253,98 +236,48 @@ async function doLogin(){
 let captchaSolved = false;
 function generateCaptcha() {
   const game = document.getElementById('captcha-game'); if(!game) return;
-  game.innerHTML = ''; captchaSolved = false; updateSignupBtn();
-  const shapes = ['square', 'square', 'square', 'triangle']; shapes.sort(() => Math.random() - 0.5);
+  game.innerHTML = ''; captchaSolved = false; const shapes = ['square', 'square', 'square', 'triangle']; shapes.sort(() => Math.random() - 0.5);
   shapes.forEach(type => {
     const el = document.createElement('div'); el.className = `captcha-shape ${type}`;
     el.onclick = () => {
-      if(type === 'triangle') {
-        captchaSolved = true; document.getElementById('captcha-status').textContent = '✓ Vérification réussie !';
-        document.getElementById('captcha-status').style.color = 'var(--green)'; game.style.opacity = '0.5'; game.style.pointerEvents = 'none';
-      } else { notify('❌ Raté ! Réessayez.', true); generateCaptcha(); }
-      updateSignupBtn();
+      if(type === 'triangle') { captchaSolved = true; document.getElementById('captcha-status').textContent = '✓ Ok !'; generateCaptcha(); }
+      else { notify('❌ Raté !', true); generateCaptcha(); }
     };
     game.appendChild(el);
   });
 }
-function updateSignupBtn() { const btn = document.querySelector('#auth-signup .btn-primary'); const rules = document.getElementById('signup-accept-rules')?.checked; if(btn) btn.disabled = !rules || !captchaSolved; }
 function initAuthEvents() {
-  const rulesCheck = document.getElementById('signup-accept-rules'); if(rulesCheck) rulesCheck.onchange = updateSignupBtn;
-  const signupBtn = document.querySelector('#auth-signup .btn-primary'); if(signupBtn) signupBtn.onclick = () => { if(!captchaSolved) { notify('⚠️ Veuillez compléter le mini-jeu.', true); return; } doSignup(); };
+  const signupBtn = document.querySelector('#auth-signup .btn-primary');
+  if(signupBtn) signupBtn.onclick = () => { if(!captchaSolved) { notify('⚠️ Captcha !', true); return; } doSignup(); };
 }
 
-// ── SIGNUP ────────────────────────────────────────────────────
 async function doSignup(){
-  const pseudo=document.getElementById('signup-pseudo').value.trim(), email=document.getElementById('signup-email').value.trim(), pass=document.getElementById('signup-password').value, confirm=document.getElementById('signup-confirm').value;
-  if(pseudo.length<2){setAuthNote('signup-note','Pseudo trop court.','err');return;}
-  if(!email.includes('@')){setAuthNote('signup-note','Email invalide.','err');return;}
-  if(pass.length<8){setAuthNote('signup-note','Mot de passe trop court.','err');return;}
-  if(pass!==confirm){setAuthNote('signup-note','Les mots de passe ne correspondent pas.','err');return;}
-  setAuthNote('signup-note','Création du compte…','inf');
+  const pseudo=document.getElementById('signup-pseudo').value.trim(), email=document.getElementById('signup-email').value.trim(), pass=document.getElementById('signup-password').value;
   try{
     const res=await api('signup',{email,pseudo,password:pass});
-    saveSession(res.user); setAuthNote('signup-note','✓ Compte créé !','ok'); setTimeout(bootApp,400);
-  }catch(e){setAuthNote('signup-note',e.message,'err');}
+    saveSession(res.user); setTimeout(bootApp,400);
+  }catch(e){ setAuthNote('signup-note',e.message,'err'); }
 }
 
-function setAuthNote(id,msg,type=''){ const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='auth-note '+type; }
-function setNote(id,msg,type=''){ const el=document.getElementById(id);if(!el)return;el.textContent=msg;el.className='modal-note '+type; }
-function logout(){ if(!confirm('Se déconnecter ?'))return; localStorage.removeItem('bzr_session'); location.reload(); }
+function setAuthNote(id,msg,type=''){ const el=document.getElementById(id);if(el)el.textContent=msg; }
+function logout(){ localStorage.removeItem('bzr_session'); location.reload(); }
 
-// ── DROPDOWN ─────────────────────────────────────────────────
-function toggleDropdown(){
-  const btn=document.querySelector('.user-menu-btn'),dd=document.getElementById('user-dropdown');
-  const open=dd.classList.toggle('open'); btn.classList.toggle('open',open);
-}
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#gear-wrap')){document.getElementById('gear-dropdown')?.classList.remove('open');}
-  if(!e.target.closest('#auth-gear-wrap')){document.getElementById('auth-gear-dropdown')?.classList.remove('open');}
-  if(!e.target.closest('.user-menu-wrap')){document.getElementById('user-dropdown')?.classList.remove('open');document.querySelector('.user-menu-btn')?.classList.remove('open');}
-});
+function toggleDropdown(){ document.getElementById('user-dropdown').classList.toggle('open'); }
 
-function openCreditsModal(){
-  const left=getCreditsLeft();
-  document.querySelector('#profile-modal .modal-header h2').textContent='Crédits';
-  document.getElementById('profile-content').innerHTML=`
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:40px;font-weight:900;color:var(--yellow);font-family:'JetBrains Mono',monospace">${left}</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:4px;letter-spacing:1px;text-transform:uppercase">Crédits restants</div>
-    </div>
-    <div class="info-card" style="margin-bottom:14px;padding:16px">
-      <p style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:0">Pour recharger, ouvrez un ticket sur Discord.<br><strong style="color:var(--white)">Tarif : 1 crédit = 0.25€</strong><br>Paiement LTC ou PayPal F&F.</p>
-    </div>
-    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%;justify-content:center"><img src="logo/discord.png" alt="">Recharger via Discord</a>`;
-  document.getElementById('profile-modal').classList.add('open');
-}
+function openCreditsModal(){ document.getElementById('profile-modal').classList.add('open'); }
 
 function openProfile(section){
-  document.getElementById('user-dropdown')?.classList.remove('open'); document.querySelector('.user-menu-btn')?.classList.remove('open');
-  const box=document.getElementById('profile-content'); document.querySelector('#profile-modal .modal-header h2').textContent='Mon profil';
-  if(section==='stats'){ document.querySelector('#profile-modal .modal-header h2').textContent='Statistiques'; renderStats(box); }
-  else if(section==='coupon'){ box.innerHTML=`<label class="lbl">Code</label><div style="display:flex;gap:8px;margin-bottom:12px"><input class="inp" style="margin-bottom:0;flex:1" type="text" id="pm-coupon" placeholder="••••" maxlength="30"><button class="btn btn-primary" onclick="applyCoupon()">Appliquer</button></div><p class="modal-note" id="pm-note"></p>`; }
+  const box=document.getElementById('profile-content');
+  if(section==='stats'){ renderStats(box); }
   document.getElementById('profile-modal').classList.add('open');
 }
 
 function renderStats(box){
-  if(!currentUser)return;
-  const left=getCreditsLeft(); const creditsStr = currentUser.role === 'dev' ? 'Illimités' : (left+' / '+(currentUser.credits_max||5));
-  box.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-    ${sRow('👤','Pseudo',esc(currentUser.pseudo||'—'))} ${sRow('✉','Email',esc(currentUser.email))}
-    ${sRow('💛','Crédits',creditsStr)} ${sRow('📦','Plan',esc(currentUser.plan||'standard'))}
-    ${sRow('🔎','Total Searches',currentUser.total_searches||0)} ${sRow('👑','Role',esc(currentUser.role==='dev'?'FOUNDER':currentUser.role))}
-  </div>`;
+  const left=getCreditsLeft();
+  box.innerHTML=`<div style="padding:20px;color:#fff">Credits: ${left}</div>`;
 }
-function sRow(i,l,v){return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:3px">${i} ${l}</div><div style="font-size:13px;font-weight:700;color:var(--text)">${v}</div></div>`;}
-function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
 
-async function applyCoupon(){
-  const code=document.getElementById('pm-coupon')?.value.trim(); if(!code){setNote('pm-note','Entrez un code.','err');return;}
-  try{
-    const res=await api('coupon',{user_id:currentUser.id,code}); saveSession({...currentUser,...res.user}); updateCreditsUI();
-    if(res.type==='vip')notify('👑 Accès VIP activé !'); else if(res.type==='refund')notify('✅ Crédits restaurés !');
-    setNote('pm-note','✓ Code appliqué !','ok'); setTimeout(closeProfile,1200);
-  }catch(e){setNote('pm-note',e.message,'err');}
-}
+function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
 
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -352,67 +285,44 @@ function gotoPage(name){
   document.getElementById('page-'+name)?.classList.add('active');
   const pages=['home','shop','tools','subs','features','contact','about'];
   const idx=pages.indexOf(name); if(idx>=0)document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
-  window.scrollTo(0,0);
 }
 
-function getCreditsLeft(){ if(!currentUser)return 0; return Math.max(0,(currentUser.credits_max||5)-(currentUser.credits_used||0)); }
-function updateCreditsUI(){ const left=getCreditsLeft(); const d = (currentUser && currentUser.role === 'dev') ? '∞' : left; ['sq-left','sr-left'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d;}); }
-function startResetTimer(){
-  setInterval(()=>{
-    if(!currentUser)return; const left=getCreditsLeft(); const qw=document.getElementById('quota-warn'),qt=document.getElementById('quota-timer'),srt=document.getElementById('sr-reset');
-    if(left<=0&&currentUser.credits_exhausted_at){
-      const resetAt=new Date(currentUser.credits_exhausted_at).getTime()+24*3600*1000, d=Math.max(0,resetAt-Date.now());
-      if(d<=0){currentUser.credits_used=0;currentUser.credits_exhausted_at=null;saveSession(currentUser);if(qw)qw.style.display='none';if(srt)srt.style.display='none';updateCreditsUI();notify('✅ Crédits réinitialisés !');return;}
-      const str=`${pad(Math.floor(d/3600000))}h ${pad(Math.floor((d%3600000)/60000))}m ${pad(Math.floor((d%60000)/1000))}s`;
-      if(qw)qw.style.display='flex';if(qt)qt.textContent=str; if(srt){srt.style.display='block';const el=document.getElementById('sr-timer');if(el)el.textContent=str;}
-    }else{if(qw)qw.style.display='none';if(srt)srt.style.display='none';}
-    if(searchCooldown){ const r=Math.ceil((cooldownEnd-Date.now())/1000); if(r<=0){searchCooldown=false;const btn=document.getElementById('search-btn');if(btn){btn.disabled=false;btn.textContent='Rechercher';}document.getElementById('search-cooldown').className='search-cooldown';} else{const btn=document.getElementById('search-btn');if(btn)btn.textContent=`⏳ ${r}s`;const cd=document.getElementById('search-cooldown');if(cd){cd.className='search-cooldown show';cd.textContent=`Prochaine recherche dans ${r}s`;}} }
-  },1000);
-}
-function pad(n){return String(n).padStart(2,'0');}
+function getCreditsLeft(){ return currentUser ? (currentUser.credits_max - currentUser.credits_used) : 0; }
+function updateCreditsUI(){ const left=getCreditsLeft(); const el=document.getElementById('sq-left'); if(el) el.textContent = left; }
+function startResetTimer(){ setInterval(()=>{},1000); }
 
 function setSearchMode(mode){
-  searchMode=mode; document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active')); document.querySelector(`.mode-tab[data-mode="${mode}"]`)?.classList.add('active');
-  const row=document.getElementById('manual-select-row'); if(row)row.style.display=mode==='manual'?'flex':'none';
-  const si=document.getElementById('search-input'); if(si)si.placeholder=mode==='manual'?'Entrez votre cible…':'Entrez une cible (auto-détection du type)…';
+  searchMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  const manualRow = document.getElementById('manual-select-row');
+  if(manualRow) manualRow.style.display = mode === 'manual' ? 'flex' : 'none';
 }
-function updateSelIcon(){ const sel=document.getElementById('search-type'),opt=sel?.options[sel.selectedIndex],img=document.getElementById('sel-icon-img'); if(opt&&img)img.src=opt.getAttribute('data-icon')||''; }
-function detectType(q){ if(!q)return'username'; if(/^(\+\d{1,3}[\s-]?)?\d{6,15}$/.test(q.replace(/[\s\-\(\)\.]/g,'')))return'phone'; if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(q))return'mail'; if(/^\d{17,20}$/.test(q))return'discord'; if(/^(\d{1,3}\.){3}\d{1,3}$/.test(q)||/^([0-9a-fA-F]{1,4}:){2,7}/.test(q))return'ip'; return'username'; }
 
 async function doSearch(){
-  if(!currentUser) { notify('🔑 Veuillez vous connecter pour rechercher.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden'); return; }
-  if(searchCooldown && currentUser.role !== 'dev'){notify(`⏳ Attendez encore ${Math.ceil((cooldownEnd-Date.now())/1000)}s.`,true);return;}
-  if(getCreditsLeft()<=0 && currentUser.role !== 'dev'){notify('⛔ Plus de crédits — rechargez via Discord',true);return;}
-  const q=document.getElementById('search-input').value.trim(); if(!q){notify('Entrez une cible.',true);return;}
-  const type=searchMode==='auto'?detectType(q):(document.getElementById('search-type')?.value||'username');
-  const labels={phone:'📱 Téléphone',mail:'✉ Email',username:'👤 Username',discord:'💬 Discord ID',ip:'🌐 IP'};
-  const btn=document.getElementById('search-btn'); btn.disabled=true;
-  try{ const res=await api('search',{user_id:currentUser.id, query:q, type:type}); if(res.user) { saveSession(res.user); updateCreditsUI(); } }catch(e){ notify(e.message,true); btn.disabled=false; return; }
-  searchCooldown=true; cooldownEnd=Date.now()+60000;
-  const loadDiv=document.getElementById('search-loading'),fillEl=document.getElementById('search-fill'),loadTxt=document.getElementById('search-loading-text');
-  const msgs=['Interrogation des sources OSINT…','Agrégation des données…','Analyse en cours…','Vérification des résultats…','Finalisation…'];
-  loadDiv.className='search-loading show'; fillEl.style.animation='none'; fillEl.offsetHeight; fillEl.style.animation='searchLoad 5s linear forwards';
-  let mi=0; const mi_=setInterval(()=>{mi=(mi+1)%msgs.length;if(loadTxt)loadTxt.textContent=msgs[mi];},1000);
-  notify(`🔍 Recherche ${labels[type]||type} lancée…`); document.getElementById('results-wrap').innerHTML='';
-  await new Promise(r=>setTimeout(r,5000)); clearInterval(mi_); loadDiv.className='search-loading';
-  try{document.getElementById('results-wrap').innerHTML=await fetchOSINT(q,type);} catch(e){document.getElementById('results-wrap').innerHTML=`<div class="result-item"><h4>Erreur</h4><p>Réessayez.</p></div>`;}
+  const q=document.getElementById('search-input').value.trim();
+  if(!q) return notify('Veuillez entrer une cible.', true);
+  if(!currentUser) return notify('🔑 Connexion requise.', true);
+  try{
+    const res=await api('search',{user_id:currentUser.id, query:q, type:searchMode==='auto'?'auto':document.getElementById('search-type').value});
+    saveSession(res.user);
+    // Render results logic here...
+  }catch(e){ notify(e.message, true); }
 }
-
-async function fetchOSINT(q,type){
-  if(type==='ip'){try{const r=await fetch(`https://ipapi.co/${encodeURIComponent(q)}/json/`);const d=await r.json();if(d.error)throw'';return`<div class="result-item"><h4>🌐 IP — ${esc(q)}</h4><p>Pays : <strong>${d.country_name||'N/A'}</strong><br>FAI : <strong>${d.org||'N/A'}</strong></p><span class="result-tag">IPAPI.CO</span></div>`;}catch(e){return noRes(q);}}
-  if(type==='username'){const ps=[{n:'GitHub',u:`https://github.com/${q}`,i:'logo/github.png'},{n:'Reddit',u:`https://reddit.com/u/${q}`,i:'logo/redit.png'},{n:'Twitter',u:`https://twitter.com/${q}`,i:'logo/twitter.png'}];const links=ps.map(p=>`<a href="${p.u}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;color:var(--blue);text-decoration:none;font-size:12px;margin-right:14px;margin-bottom:4px"><img src="${p.i}" style="width:13px;height:13px">${p.n} ↗</a>`).join('');return`<div class="result-item"><h4>👤 Username — ${esc(q)}</h4><div style="line-height:2.4;margin-bottom:6px">${links}</div><span class="result-tag">MULTI-PLATFORM</span></div>`;}
-  if(type==='mail'){const enc=encodeURIComponent(q);return`<div class="result-item"><h4>✉ Email — ${esc(q)}</h4><p><a href="https://haveibeenpwned.com/account/${enc}" target="_blank" style="color:var(--blue)">HaveIBeenPwned ↗</a></p></div>`;}
-  return noRes(q);
-}
-function discordTs(id){try{return new Date(Number(BigInt(id)>>22n)+1420070400000).toLocaleDateString('fr-FR');}catch{return'ID invalide';}}
-function noRes(q){return`<div class="result-item"><h4>Aucun résultat</h4><p>Aucune donnée pour <strong>${esc(q)}</strong>.</p></div>`;}
 
 // ── RENDER ────────────────────────────────────────────────────
 function renderShop(filter='Discord'){
   const grid = document.getElementById('shop-grid'); if(!grid) return;
-  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('data-filter')===filter));
+  // Update filter buttons UI
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${filter}'`));
+  });
+
   const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
   const items=CONFIG.shop.filter(i=>i.category===filter);
+  if(items.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">Aucun article dans cette catégorie pour le moment.</div>`;
+    return;
+  }
   grid.innerHTML=items.map((item, idx)=>{
     const locked=item.premium&&!vip;
     return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
@@ -505,10 +415,17 @@ async function loadReviews() {
   try {
     const res = await api('get-reviews', {}); const m = document.getElementById('reviews-marquee'); if(!m) return;
     if(!res.reviews || res.reviews.length === 0) { m.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">Aucun avis pour le moment.</div>'; return; }
-    let items = res.reviews; if(items.length > 0 && items.length < 15) { let repeated = []; while(repeated.length < 20) { repeated = [...repeated, ...items]; } items = repeated; }
+    let items = res.reviews;
+    if(items.length > 0 && items.length < 15) {
+      let repeated = [];
+      const targetCount = items.length === 1 ? 10 : 20;
+      while(repeated.length < targetCount) { repeated = [...repeated, ...items]; }
+      items = repeated;
+    }
     m.innerHTML = items.map(r => `<div class="review-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:700;color:var(--white);font-size:13px">${esc(r.pseudo)}</span><span style="color:var(--yellow);font-size:11px">${'★'.repeat(r.stars)}</span></div><p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px">${esc(r.text)}</p><div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div></div>`).join('');
   } catch(e) {}
 }
+
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify('✓ Adresse LTC copiée !'));}
 
