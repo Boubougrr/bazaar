@@ -40,7 +40,7 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
   inherits: false;
 }
 
-.item-card::before, .plan-card-body:not(.plan-highlight-body)::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
+.item-card::before, .plan-card-body::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
   content: '';
   position: absolute;
   inset: -2px;
@@ -57,7 +57,7 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
   z-index: 10;
 }
 
-.item-card:hover::before, .plan-card:hover .plan-card-body:not(.plan-highlight-body)::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
+.item-card:hover::before, .plan-card:hover .plan-card-body::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
   opacity: 1;
 }
 

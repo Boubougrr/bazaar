@@ -455,7 +455,7 @@ function renderTools(){
 function renderPlans(){
   const grid=document.getElementById('plans-grid'); if(!grid) return;
   grid.innerHTML=CONFIG.plans.map((p, idx)=>`
-    <div class="plan-card${p.highlight?' plan-highlight':''}" style="animation:fadeUp .4s ease forwards; animation-delay:${idx*60}ms">
+    <div class="plan-card" style="animation:fadeUp .4s ease forwards; animation-delay:${idx*60}ms">
       ${p.highlight?'<div class="plan-best">👑 BEST VALUE</div>':''}
       <div class="plan-card-body" style="padding: 24px 20px; border: 1px solid var(--border2); background: var(--panel);">
         <div class="plan-name" style="color:${p.color}">${p.name}</div>
@@ -464,7 +464,7 @@ function renderPlans(){
         <div class="plan-searches-badge">${p.searches>=999999?'Illimitées':p.searches} recherches/jour</div>
         <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
         <ul class="plan-features">${p.features.map(f=>`<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span>${f.text}</li>`).join('')}</ul>
-        <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?'Plan actuel':'S\'abonner'}</a>
+        <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?'Plan actuel':'S\'abonner'}</a>
         <p class="plan-ticket-note">Ouvrez un ticket Discord pour activer</p>
       </div>
     </div>`).join('');
