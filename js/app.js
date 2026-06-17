@@ -88,6 +88,7 @@ function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySe
 
 function openSettings(){ document.getElementById('settings-modal').classList.add('open'); }
 function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
+function toggleGear(){ openSettings(); }
 
 // ── CURSOR ────────────────────────────────────────────────────
 const cursorEl = document.getElementById('cursor');
@@ -270,14 +271,17 @@ function logout(){ localStorage.removeItem('bzr_session'); location.reload(); }
 function toggleDropdown(){ document.getElementById('user-dropdown').classList.toggle('open'); }
 
 function openProfile(section){
-  const box=document.getElementById('profile-content');
-  if(section==='stats') renderStats(box);
-  else if(section==='credits') renderCreditsInfo(box);
-  else if(section==='pseudo') renderChangePseudo(box);
-  else if(section==='password') renderChangePassword(box);
-  else if(section==='email') renderChangeEmail(box);
-  else if(section==='coupon') renderApplyCoupon(box);
-  document.getElementById('profile-modal').classList.add('open');
+  try {
+    const box = document.getElementById('profile-content');
+    if(!box) return;
+    if(section==='stats') renderStats(box);
+    else if(section==='credits') renderCreditsInfo(box);
+    else if(section==='pseudo') renderChangePseudo(box);
+    else if(section==='password') renderChangePassword(box);
+    else if(section==='email') renderChangeEmail(box);
+    else if(section==='coupon') renderApplyCoupon(box);
+    document.getElementById('profile-modal')?.classList.add('open');
+  } catch(e) { console.error('Error opening profile:', e); }
 }
 
 function renderStats(box){
@@ -297,6 +301,64 @@ function renderStats(box){
     </div>
   </div>`;
 }
+
+function renderCreditsInfo(box){
+  box.innerHTML=`<div style="padding:24px;text-align:center">
+    <img src="logo/coins.png" style="width:60px;margin-bottom:16px">
+    <h3 style="color:#fff;margin-bottom:8px">Acheter des crédits</h3>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:16px">1 Crédit = 0.25€</p>
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">• Les crédits sont ajoutés manuellement.<br>• Paiement via PayPal, LTC ou PSC.<br>• Ouvrez un ticket sur notre Discord.</p>
+    </div>
+    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%">Ouvrir un ticket Discord</a>
+  </div>`;
+}
+
+function renderChangePseudo(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer le pseudo</h3>
+    <label class="lbl">Nouveau pseudo</label>
+    <input class="inp" id="new-pseudo" placeholder="MonNouveauPseudo">
+    <label class="lbl">Mot de passe actuel</label>
+    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('pseudo')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderChangePassword(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer le mot de passe</h3>
+    <label class="lbl">Nouveau mot de passe</label>
+    <input class="inp" type="password" id="new-pass" placeholder="••••••••">
+    <label class="lbl">Confirmer mot de passe</label>
+    <input class="inp" type="password" id="confirm-new-pass" placeholder="••••••••">
+    <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
+    <label class="lbl">Ancien mot de passe</label>
+    <input class="inp" type="password" id="old-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('password')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderChangeEmail(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Changer l'email</h3>
+    <label class="lbl">Nouvel email</label>
+    <input class="inp" type="email" id="new-email" placeholder="nouveau@domaine.com">
+    <label class="lbl">Mot de passe actuel</label>
+    <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('email')">Mettre à jour</button>
+  </div>`;
+}
+
+function renderApplyCoupon(box){
+  box.innerHTML=`<div style="padding:24px">
+    <h3 style="color:#fff;margin-bottom:16px">Appliquer un coupon</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Entrez un code promo ou VIP pour l'activer sur votre compte.</p>
+    <input class="inp" id="coupon-code" placeholder="BAZAAR-XXXX">
+    <button class="btn btn-primary" style="width:100%" onclick="applyCoupon()">Activer le code</button>
+  </div>`;
+}
+
 async function updateUserField(field){
   const body = { user_id: currentUser.id };
   if(field === 'pseudo') {

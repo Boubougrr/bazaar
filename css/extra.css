@@ -33,43 +33,51 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
 .plan-card { overflow: visible !important; }
 .plan-card-body { position: relative; overflow: hidden; border-radius: var(--r2); display: flex; flex-direction: column; gap: 14px; padding: 0; height: 100%; width: 100%; }
 
-/* PREMIUM SHINE */
+/* PREMIUM SHINE (Strict Clipping) */
+.plan-highlight .plan-card-body {
+  overflow: hidden !important;
+  position: relative;
+}
 .plan-highlight .plan-card-body::after{
-  content:'';position:absolute;top:0;left:0;width:100%;height:100%;
-  background:linear-gradient(120deg, transparent, rgba(251,191,36,0.1), rgba(251,191,36,0.2), transparent);
-  transform: translateX(-150%);
-  animation:shineEffect 3s infinite;
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(120deg, transparent, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.15), transparent);
+  animation:shineEffect 3s infinite linear;
   pointer-events:none;
-  z-index: 4;
+  z-index: 2;
 }
 @keyframes shineEffect {
-  0% { transform: translateX(-150%); }
-  20% { transform: translateX(150%); }
-  100% { transform: translateX(150%); }
+  0% { left: -100%; }
+  30% { left: 100%; }
+  100% { left: 100%; }
 }
 
-/* ROTATING BORDER */
+/* ROTATING BORDER (Enhanced Visibility) */
 @property --angle {
   syntax: '<angle>';
   initial-value: 0deg;
   inherits: false;
 }
 
+.item-card, .plan-card-body, .info-card, .stat-card, .how-step, .auth-outer, .modal-box {
+  position: relative;
+  z-index: 1;
+}
+
 .item-card::before, .plan-card-body::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
   content: '';
   position: absolute;
-  inset: -1px;
-  background: conic-gradient(from var(--angle), transparent 70%, #fff 85%, #fff 95%, transparent 100%);
+  inset: -2px;
+  background: conic-gradient(from var(--angle), transparent 70%, #ffffff 85%, #ffffff 95%, transparent 100%);
   border-radius: inherit;
-  padding: 1px;
+  padding: 2px;
   animation: rotateBorder 3s linear infinite;
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.3s ease;
   pointer-events: none;
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  z-index: 5;
+  z-index: 10; /* Above background, but masked out from content area */
 }
 
 .item-card:hover::before, .plan-card:hover .plan-card-body::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
