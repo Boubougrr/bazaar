@@ -254,8 +254,9 @@ async function initApp() {
 
   generateCaptcha(); initAuthEvents();
   renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
-  document.querySelector('.credits-pill')?.addEventListener('click', () => openProfile('credits'));
-  setSearchMode(settings.searchMode);
+  loadReviews();
+  selectSearchType('auto');
+  initCardSpotlight();
 
   // Splash Loader (1.5s)
   setTimeout(() => {
@@ -270,12 +271,14 @@ function bootApp(silent = false){
   try {
     const navAuth = document.getElementById('nav-auth-only'), navLogin = document.getElementById('nav-login-btn');
     const badge = document.getElementById('dev-badge'), mainScreen = document.getElementById('main-screen');
+    const creditsRow = document.getElementById('search-credits-row');
     if(mainScreen) mainScreen.style.display='flex';
     if(!currentUser) {
       document.getElementById('auth-screen')?.classList.add('hidden');
       if(navAuth) navAuth.style.display='none';
       if(navLogin) navLogin.style.display='block';
       if(badge) badge.style.display='none';
+      if(creditsRow) creditsRow.style.display='none';
       const guestMsg = document.getElementById('search-guest-msg');
       if(guestMsg) guestMsg.style.display='block';
       ['shop','tools','subs','features','contact','about'].forEach(id => {
@@ -291,6 +294,7 @@ function bootApp(silent = false){
     document.getElementById('auth-screen')?.classList.add('hidden');
     if(navAuth) navAuth.style.display='contents';
     if(navLogin) navLogin.style.display='none';
+    if(creditsRow) creditsRow.style.display='flex';
     const guestMsg = document.getElementById('search-guest-msg');
     if(guestMsg) guestMsg.style.display='none';
     const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
@@ -419,32 +423,42 @@ function openProfile(section){
     const box = document.getElementById('profile-content');
     if(!box) return;
     currentProfileSection = section;
-    if(section==='stats') renderStats(box);
-    else if(section==='credits') renderCreditsInfo(box);
-    else if(section==='pseudo') renderChangePseudo(box);
+    if(section==='stats')    renderStats(box);
+    else if(section==='credits')  renderCreditsInfo(box);
+    else if(section==='pseudo')   renderChangePseudo(box);
     else if(section==='password') renderChangePassword(box);
-    else if(section==='email') renderChangeEmail(box);
-    else if(section==='coupon') renderApplyCoupon(box);
+    else if(section==='email')    renderChangeEmail(box);
+    else if(section==='coupon')   renderApplyCoupon(box);
+    else if(section==='avatar')   renderAvatarUpload(box);
     document.getElementById('profile-modal')?.classList.add('open');
   } catch(e) { console.error('Error opening profile:', e); }
 }
 
 function renderStats(box){
   const u = currentUser;
-  box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">${t('myStats')}</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-      <div class="info-card"><h4>${t('creditsLabel')}</h4><p>${u.credits_max - u.credits_used} / ${u.credits_max}</p></div>
-      <div class="info-card"><h4>${t('rankLabel')}</h4><p>${u.role === 'dev' ? t('staffRank') : (u.vip_active ? t('vipRank') : t('memberRank'))}</p></div>
-      <div class="info-card"><h4>${t('searchesLabel')}</h4><p>${u.total_searches || 0}</p></div>
-      <div class="info-card"><h4>${t('loginsLabel')}</h4><p>${u.login_count || 1}</p></div>
-      <div class="info-card"><h4>${t('joinedLabel')}</h4><p>${new Date(u.joined_at || u.created_at).toLocaleDateString()}</p></div>
+  const rank = u.role === 'dev' ? t('staffRank') : (u.vip_active ? t('vipRank') : t('memberRank'));
+  const initial = (u.pseudo || u.email || '?')[0].toUpperCase();
+  const avatarHtml = u.avatar_url
+    ? `<img src="${esc(u.avatar_url)}" class="avatar-circle" style="width:56px;height:56px" alt="">`
+    : `<div class="avatar-placeholder" style="width:56px;height:56px;font-size:20px">${initial}</div>`;
+  box.innerHTML=`
+    <div style="padding:20px 24px 12px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)">
+      ${avatarHtml}
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--white)">${esc(u.pseudo||u.email)}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:1px">${rank} · ${(u.plan||'standard').toUpperCase()}</div>
+      </div>
     </div>
-    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px">
-      <h4 style="color:var(--white);font-size:12px;margin-bottom:8px">${t('planInfoTitle')}</h4>
-      <p style="font-size:13px;color:var(--text2)">${t('planInfoPrefix')} <strong style="color:var(--accent)">${(u.plan || 'standard').toUpperCase()}</strong>${t('planInfoSuffix')}</p>
+    <div class="profile-stat-grid">
+      <div class="profile-stat-item"><span class="stat-val">${getCreditsLeft()} / ${u.credits_max||5}</span><span class="stat-lbl">Crédits</span></div>
+      <div class="profile-stat-item"><span class="stat-val">${u.total_searches||0}</span><span class="stat-lbl">Recherches</span></div>
+      <div class="profile-stat-item"><span class="stat-val">${u.login_count||1}</span><span class="stat-lbl">Connexions</span></div>
+      <div class="profile-stat-item"><span class="stat-val">${new Date(u.joined_at||u.created_at).toLocaleDateString('fr')}</span><span class="stat-lbl">Inscrit le</span></div>
     </div>
-  </div>`;
+    <div class="profile-plan-badge">
+      <span style="font-size:13px;color:var(--text2)">Plan actuel</span>
+      <span style="font-size:14px;font-weight:800;color:var(--accent)">${(u.plan||'standard').toUpperCase()}</span>
+    </div>`;
 }
 
 function renderCreditsInfo(box){
@@ -542,15 +556,29 @@ function gotoPage(name){
   const idx=pages.indexOf(name); if(idx>=0)document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
 }
 
-function getCreditsLeft(){ return currentUser ? (currentUser.credits_max - currentUser.credits_used) : 0; }
-function updateCreditsUI(){ const left=getCreditsLeft(); const el=document.getElementById('sq-left'); if(el) el.textContent = left; const sr=document.getElementById('sr-left'); if(sr) sr.textContent = left; }
+function getCreditsLeft(){ return currentUser ? Math.max(0, (currentUser.credits_max||5) - (currentUser.credits_used||0)) : 0; }
+function updateCreditsUI(){
+  const left = getCreditsLeft();
+  const max  = currentUser ? (currentUser.credits_max || 5) : 5;
+  ['sq-left','credits-above-num'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=left; });
+  ['sq-max','credits-above-max'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=max; });
+}
 function startResetTimer(){ setInterval(()=>{},1000); }
+
+let selectedSearchType = 'auto';
+
+function selectSearchType(type) {
+  selectedSearchType = type;
+  document.querySelectorAll('.s-type-pill').forEach(p => p.classList.toggle('active', p.dataset.type === type));
+  // Keep legacy select in sync
+  const sel = document.getElementById('search-type');
+  if(sel) sel.value = type === 'auto' ? 'auto' : type;
+  searchMode = type === 'auto' ? 'auto' : 'manual';
+}
 
 function setSearchMode(mode){
   searchMode = mode;
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-  const manualRow = document.getElementById('manual-select-row');
-  if(manualRow) manualRow.style.display = mode === 'manual' ? 'flex' : 'none';
 }
 
 async function doSearch(){
@@ -573,7 +601,7 @@ async function doSearch(){
   if(loadText) loadText.textContent = 'Interrogation des sources OSINT…';
 
   try{
-    const res=await api('search',{token:sessionToken, query:q, type:searchMode==='auto'?'auto':document.getElementById('search-type').value});
+    const res=await api('search',{token:sessionToken, query:q, type:selectedSearchType});
     saveSession(res.user);
     updateCreditsUI();
 
@@ -635,6 +663,7 @@ function renderShop(filter='Discord'){
       <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">${t('viewBtn')}</button></div>
     </div>`;
   }).join('');
+  initCardSpotlight();
 }
 function renderTools(){
   const grid = document.getElementById('tools-grid'); if(!grid) return;
@@ -649,19 +678,18 @@ function renderTools(){
 function renderPlans(){
   const grid=document.getElementById('plans-grid'); if(!grid) return;
   grid.innerHTML=CONFIG.plans.map((p, idx)=>`
-    <div class="plan-card" style="animation:fadeUp .4s ease forwards; animation-delay:${idx*60}ms">
+    <div class="plan-card${p.highlight?' plan-highlight':''}" style="border-color:${p.highlight?'var(--yellow)':p.color+'33'};animation:fadeUp .4s ease forwards;animation-delay:${idx*60}ms">
       ${p.highlight?`<div class="plan-best">${t('bestValue')}</div>`:''}
-      <div class="plan-card-body" style="padding: 24px 20px; border: 1px solid var(--border2); background: var(--panel);">
-        <div class="plan-name" style="color:${p.color}">${p.name}</div>
-        <div class="plan-subtitle">${p.subtitle}</div>
-        <div class="plan-price">${p.price}<span class="plan-period"> ${p.period}</span></div>
-        <div class="plan-searches-badge">${p.searches>=999999?t('unlimitedSearches'):p.searches} ${t('searchesPerDay')}</div>
-        <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
-        <ul class="plan-features">${p.features.map(f=>`<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span>${f.text}</li>`).join('')}</ul>
-        <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?t('currentPlan'):t('subscribeBtn')}</a>
-        <p class="plan-ticket-note">${t('openTicketToActivate')}</p>
-      </div>
+      <div class="plan-name" style="color:${p.color}">${p.name}</div>
+      <div class="plan-subtitle">${p.subtitle}</div>
+      <div class="plan-price">${p.price}<span class="plan-period"> ${p.period}</span></div>
+      <div class="plan-searches-badge">${p.searches>=999999?t('unlimitedSearches'):p.searches} ${t('searchesPerDay')}</div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:0">
+      <ul class="plan-features">${p.features.map(f=>`<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span>${f.text}</li>`).join('')}</ul>
+      <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}"><img src="logo/discord.png" alt="">${(currentUser&&p.id==='plan_free')?t('currentPlan'):t('subscribeBtn')}</a>
+      <p class="plan-ticket-note">${t('openTicketToActivate')}</p>
     </div>`).join('');
+  initCardSpotlight();
 }
 function renderFounders(){
   const c=document.getElementById('founders-grid'); if(!c)return;
@@ -720,14 +748,103 @@ async function loadReviews() {
     const res = await api('get-reviews', {}); const m = document.getElementById('reviews-marquee'); if(!m) return;
     if(!res.reviews || res.reviews.length === 0) { m.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">${t('noReviewsYet')}</div>`; return; }
     let items = res.reviews;
-    if(items.length > 0 && items.length < 15) {
+    if(items.length < 15) {
       let repeated = [];
       const targetCount = items.length === 1 ? 10 : 20;
-      while(repeated.length < targetCount) { repeated = [...repeated, ...items]; }
+      while(repeated.length < targetCount) repeated = [...repeated, ...items];
       items = repeated;
     }
-    m.innerHTML = items.map(r => `<div class="review-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:700;color:var(--white);font-size:13px">${esc(r.pseudo)}</span><span style="color:var(--yellow);font-size:11px">${'★'.repeat(r.stars)}</span></div><p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:8px">${esc(r.text)}</p><div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div></div>`).join('');
+    m.innerHTML = items.map(r => {
+      const initial = (r.pseudo || '?')[0].toUpperCase();
+      const avatar = r.avatar_url
+        ? `<img src="${esc(r.avatar_url)}" class="review-avatar" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        : '';
+      const placeholder = `<div class="review-avatar-placeholder" style="${r.avatar_url?'display:none':''}">${initial}</div>`;
+      return `<div class="review-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          ${avatar}${placeholder}
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:var(--white);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.pseudo)}</div>
+            <div style="color:var(--yellow);font-size:11px">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:8px">${esc(r.text)}</p>
+        <div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
+      </div>`;
+    }).join('');
   } catch(e) {}
+}
+
+// ── CARD SPOTLIGHT ────────────────────────────
+function initCardSpotlight() {
+  document.querySelectorAll('.item-card, .plan-card, .info-card, .how-step, .stat-card').forEach(card => {
+    if(card.dataset.spotlightInit) return;
+    card.dataset.spotlightInit = '1';
+
+    // Add spotlight div for item-cards
+    if(card.classList.contains('item-card') && !card.querySelector('.card-spotlight')) {
+      const sp = document.createElement('div');
+      sp.className = 'card-spotlight';
+      card.appendChild(sp);
+    }
+
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%';
+      const y = ((e.clientY - rect.top)  / rect.height * 100).toFixed(1) + '%';
+      card.style.setProperty('--sx', x);
+      card.style.setProperty('--sy', y);
+      const sp = card.querySelector('.card-spotlight');
+      if(sp) { sp.style.setProperty('--sx', x); sp.style.setProperty('--sy', y); }
+    }, { passive: true });
+  });
+}
+
+// ── AVATAR UPLOAD ─────────────────────────────
+function renderAvatarUpload(box) {
+  const u = currentUser;
+  const initial = (u?.pseudo || u?.email || '?')[0].toUpperCase();
+  const avatarHtml = u?.avatar_url
+    ? `<img src="${esc(u.avatar_url)}" class="avatar-preview-img" id="avatar-preview" alt="">`
+    : `<div class="avatar-preview-placeholder" id="avatar-preview">${initial}</div>`;
+  box.innerHTML = `
+    <div class="avatar-upload-area">
+      ${avatarHtml}
+      <div style="text-align:center">
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Photo de profil visible sur les avis.</p>
+        <label class="avatar-upload-btn" style="cursor:pointer">
+          📸 Choisir une image
+          <input type="file" accept="image/*" id="avatar-file-input" style="display:none" onchange="handleAvatarFile(event)">
+        </label>
+      </div>
+      <p class="modal-note" id="avatar-note" style="min-height:16px"></p>
+    </div>`;
+}
+
+async function handleAvatarFile(e) {
+  const file = e.target.files[0]; if(!file) return;
+  if(file.size > 2 * 1024 * 1024) { setNote('avatar-note', 'Image trop grande (max 2MB).', 'err'); return; }
+  setNote('avatar-note', 'Chargement…', 'inf');
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const b64 = ev.target.result;
+    // Preview
+    const prev = document.getElementById('avatar-preview');
+    if(prev) { prev.src = b64; prev.onerror = null; }
+    try {
+      const res = await api('upload-avatar', { token: sessionToken, imageBase64: b64, mimeType: file.type });
+      currentUser.avatar_url = res.avatar_url;
+      saveSession(currentUser);
+      setNote('avatar-note', '✓ Photo mise à jour !', 'ok');
+    } catch(err) { setNote('avatar-note', err.message, 'err'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function setNote(id, msg, type='') {
+  const el = document.getElementById(id); if(!el) return;
+  el.textContent = msg;
+  el.className = 'modal-note' + (type ? ' '+type : '');
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}

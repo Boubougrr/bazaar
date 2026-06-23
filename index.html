@@ -234,7 +234,7 @@
       <div id="dev-badge" class="dev-badge" style="display:none">STAFF</div>
       <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="nav-discord"><img src="logo/discord.png" alt="">Discord</a>
       <div id="nav-auth-only" style="display:contents">
-        <div class="credits-pill" title="Cliquer pour recharger" onclick="openProfile('credits')"><img src="logo/coins.png" alt=""><span id="sq-left">5</span><span data-i18n="credits">credits</span></div>
+        <div class="credits-pill" title="Crédits restants" onclick="openProfile('credits')"><img src="logo/coins.png" alt=""><span id="sq-left">5</span><span>/</span><span id="sq-max">5</span></div>
         <!-- Gear settings dropdown -->
         <div class="gear-wrap" id="gear-wrap">
           <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
@@ -249,6 +249,7 @@
           </div>
           <div id="user-dropdown">
             <div class="dd-label">Mon compte</div>
+            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('avatar')">🖼️ Photo de profil</div>
             <div class="dd-item" id="dd-pseudo" tabindex="0" role="button" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
 
             <div class="dd-item" tabindex="0" role="button" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
@@ -306,35 +307,57 @@
         </div>
       </div>
 
+      <!-- Credits pill above search -->
+      <div class="search-credits-row" id="search-credits-row" style="display:none">
+        <div class="credits-above-pill" onclick="openProfile('credits')" title="Acheter des crédits">
+          <img src="logo/coins.png" alt="">
+          <span id="credits-above-num">5</span> / <span id="credits-above-max">5</span> Crédits Restants
+        </div>
+      </div>
+
       <div class="search-panel">
-        <div class="search-mode-tabs">
-          <div class="mode-tab active" tabindex="0" role="button" data-mode="auto" onclick="setSearchMode('auto')">Auto-détection</div>
+        <!-- Hidden legacy selects kept for JS compatibility -->
+        <div class="search-mode-tabs" style="display:none">
+          <div class="mode-tab active" tabindex="0" role="button" data-mode="auto" onclick="setSearchMode('auto')">Auto</div>
           <div class="mode-tab" tabindex="0" role="button" data-mode="manual" onclick="setSearchMode('manual')">Manuel</div>
         </div>
-        <div class="sel-row" id="manual-select-row" style="display:none">
-          <label>Type</label>
-          <div class="sel-inner">
-            <img class="sel-icon" id="sel-icon-img" src="logo/phone.png" alt="">
-            <select class="type-select" id="search-type" onchange="updateSelIcon()">
-              <option value="phone"    data-icon="logo/phone.png">Téléphone</option>
-              <option value="mail"     data-icon="logo/mail.png">Email</option>
-              <option value="username" data-icon="logo/user.png">Username</option>
-              <option value="discord"  data-icon="logo/discord.png">Discord ID</option>
-              <option value="ip"       data-icon="logo/ip.png">Adresse IP</option>
-            </select>
+        <select id="search-type" style="display:none">
+          <option value="auto">Auto</option>
+          <option value="phone">Téléphone</option>
+          <option value="mail">Email</option>
+          <option value="username">Username</option>
+          <option value="discord">Discord ID</option>
+          <option value="ip">Adresse IP</option>
+        </select>
+
+        <!-- Compact search row -->
+        <div class="search-main-row">
+          <div class="search-input-wrap">
+            <img class="search-icon-left" src="logo/loupe.png" alt="">
+            <input class="search-input" id="search-input" placeholder="Entrez une cible…" autocomplete="off">
+          </div>
+          <button class="btn btn-primary search-submit-btn" id="search-btn" onclick="doSearch()">Rechercher →</button>
+        </div>
+
+        <!-- Type selector pills -->
+        <div class="search-type-selector">
+          <span class="search-type-label">Type de recherche :</span>
+          <div class="search-type-pills">
+            <button class="s-type-pill active" data-type="auto" onclick="selectSearchType('auto')">🔮 Auto</button>
+            <button class="s-type-pill" data-type="mail" onclick="selectSearchType('mail')"><img src="logo/mail.png" alt=""> Email</button>
+            <button class="s-type-pill" data-type="username" onclick="selectSearchType('username')"><img src="logo/user.png" alt=""> Username</button>
+            <button class="s-type-pill" data-type="discord" onclick="selectSearchType('discord')"><img src="logo/discord.png" alt=""> Discord ID</button>
+            <button class="s-type-pill" data-type="ip" onclick="selectSearchType('ip')"><img src="logo/ip.png" alt=""> IP</button>
+            <button class="s-type-pill" data-type="phone" onclick="selectSearchType('phone')"><img src="logo/phone.png" alt=""> Phone</button>
           </div>
         </div>
-        <div class="search-row">
-          <input class="search-input" id="search-input" placeholder="Entrez une cible (auto-détection du type)…">
-          <button class="btn btn-primary" id="search-btn" onclick="doSearch()">Rechercher</button>
-        </div>
+
         <div id="search-guest-msg" style="display:none;margin-top:14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:var(--r);padding:12px;text-align:center">
           <p style="font-size:13px;color:var(--red);font-weight:700;margin-bottom:8px">Connexion requise pour rechercher</p>
           <button class="btn btn-outline" style="width:100%;font-size:12px;padding:8px" onclick="document.getElementById('auth-screen').classList.remove('hidden')">Se connecter</button>
         </div>
-        <div class="search-footer">
-          <p>Crédits restants : <span id="sr-left">5</span></p>
-          <p id="sr-reset" style="display:none">Reset dans : <span id="sr-timer" style="color:var(--white);font-weight:700"></span></p>
+        <div class="search-footer" style="margin-top:12px">
+          <p id="sr-reset" style="display:none;font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace">Reset dans : <span id="sr-timer" style="color:var(--white);font-weight:700"></span></p>
         </div>
         <div class="search-loading" id="search-loading">
           <div class="search-loading-bar"><div class="search-loading-fill" id="search-fill"></div></div>
@@ -587,39 +610,61 @@
 
   <footer>
     <div class="footer-inner">
-      <div class="footer-info">
+      <!-- Brand -->
+      <div class="footer-brand">
         <div class="footer-logo">BAZAAR</div>
-        <p style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6">Plateforme OSINT — 2026<br>Usage légal uniquement.<br>All rights reserved.</p>
-      </div>
-      
-      <div class="footer-nav-links">
-        <div class="footer-col">
-          <h4 data-i18n="navTitle">Navigation</h4>
-          <div class="footer-links-grid">
-            <a onclick="gotoPage('home')" data-i18n="home">Accueil</a>
-            <a onclick="gotoPage('shop')" data-i18n="shop">Boutique</a>
-            <a onclick="gotoPage('tools')">Tools</a>
-            <a onclick="gotoPage('subs')" data-i18n="subs">Abonnements</a>
-            <a onclick="gotoPage('features')" data-i18n="features">Fonctionnalités</a>
-            <a onclick="gotoPage('contact')" data-i18n="contact">Contact</a>
-            <a onclick="gotoPage('about')" data-i18n="about">À propos</a>
-          </div>
+        <p class="footer-brand-desc">Plateforme OSINT professionnelle fondée en 2026.<br>Croisez des millions de données en quelques secondes.<br>Usage légal et éthique uniquement.</p>
+        <div class="footer-badges">
+          <span class="footer-badge"><img src="logo/loupe.png" alt="">47 Sources</span>
+          <span class="footer-badge"><img src="logo/tools.png" alt="">99.2% Uptime</span>
+          <span class="footer-badge"><img src="logo/ltc.png" alt="">Crypto</span>
         </div>
+        <div onclick="copyLTC()" class="footer-ltc" title="Cliquer pour copier">⚡ LTC : LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</div>
+      </div>
 
-        <div class="footer-col">
-          <h4 data-i18n="communityTitle">Communauté</h4>
-          <p style="margin-bottom:10px" data-i18n="communityDesc">Support & News sur Discord.</p>
-          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="padding:10px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; width:fit-content; background:#5865f2; color:#fff">
-            <img src="logo/discord.png" alt="" style="width:16px; height:16px; margin-right:8px">
-            <span data-i18n="joinDiscord">Rejoindre le Discord</span>
-          </a>
+      <!-- Navigation -->
+      <div class="footer-section">
+        <h4>Navigation</h4>
+        <div class="footer-links">
+          <a onclick="gotoPage('home')">🏠 Accueil</a>
+          <a onclick="gotoPage('shop')">🛒 Boutique</a>
+          <a onclick="gotoPage('tools')">🔧 Tools</a>
+          <a onclick="gotoPage('subs')">💎 Abonnements</a>
+          <a onclick="gotoPage('features')">⚡ Fonctionnalités</a>
+          <a onclick="gotoPage('about')">👥 À propos</a>
+        </div>
+      </div>
+
+      <!-- Services -->
+      <div class="footer-section">
+        <h4>Services</h4>
+        <div class="footer-links">
+          <a onclick="gotoPage('shop')">Nitro Discord</a>
+          <a onclick="gotoPage('shop')">Server Boosting</a>
+          <a onclick="gotoPage('shop')">Currency Exchange</a>
+          <a onclick="gotoPage('tools')">Phone OSINT</a>
+          <a onclick="gotoPage('tools')">Username Checker</a>
+          <a onclick="gotoPage('subs')">Plan Lifetime</a>
+        </div>
+      </div>
+
+      <!-- Communauté -->
+      <div class="footer-section">
+        <h4>Communauté</h4>
+        <p style="font-size:13px;color:var(--text3);line-height:1.6">Support, annonces et codes promo sur notre serveur Discord 7j/7.</p>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="footer-discord-btn">
+          <img src="logo/discord.png" alt="">discord.gg/ssYFSXRGPP
+        </a>
+        <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+          <p style="font-size:12px;color:var(--text3)">💳 <strong style="color:var(--text2)">PayPal F&F :</strong> phoenix.guecko@gmail.com</p>
+          <p style="font-size:12px;color:var(--text3)">⚡ <strong style="color:var(--text2)">Support :</strong> &lt; 2h sur Discord</p>
         </div>
       </div>
     </div>
-    
+
     <div class="footer-bottom">
-      <p>© 2026 Bazaar Services — Boubou · ZIamana</p>
-      <p>LTC : <span style="font-family:'JetBrains Mono',monospace;color:var(--yellow);font-size:11px">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></p>
+      <p>© 2026 Bazaar Services — Boubou &amp; ZIamana. All rights reserved.</p>
+      <p style="font-size:11px;color:var(--text3)">Usage légal uniquement — Données publiques uniquement</p>
     </div>
   </footer>
 </div>

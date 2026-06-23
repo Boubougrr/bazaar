@@ -13,8 +13,8 @@ body.custom-cursor #cursor{display:block;}
 
 /* MOUSE LIGHT — Interactive illumination */
 #mouse-light{
-  position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:radial-gradient(circle 150px at var(--mx, 50%) var(--my, 50%), rgba(123,110,246,0.15), transparent 100%);
+  position:fixed;inset:0;z-index:120;pointer-events:none;
+  background:radial-gradient(circle 380px at var(--mx, 50%) var(--my, 50%), rgba(123,110,246,0.12), rgba(123,110,246,0.04) 50%, transparent 100%);
   mix-blend-mode:screen;
 }
 
@@ -63,7 +63,9 @@ nav{display:flex;align-items:center;padding:0 24px;height:64px;background:rgba(1
 /* FOUNDERS PROFILE PICS */
 .team-img{width:60px;height:60px;border-radius:50%;margin-bottom:10px;object-fit:cover;border:2px solid var(--border2);transition:transform .3s;}
 .team-card:hover .team-img{transform:scale(1.1) rotate(5deg);border-color:var(--accent);}
-.credits-pill:hover{border-color:var(--yellow);color:var(--yellow);}
+.credits-pill{display:flex;align-items:center;gap:6px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.22);border-radius:20px;padding:5px 12px;color:var(--yellow);font-size:12px;font-weight:700;cursor:pointer;transition:all .16s;white-space:nowrap;}
+.credits-pill img{width:14px;height:14px;object-fit:contain;flex-shrink:0;}
+.credits-pill:hover{background:rgba(251,191,36,.15);border-color:var(--yellow);box-shadow:0 0 12px rgba(251,191,36,.2);}
 .nav-discord{display:flex;align-items:center;gap:6px;background:#5865f2;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;text-decoration:none;white-space:nowrap;transition:all .16s;}
 .nav-discord:hover{background:#4a57e0;transform:translateY(-1px);}
 .nav-discord img{width:15px;height:15px;}
@@ -175,7 +177,7 @@ textarea.inp{resize:vertical;min-height:90px;}
 
 /* PLANS */
 .plans-wrapper{max-width:1100px;margin:0 auto;}
-.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start;}
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch;}
 .plan-card{background:var(--panel);border:1px solid var(--border2);border-radius:var(--r2);padding:24px 20px;display:flex;flex-direction:column;gap:14px;position:relative;transition:border-color .2s,transform .2s,box-shadow .2s;}
 .plan-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.5);}
 .plan-best{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:11px;font-weight:800;padding:4px 14px;border-radius:20px;white-space:nowrap;letter-spacing:.5px;z-index:10;box-shadow:0 4px 12px rgba(123,110,246,0.4);}

@@ -38,9 +38,12 @@ export default async function handler(req, res) {
 
   if (ipReviews >= 2) return res.status(400).json({ error: 'Limite de 2 avis par IP atteinte.' });
 
+  const { data: authUserFull } = await supabase.from('users').select('avatar_url').eq('id', user_id).single();
+  const avatar_url = authUserFull?.avatar_url || null;
+
   const { data, error } = await supabase
     .from('reviews')
-    .insert([{ user_id, pseudo, text, stars, ip, created_at: new Date().toISOString() }])
+    .insert([{ user_id, pseudo, text, stars, ip, avatar_url, created_at: new Date().toISOString() }])
     .select('*')
     .single();
 
