@@ -14,7 +14,7 @@ body.custom-cursor #cursor{display:block;}
 /* MOUSE LIGHT — Interactive illumination */
 #mouse-light{
   position:fixed;inset:0;z-index:120;pointer-events:none;
-  background:radial-gradient(circle 380px at var(--mx, 50%) var(--my, 50%), rgba(123,110,246,0.12), rgba(123,110,246,0.04) 50%, transparent 100%);
+  background:radial-gradient(circle 260px at var(--mx, 50%) var(--my, 50%), rgba(123,110,246,0.05), rgba(123,110,246,0.015) 55%, transparent 100%);
   mix-blend-mode:screen;
 }
 

@@ -350,9 +350,14 @@ function generateCaptcha() {
     const el = document.createElement('div'); el.className = `captcha-shape ${type}`;
     el.tabIndex = 0; el.setAttribute('role','button');
     el.setAttribute('aria-label', type === 'triangle' ? 'Triangle' : 'Carré');
-    el.onclick = () => {
-      if(type === 'triangle') { captchaSolved = true; document.getElementById('captcha-status').textContent = t('captchaOk'); generateCaptcha(); }
-      else { notify(t('captchaWrong'), true); generateCaptcha(); }
+    el.onclick = function() {
+      if(type === 'triangle') {
+        captchaSolved = true;
+        const st = document.getElementById('captcha-status');
+        if(st){ st.textContent = t('captchaOk'); st.style.color = '#4ade80'; st.style.fontWeight = '700'; }
+        game.querySelectorAll('.captcha-shape').forEach(s => { s.style.pointerEvents = 'none'; s.style.opacity = '.4'; });
+        this.style.opacity = '1'; this.style.filter = 'drop-shadow(0 0 8px #7b6ef6)';
+      } else { notify(t('captchaWrong'), true); generateCaptcha(); }
     };
     game.appendChild(el);
   });
@@ -552,9 +557,12 @@ function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   document.getElementById('page-'+name)?.classList.add('active');
-  const pages=['home','shop','tools','subs','features','contact','about'];
+  const pages=['home','shop','tools','subs','features','contact','about','settings'];
   const idx=pages.indexOf(name); if(idx>=0)document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
+  if(name==='settings') applySettings();
 }
+
+function openSettings(){ gotoPage('settings'); closeDropdown?.(); }
 
 function getCreditsLeft(){ return currentUser ? Math.max(0, (currentUser.credits_max||5) - (currentUser.credits_used||0)) : 0; }
 function updateCreditsUI(){
@@ -657,7 +665,7 @@ function renderShop(filter='Discord'){
   }
   grid.innerHTML=items.map((item, idx)=>{
     const locked=item.premium&&!vip;
-    return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
+    return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
       <div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.premium?'<span class="premium-crown">👑</span>':''}${locked?'<div class="lock-overlay">🔒</div>':''}</div>
       <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?t('lockedDesc'):item.desc.substring(0,80)+'…'}</p></div>
       <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">${t('viewBtn')}</button></div>
@@ -671,14 +679,14 @@ function renderTools(){
   const visible=CONFIG.tools.filter(i=>i.category==='FreeTools' || (i.category==='Tools' && vip));
   const locked=CONFIG.tools.filter(i=>i.category==='Tools' && !vip);
   grid.innerHTML=[
-    ...visible.map((item, idx)=>`<div class="item-card${item.category==='Tools'?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.category==='Tools'?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="${item.category==='Tools'?'premium-price':'card-free'}">${item.category==='Tools'?t('premiumBadge'):t('freeBadge')}</span><button class="btn-sm">${t('viewBtn')}</button></div></div>`),
-    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="lock-overlay">🔒</div><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${t('paidToolDesc')}</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">${t('unlockBtn')}</button></div></div>`)
+    ...visible.map((item)=>`<div class="item-card${item.category==='Tools'?' premium-card':''}" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.category==='Tools'?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="${item.category==='Tools'?'premium-price':'card-free'}">${item.category==='Tools'?t('premiumBadge'):t('freeBadge')}</span><button class="btn-sm">${t('viewBtn')}</button></div></div>`),
+    ...locked.map((item)=>`<div class="item-card premium-card locked-card" onclick="notifyVipRequired()"><div class="lock-overlay">🔒</div><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${t('paidToolDesc')}</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">${t('unlockBtn')}</button></div></div>`)
   ].join('');
 }
 function renderPlans(){
   const grid=document.getElementById('plans-grid'); if(!grid) return;
   grid.innerHTML=CONFIG.plans.map((p, idx)=>`
-    <div class="plan-card${p.highlight?' plan-highlight':''}" style="border-color:${p.highlight?'var(--yellow)':p.color+'33'};animation:fadeUp .4s ease forwards;animation-delay:${idx*60}ms">
+    <div class="plan-card${p.highlight?' plan-highlight':''}" style="border-color:${p.highlight?'var(--yellow)':p.color+'33'}">
       ${p.highlight?`<div class="plan-best">${t('bestValue')}</div>`:''}
       <div class="plan-name" style="color:${p.color}">${p.name}</div>
       <div class="plan-subtitle">${p.subtitle}</div>

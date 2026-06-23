@@ -490,44 +490,140 @@
 
   <!-- FEATURES -->
   <div class="page" id="page-features">
-    <div class="main-content" style="align-items:center">
-      <div class="page-header" style="text-align:center"><h1><img src="logo/fonction.png" alt="">Fonctionnalités</h1><p>Capacités de la plateforme.</p></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:12px;margin-bottom:22px;width:100%;max-width:900px">
-        <div class="info-card"><h3>Recherche OSINT</h3><p>Multi-sources : Phone, Email, Username, Discord ID, IP. 47 sources en temps réel.</p></div>
-        <div class="info-card"><h3>Auto-détection</h3><p>Le moteur détecte automatiquement le type de cible saisie.</p></div>
-        <div class="info-card"><h3>Sécurité 60s</h3><p>Délai de 60 secondes entre chaque recherche pour protéger la plateforme.</p></div>
-        <div class="info-card"><h3>Crédits 24h</h3><p>Crédits réinitialisés 24h après épuisement. Rechargeable via Discord (0.25€/crédit).</p></div>
-        <div class="info-card"><h3>Multi-langue</h3><p>Interface disponible en Français et Anglais. Changez dans Paramètres.</p></div>
-        <div class="info-card"><h3>Multi-paiement</h3><p>LTC et PayPal F&amp;F en EUR. Paysafecard via Discord.</p></div>
+    <div class="main-content" style="align-items:center;max-width:1100px;margin:0 auto">
+      <div class="page-header" style="text-align:center">
+        <h1><img src="logo/fonction.png" alt="">Fonctionnalités</h1>
+        <p>Tout ce que Bazaar offre — OSINT, sécurité, flexibilité.</p>
       </div>
-      <div class="info-card" style="max-width:440px">
-        <h3>Crédits de recherche</h3>
-        <p>• <strong>Standard :</strong> 5 crédits / 24h</p>
-        <p>• <strong>Starter :</strong> 20 crédits / 24h</p>
-        <p>• <strong>Pro :</strong> 50 crédits / 24h</p>
-        <p>• <strong>Lifetime :</strong> illimités</p>
-        <p style="font-size:12px;color:var(--text3);margin-top:4px">Recharge : 1 crédit = 0.25€ via Discord</p>
+
+      <!-- Stat strip -->
+      <div class="stats-row" style="margin-bottom:28px">
+        <div class="stat-card"><div class="stat-num">47</div><div class="stat-label">Sources OSINT</div></div>
+        <div class="stat-card"><div class="stat-num">99.2%</div><div class="stat-label">Uptime</div></div>
+        <div class="stat-card"><div class="stat-num">&lt;2s</div><div class="stat-label">Temps de réponse</div></div>
+        <div class="stat-card"><div class="stat-num">5+</div><div class="stat-label">Paiements acceptés</div></div>
+      </div>
+
+      <!-- Feature grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;width:100%;margin-bottom:28px">
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">🔍</div>
+          <h3>Recherche OSINT</h3>
+          <p>47 sources interrogées simultanément. Phone, Email, Username, Discord ID, adresse IP — un seul champ de saisie.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">🤖</div>
+          <h3>Auto-détection</h3>
+          <p>Le moteur identifie automatiquement le type de cible saisie. Aucune configuration manuelle requise.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">⚡</div>
+          <h3>Résultats instantanés</h3>
+          <p>Résultats agrégés en moins de 2 secondes grâce à des requêtes parallèles sur toutes les sources.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">🔒</div>
+          <h3>Sécurité intégrée</h3>
+          <p>Délai anti-spam entre les recherches. Tokens de session signés HMAC. Pas de stockage de résultats.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">💎</div>
+          <h3>Plans flexibles</h3>
+          <p>De 5 recherches/j en Standard à l'illimité en Lifetime. Choisissez selon vos besoins.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">🌍</div>
+          <h3>Bilingue FR / EN</h3>
+          <p>Interface complète en Français et Anglais. Changez instantanément dans les Paramètres.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">💰</div>
+          <h3>Multi-paiement</h3>
+          <p>LTC, PayPal F&amp;F, Paysafecard, et autres cryptos. Paiements traités via Discord.</p>
+        </div>
+        <div class="info-card">
+          <div style="font-size:28px;margin-bottom:10px">🛒</div>
+          <h3>Boutique intégrée</h3>
+          <p>Nitro Discord, Server Boosts, Currency Exchange — au meilleur prix, sans intermédiaire.</p>
+        </div>
+      </div>
+
+      <!-- Credits table -->
+      <div class="info-card" style="width:100%;max-width:600px">
+        <h3 style="margin-bottom:16px">Crédits par plan</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
+          <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Plan</div>
+          <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Crédits/j</div>
+          <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">Prix</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Standard</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">5</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:#4ade80;font-weight:700">Gratuit</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Starter</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">20</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--yellow);font-weight:700">2.99€/mois</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Pro</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">50</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--yellow);font-weight:700">5.99€/mois</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Lifetime</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--accent);font-weight:700">∞</div>
+          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--accent);font-weight:700">19.99€ une fois</div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- CONTACT -->
   <div class="page" id="page-contact">
-    <div class="main-content" style="align-items:center; justify-content:center">
-        <div class="page-header" style="text-align:center"><h1><img src="logo/mail.png" alt="">Contact</h1><p>Support &amp; assistance.</p></div>
-        <div class="contact-grid">
-        <div class="info-card">
-          <h3>Discord officiel</h3>
-          <p>Notre serveur Discord est le principal canal de support.</p>
-          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:10px"><img src="logo/discord.png" alt="">Rejoindre le serveur</a>
-          <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#fff;margin-top:12px;margin-bottom:0;font-weight:700">discord.gg/ssYFSXRGPP</p>
+    <div class="main-content" style="align-items:center;max-width:900px;margin:0 auto">
+      <div class="page-header" style="text-align:center">
+        <h1><img src="logo/mail.png" alt="">Contact</h1>
+        <p>Notre équipe vous répond en moins de 2 heures.</p>
+      </div>
+
+      <!-- Main contact card -->
+      <div class="info-card" style="width:100%;margin-bottom:16px;flex-direction:row;align-items:center;gap:24px;flex-wrap:wrap">
+        <div style="background:linear-gradient(135deg,rgba(88,101,242,.2),rgba(88,101,242,.05));border:1px solid rgba(88,101,242,.3);border-radius:16px;padding:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <img src="logo/discord.png" alt="" style="width:44px;height:44px">
         </div>
-        <div class="info-card">
-          <h3>Temps de réponse</h3>
-          <p>• Discord : &lt; 2 heures</p>
-          <p>• Commandes : 1–24 heures</p>
-          <p>• Support technique : 24–48 heures</p>
-          <p style="margin-top:10px;font-size:12px;color:var(--text3);margin-bottom:0">Disponible 7j/7</p>
+        <div style="flex:1;min-width:200px">
+          <h3 style="font-size:18px;margin-bottom:6px">Discord Officiel</h3>
+          <p style="margin-bottom:14px">Canal principal pour le support, les commandes, les annonces et les codes promo exclusifs.</p>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex">
+            <img src="logo/discord.png" alt="">Rejoindre le serveur
+          </a>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--white);font-weight:700;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:10px 16px;white-space:nowrap">
+          discord.gg/ssYFSXRGPP
+        </div>
+      </div>
+
+      <!-- Info grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%">
+        <div class="info-card" style="text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">⏱️</div>
+          <h3 style="font-size:14px;margin-bottom:8px">Temps de réponse</h3>
+          <p style="font-size:13px"><strong style="color:var(--green,#4ade80)">&lt; 2h</strong> en général</p>
+          <p style="font-size:12px;color:var(--text3);margin-top:4px">Support 7j/7</p>
+        </div>
+        <div class="info-card" style="text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">💳</div>
+          <h3 style="font-size:14px;margin-bottom:8px">PayPal F&amp;F</h3>
+          <p style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);word-break:break-all">phoenix.guecko<br>@gmail.com</p>
+        </div>
+        <div class="info-card" style="text-align:center">
+          <div style="font-size:32px;margin-bottom:10px">⚡</div>
+          <h3 style="font-size:14px;margin-bottom:8px">LTC</h3>
+          <p style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--yellow);word-break:break-all;cursor:pointer" onclick="copyLTC()">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</p>
+          <button class="btn btn-outline" style="font-size:11px;padding:5px 12px;margin-top:8px" onclick="copyLTC()">Copier</button>
+        </div>
+      </div>
+
+      <!-- SLA note -->
+      <div style="background:rgba(123,110,246,.07);border:1px solid rgba(123,110,246,.2);border-radius:var(--r);padding:16px 20px;margin-top:16px;width:100%;display:flex;align-items:flex-start;gap:12px">
+        <span style="font-size:20px;flex-shrink:0">ℹ️</span>
+        <div>
+          <p style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px">Pour les commandes</p>
+          <p style="font-size:13px;color:var(--text2)">Ouvrez un ticket sur Discord. Précisez votre commande, votre méthode de paiement et votre pseudo Bazaar. Délai de livraison : 1 à 24 heures.</p>
         </div>
       </div>
     </div>
@@ -535,36 +631,98 @@
 
   <!-- ABOUT -->
   <div class="page" id="page-about">
-    <div class="main-content" style="align-items:center">
-      <div class="page-header" style="text-align:center"><h1><img src="logo/user.png" alt="">À propos</h1><p>Bazaar Services — 2026</p></div>
-      <div class="info-card" style="margin-bottom:12px;width:100%;max-width:800px"><h3>Qui sommes-nous ?</h3><p>Bazaar est une plateforme OSINT fondée en 2026 par une équipe passionnée de cybersécurité.</p><p style="font-size:12px;color:var(--text3);margin-bottom:0">⚠️ Usage légal et éthique uniquement.</p></div>
-      <div class="info-card" style="margin-bottom:12px;width:100%;max-width:800px"><h3>Fondateurs</h3><div class="team-grid" id="founders-grid" style="justify-content:center"></div></div>
-      <div class="info-card" style="width:100%;max-width:800px"><h3>Paiement &amp; Commandes</h3>
-        <p>Tous les achats via Discord — ouvrez un ticket.</p>
-        <p>• <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span> <button class="ltc-copy" onclick="copyLTC()" style="margin-left:6px">Copier</button></p>
-        <p>• <strong>PayPal F&amp;F :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></p>
-        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px"><img src="logo/discord.png" alt="">Rejoindre &amp; Commander</a>
+    <div class="main-content" style="align-items:center;max-width:900px;margin:0 auto">
+      <div class="page-header" style="text-align:center">
+        <h1><img src="logo/user.png" alt="">À propos</h1>
+        <p>Bazaar Services — La référence OSINT francophone depuis 2026.</p>
+      </div>
+
+      <!-- Mission -->
+      <div class="info-card" style="width:100%;margin-bottom:16px">
+        <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+          <div style="font-size:40px;flex-shrink:0">🎯</div>
+          <div style="flex:1;min-width:220px">
+            <h3 style="margin-bottom:8px">Notre mission</h3>
+            <p>Bazaar est une plateforme OSINT (Open Source Intelligence) fondée en 2026 par deux passionnés de cybersécurité. Notre objectif : rendre la recherche d'informations publiques accessible, rapide et fiable — en un seul endroit.</p>
+            <p style="margin-top:10px;padding:10px 14px;background:rgba(248,113,113,.08);border-left:3px solid rgba(248,113,113,.4);border-radius:0 var(--r) var(--r) 0;font-size:12px;color:var(--text2)">⚠️ Bazaar n'utilise que des données publiquement accessibles. Usage légal et éthique strictement requis.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team -->
+      <div class="info-card" style="width:100%;margin-bottom:16px">
+        <h3 style="margin-bottom:16px">L'équipe fondatrice</h3>
+        <div class="team-grid" id="founders-grid" style="justify-content:flex-start"></div>
+      </div>
+
+      <!-- Stats + payments -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%">
+        <div class="info-card">
+          <h3 style="margin-bottom:14px">En chiffres</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:var(--text2)">Sources OSINT</span>
+              <span style="font-weight:800;color:var(--accent)">47</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:var(--text2)">Disponibilité</span>
+              <span style="font-weight:800;color:#4ade80">99.2%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:13px;color:var(--text2)">Support</span>
+              <span style="font-weight:800;color:var(--white)">7j/7</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+              <span style="font-size:13px;color:var(--text2)">Fondé en</span>
+              <span style="font-weight:800;color:var(--white)">2026</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-card">
+          <h3 style="margin-bottom:14px">Paiements acceptés</h3>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+              <img src="logo/ltc.png" alt="" style="width:20px;height:20px;object-fit:contain">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--white)">Litecoin (LTC)</div>
+                <div style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--yellow);cursor:pointer" onclick="copyLTC()">LgajyZa9… · Cliquer pour copier</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+              <span style="font-size:20px">💳</span>
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--white)">PayPal F&amp;F</div>
+                <div style="font-size:11px;color:var(--accent)">phoenix.guecko@gmail.com</div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+              <span style="font-size:20px">🎟️</span>
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--white)">Paysafecard &amp; Autres</div>
+                <div style="font-size:11px;color:var(--text3)">Via ticket Discord uniquement</div>
+              </div>
+            </div>
+          </div>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:14px;font-size:12px">
+            <img src="logo/discord.png" alt="">Ouvrir un ticket
+          </a>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
-    <div class="main-content">
-      <div class="page-header"><h1>⚙ Paramètres</h1><p>Personnalisez votre expérience sur Bazaar.</p></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:16px">
-        
+    <div class="main-content" style="max-width:900px;margin:0 auto">
+      <div class="page-header"><h1>⚙️ Paramètres</h1><p>Personnalisez votre expérience Bazaar.</p></div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
+
+        <!-- Langue -->
         <div class="info-card">
-          <h3>Apparence</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🌍 Langue</h3>
           <div class="setting-group-v">
-            <div class="setting-label">Thème de l'interface</div>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
-              <button class="setting-btn" id="p-theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
-            </div>
-          </div>
-          <div class="setting-group-v">
-            <div class="setting-label">Langue</div>
+            <div class="setting-label">Interface language</div>
             <div class="setting-options">
               <button class="setting-btn" id="p-lang-fr" onclick="setLang('fr')">🇫🇷 Français</button>
               <button class="setting-btn" id="p-lang-en" onclick="setLang('en')">🇬🇧 English</button>
@@ -572,19 +730,26 @@
           </div>
         </div>
 
+        <!-- Apparence -->
         <div class="info-card">
-          <h3>Interaction</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🎨 Apparence</h3>
           <div class="setting-group-v">
+            <div class="setting-label">Thème</div>
+            <div class="setting-options">
+              <button class="setting-btn" id="p-theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
+              <button class="setting-btn" id="p-theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
+            </div>
+          </div>
+          <div class="setting-group-v" style="margin-top:14px">
             <div class="setting-label">Curseur personnalisé</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Active ou désactive le cercle blanc qui suit votre souris.</p>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Le cercle blanc qui suit votre souris.</p>
             <div class="setting-options">
               <button class="setting-btn" id="p-cursor-on" onclick="setCursor(true)">✓ Activé</button>
               <button class="setting-btn" id="p-cursor-off" onclick="setCursor(false)">✕ Désactivé</button>
             </div>
           </div>
-          <div class="setting-group-v">
-            <div class="setting-label">Animations</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Désactiver pour une navigation plus sobre et rapide.</p>
+          <div class="setting-group-v" style="margin-top:14px">
+            <div class="setting-label">Animations UI</div>
             <div class="setting-options">
               <button class="setting-btn" id="p-anim-on" onclick="setAnim(true)">✓ Activées</button>
               <button class="setting-btn" id="p-anim-off" onclick="setAnim(false)">✕ Désactivées</button>
@@ -592,16 +757,57 @@
           </div>
         </div>
 
+        <!-- Recherche -->
         <div class="info-card">
-          <h3>Recherche</h3>
+          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🔍 Recherche</h3>
           <div class="setting-group-v">
             <div class="setting-label">Mode par défaut</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">L'auto-détection tente de trouver le type de votre cible.</p>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">L'auto-détection identifie le type de cible automatiquement.</p>
             <div class="setting-options">
-              <button class="setting-btn" id="p-sm-auto" onclick="setDefaultSearchMode('auto')">Auto-détection</button>
-              <button class="setting-btn" id="p-sm-manual" onclick="setDefaultSearchMode('manual')">Manuel</button>
+              <button class="setting-btn" id="p-sm-auto" onclick="setDefaultSearchMode('auto')">🔮 Auto-détection</button>
+              <button class="setting-btn" id="p-sm-manual" onclick="setDefaultSearchMode('manual')">⚙️ Manuel</button>
             </div>
           </div>
+        </div>
+
+        <!-- Compte -->
+        <div class="info-card" id="settings-account-card">
+          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">👤 Compte</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="gotoPage('settings');openProfile('avatar')">🖼️ Changer la photo de profil</button>
+            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('pseudo')">✏️ Changer le pseudo</button>
+            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('password')">🔑 Changer le mot de passe</button>
+            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('email')">📧 Changer l'email</button>
+            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('coupon')">🎟️ Appliquer un code promo</button>
+            <div class="dd-sep" style="margin:4px 0"></div>
+            <button class="btn" style="width:100%;background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--red);justify-content:flex-start;gap:10px" onclick="logout()">🚪 Se déconnecter</button>
+          </div>
+        </div>
+
+        <!-- Version / infos -->
+        <div class="info-card">
+          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">ℹ️ À propos de l'app</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Version</span>
+              <span style="font-family:'JetBrains Mono',monospace;color:var(--white);font-weight:700">v2.1</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Plateforme</span>
+              <span style="color:var(--white)">Bazaar Services</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
+              <span style="color:var(--text3)">Fondé en</span>
+              <span style="color:var(--white)">2026</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
+              <span style="color:var(--text3)">Créateurs</span>
+              <span style="color:var(--white)">Boubou &amp; ZIamana</span>
+            </div>
+          </div>
+          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:16px;font-size:12px;width:100%;justify-content:center">
+            <img src="logo/discord.png" alt="">Rejoindre le Discord
+          </a>
         </div>
 
       </div>
