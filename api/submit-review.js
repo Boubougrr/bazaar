@@ -1,5 +1,6 @@
 // api/submit-review.js
 import { createClient } from '@supabase/supabase-js';
+import { verifySession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -8,8 +9,16 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { user_id, pseudo, text, stars } = req.body;
-  if (!user_id || !text || !stars) return res.status(400).json({ error: 'Champs manquants.' });
+  const { token, text, stars } = req.body;
+  if (!text || !stars) return res.status(400).json({ error: 'Champs manquants.' });
+
+  const user_id = verifySession(token);
+  if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
+
+  // pseudo is derived from the authenticated account, never trusted from the client
+  const { data: authUser } = await supabase.from('users').select('pseudo').eq('id', user_id).single();
+  if (!authUser) return res.status(401).json({ error: 'Non autorisé.' });
+  const pseudo = authUser.pseudo;
 
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 

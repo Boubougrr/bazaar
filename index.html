@@ -4,29 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bazaar Services</title>
-<link rel="icon" type="image/png" href="logo/logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="logo/coins.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/extra.css">
-<script>document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('keydown',e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&['I','J','C','U'].includes(e.key))||(e.ctrlKey&&e.key==='U'))e.preventDefault();});</script>
 </head>
 <body>
 <div id="app-loader">
   <div class="loader-logo">BAZAAR</div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
 </div>
-<div id="cursor"></div>
-<div id="mouse-light"></div>
-<canvas id="bg-canvas"></canvas>
+<div id="cursor" aria-hidden="true"></div>
+<div id="mouse-light" aria-hidden="true"></div>
 <div class="dot-bg"></div><div class="dot-bg-right"></div>
 <div id="notif" class="notif"></div>
 
 <!-- ═══ SETTINGS MODAL ═══ -->
-<div class="modal-bg" id="settings-modal">
+<div class="modal-bg" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
-      <h2 data-i18n="settings">Paramètres</h2>
-      <button class="modal-close-btn" onclick="closeSettings()">✕</button>
+      <h2 id="settings-title" data-i18n="settings">Paramètres</h2>
+      <button class="modal-close-btn" aria-label="Fermer" onclick="closeSettings()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px">
 
@@ -106,8 +104,8 @@
     </div>
     <div class="auth-right">
       <div class="auth-tabs">
-        <div class="auth-tab active" onclick="switchAuthTab('login')" data-i18n="login">Se connecter</div>
-        <div class="auth-tab" onclick="switchAuthTab('signup')" data-i18n="signup">Créer un compte</div>
+        <div class="auth-tab active" tabindex="0" role="button" onclick="switchAuthTab('login')" data-i18n="login">Se connecter</div>
+        <div class="auth-tab" tabindex="0" role="button" onclick="switchAuthTab('signup')" data-i18n="signup">Créer un compte</div>
       </div>
 
       <!-- LOGIN -->
@@ -138,15 +136,15 @@
           
           <div id="pass-strength-wrap" style="margin-top:-8px;margin-bottom:12px;display:none">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-              <span style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px">Password strength</span>
-              <span id="pass-strength-label" style="font-size:10px;font-weight:800;color:var(--red)">Very Weak</span>
+              <span id="pass-strength-header" style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px" data-i18n="passStrength">Force du mot de passe</span>
+              <span id="pass-strength-label" style="font-size:10px;font-weight:800;color:var(--red)">Très faible</span>
             </div>
             <div style="height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div id="pass-strength-bar" style="height:100%;width:20%;background:var(--red);transition:all .3s"></div></div>
             <ul style="margin-top:8px;padding-left:14px;list-style:none">
-              <li id="rule-len" style="font-size:11px;color:var(--text3)">• At least 8 characters long</li>
-              <li id="rule-up"  style="font-size:11px;color:var(--text3)">• Contains uppercase letter</li>
-              <li id="rule-low" style="font-size:11px;color:var(--text3)">• Contains lowercase letter</li>
-              <li id="rule-num" style="font-size:11px;color:var(--text3)">• Contains number</li>
+              <li id="rule-len" style="font-size:11px;color:var(--text3)" data-i18n="ruleLen">• Au moins 8 caractères</li>
+              <li id="rule-up"  style="font-size:11px;color:var(--text3)" data-i18n="ruleUp">• Contient une majuscule</li>
+              <li id="rule-low" style="font-size:11px;color:var(--text3)" data-i18n="ruleLow">• Contient une minuscule</li>
+              <li id="rule-num" style="font-size:11px;color:var(--text3)" data-i18n="ruleNum">• Contient un chiffre</li>
             </ul>
           </div>
 
@@ -163,11 +161,11 @@
           </div>
 
           <div id="captcha-wrap" style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:15px;margin-bottom:14px">
-            <p style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:800;margin-bottom:8px;text-align:center">Sécurité : Cliquez sur le triangle</p>
+            <p style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:800;margin-bottom:8px;text-align:center" data-i18n="captchaPrompt">Sécurité : Cliquez sur le triangle</p>
             <div id="captcha-game" style="display:flex;justify-content:center;gap:15px;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px">
               <!-- Icons will be generated by JS -->
             </div>
-            <div id="captcha-status" style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px">Veuillez prouver que vous êtes humain</div>
+            <div id="captcha-status" style="font-size:10px;color:var(--text3);text-align:center;margin-top:8px" data-i18n="captchaHint">Veuillez prouver que vous êtes humain</div>
           </div>
 
           <button class="btn btn-primary" style="width:100%;margin-top:4px" onclick="doSignup()" data-i18n="createBtn">Créer mon compte</button>
@@ -182,19 +180,19 @@
 </div>
 
 <!-- ═══ PROFILE MODAL ═══ -->
-<div class="modal-bg" id="profile-modal">
+<div class="modal-bg" id="profile-modal" role="dialog" aria-modal="true">
   <div class="modal-box">
-    <div class="modal-header"><h2>Mon profil</h2><button class="modal-close-btn" onclick="closeProfile()">✕</button></div>
+    <div class="modal-header"><h2>Mon profil</h2><button class="modal-close-btn" aria-label="Fermer" onclick="closeProfile()">✕</button></div>
     <div id="profile-content"></div>
   </div>
 </div>
 
 <!-- ═══ REVIEW MODAL ═══ -->
-<div class="modal-bg" id="review-modal">
+<div class="modal-bg" id="review-modal" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-header">
       <h2>Laisser un avis</h2>
-      <button class="modal-close-btn" onclick="closeReviewModal()">✕</button>
+      <button class="modal-close-btn" aria-label="Fermer" onclick="closeReviewModal()">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px">
       <p style="font-size:12px;color:var(--text2)">Partagez votre expérience avec la communauté.</p>
@@ -205,11 +203,11 @@
       <textarea class="inp" id="review-text" placeholder="Votre avis (max 100 caractères)…" maxlength="100" style="min-height:80px;margin-bottom:0"></textarea>
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div style="display:flex;gap:4px">
-          <span class="star-btn" onclick="setReviewStars(1)">★</span>
-          <span class="star-btn" onclick="setReviewStars(2)">★</span>
-          <span class="star-btn" onclick="setReviewStars(3)">★</span>
-          <span class="star-btn" onclick="setReviewStars(4)">★</span>
-          <span class="star-btn" onclick="setReviewStars(5)">★</span>
+          <span class="star-btn" tabindex="0" role="button" aria-label="1 étoile" onclick="setReviewStars(1)">★</span>
+          <span class="star-btn" tabindex="0" role="button" aria-label="2 étoiles" onclick="setReviewStars(2)">★</span>
+          <span class="star-btn" tabindex="0" role="button" aria-label="3 étoiles" onclick="setReviewStars(3)">★</span>
+          <span class="star-btn" tabindex="0" role="button" aria-label="4 étoiles" onclick="setReviewStars(4)">★</span>
+          <span class="star-btn" tabindex="0" role="button" aria-label="5 étoiles" onclick="setReviewStars(5)">★</span>
         </div>
         <span id="review-stars-val" style="font-size:12px;font-weight:800;color:var(--yellow)">5/5</span>
       </div>
@@ -220,17 +218,17 @@
 </div>
 
 <!-- ═══ MAIN APP ═══ -->
-<div id="main-screen" style="display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1">
+<div id="main-screen" role="main" style="display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:1">
   <nav>
     <a class="nav-logo" onclick="gotoPage('home')">BAZAAR</a>
     <div class="nav-links">
-      <span class="nav-link active"  onclick="gotoPage('home')">    <img src="logo/home.png"    alt=""><span data-i18n="home">Accueil</span></span>
-      <span class="nav-link" id="nav-shop"     onclick="gotoPage('shop')">    <img src="logo/dollars.png" alt=""><span data-i18n="shop">Boutique</span></span>
-      <span class="nav-link" id="nav-tools"    onclick="gotoPage('tools')">   <img src="logo/tools.png"   alt=""><span>Tools</span></span>
-      <span class="nav-link" id="nav-subs"     onclick="gotoPage('subs')">    <img src="logo/coins.png"   alt=""><span data-i18n="subs">Abonnements</span></span>
-      <span class="nav-link" id="nav-features" onclick="gotoPage('features')"><img src="logo/fonction.png"alt=""><span data-i18n="features">Fonctionnalités</span></span>
-      <span class="nav-link" id="nav-contact"  onclick="gotoPage('contact')"> <img src="logo/mail.png"    alt=""><span data-i18n="contact">Contact</span></span>
-      <span class="nav-link" id="nav-about"    onclick="gotoPage('about')">   <img src="logo/user.png"    alt=""><span data-i18n="about">À propos</span></span>
+      <span class="nav-link active" tabindex="0" role="button" onclick="gotoPage('home')">    <img src="logo/home.png"    alt=""><span data-i18n="home">Accueil</span></span>
+      <span class="nav-link" id="nav-shop" tabindex="0" role="button"     onclick="gotoPage('shop')">    <img src="logo/dollars.png" alt=""><span data-i18n="shop">Boutique</span></span>
+      <span class="nav-link" id="nav-tools" tabindex="0" role="button"    onclick="gotoPage('tools')">   <img src="logo/tools.png"   alt=""><span>Tools</span></span>
+      <span class="nav-link" id="nav-subs" tabindex="0" role="button"     onclick="gotoPage('subs')">    <img src="logo/coins.png"   alt=""><span data-i18n="subs">Abonnements</span></span>
+      <span class="nav-link" id="nav-features" tabindex="0" role="button" onclick="gotoPage('features')"><img src="logo/fonction.png"alt=""><span data-i18n="features">Fonctionnalités</span></span>
+      <span class="nav-link" id="nav-contact" tabindex="0" role="button"  onclick="gotoPage('contact')"> <img src="logo/mail.png"    alt=""><span data-i18n="contact">Contact</span></span>
+      <span class="nav-link" id="nav-about" tabindex="0" role="button"    onclick="gotoPage('about')">   <img src="logo/user.png"    alt=""><span data-i18n="about">À propos</span></span>
     </div>
     <div class="nav-right">
       <div id="dev-badge" class="dev-badge" style="display:none">STAFF</div>
@@ -244,26 +242,26 @@
           </button>
         </div>
         <div class="user-menu-wrap">
-          <div class="user-menu-btn" onclick="toggleDropdown()">
+          <div class="user-menu-btn" tabindex="0" role="button" onclick="toggleDropdown()">
             <img src="logo/user.png" alt="">
             <span id="user-name-nav">—</span>
             <span class="arr">▾</span>
           </div>
           <div id="user-dropdown">
             <div class="dd-label">Mon compte</div>
-            <div class="dd-item" id="dd-pseudo" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
+            <div class="dd-item" id="dd-pseudo" tabindex="0" role="button" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
 
-            <div class="dd-item" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
-            <div class="dd-item" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
-            <div class="dd-item" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
+            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
+            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
+            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
             <div class="dd-sep"></div>
-            <div class="dd-item" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
-            <div class="dd-item" onclick="openSettings()">
+            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
+            <div class="dd-item" tabindex="0" role="button" onclick="openSettings()">
               <img src="logo/fonction.png" alt="" style="width:14px;height:14px">
               Paramètres
             </div>
             <div class="dd-sep"></div>
-            <div class="dd-item red" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
+            <div class="dd-item red" tabindex="0" role="button" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
           </div>
         </div>
       </div>
@@ -279,6 +277,21 @@
         <h2 style="font-size:clamp(17px,2.4vw,26px);font-weight:600;color:var(--text2);margin-bottom:16px;letter-spacing:-.3px">
           La plateforme OSINT pour <span class="hero-type-text" id="hero-type">les enquêtes.</span><span class="hero-cursor"></span>
         </h2>
+
+        <div class="trace-viz" aria-hidden="true">
+          <svg viewBox="0 0 600 180" class="trace-svg" preserveAspectRatio="xMidYMid meet">
+            <path class="trace-line" d="M60,40 C180,40 220,90 300,90"/>
+            <path class="trace-line" d="M60,140 C180,140 220,90 300,90"/>
+            <path class="trace-line" d="M540,40 C420,40 380,90 300,90"/>
+            <path class="trace-line" d="M540,140 C420,140 380,90 300,90"/>
+            <g class="trace-node"><circle cx="60" cy="40" r="26"/><image href="logo/mail.png" x="46" y="26" width="28" height="28"/></g>
+            <g class="trace-node"><circle cx="60" cy="140" r="26"/><image href="logo/phone.png" x="46" y="126" width="28" height="28"/></g>
+            <g class="trace-node"><circle cx="540" cy="40" r="26"/><image href="logo/ip.png" x="526" y="26" width="28" height="28"/></g>
+            <g class="trace-node"><circle cx="540" cy="140" r="26"/><image href="logo/discord.png" x="526" y="126" width="28" height="28"/></g>
+            <g class="trace-node trace-node-center"><circle cx="300" cy="90" r="32"/><image href="logo/loupe.png" x="284" y="74" width="32" height="32"/></g>
+          </svg>
+        </div>
+
         <p data-i18n="heroSub">Nom, email, téléphone, IP, Discord ID — croisez des millions d'enregistrements en quelques secondes.</p>
         <div class="hero-btns">
           <button class="btn btn-primary" onclick="document.getElementById('search-input').focus()">🔍 <span data-i18n="startSearch">Commencer une recherche</span></button>
@@ -295,8 +308,8 @@
 
       <div class="search-panel">
         <div class="search-mode-tabs">
-          <div class="mode-tab active" data-mode="auto" onclick="setSearchMode('auto')">Auto-détection</div>
-          <div class="mode-tab" data-mode="manual" onclick="setSearchMode('manual')">Manuel</div>
+          <div class="mode-tab active" tabindex="0" role="button" data-mode="auto" onclick="setSearchMode('auto')">Auto-détection</div>
+          <div class="mode-tab" tabindex="0" role="button" data-mode="manual" onclick="setSearchMode('manual')">Manuel</div>
         </div>
         <div class="sel-row" id="manual-select-row" style="display:none">
           <label>Type</label>
@@ -581,24 +594,24 @@
       
       <div class="footer-nav-links">
         <div class="footer-col">
-          <h4>Navigation</h4>
+          <h4 data-i18n="navTitle">Navigation</h4>
           <div class="footer-links-grid">
-            <a onclick="gotoPage('home')">Accueil</a>
-            <a onclick="gotoPage('shop')">Boutique</a>
+            <a onclick="gotoPage('home')" data-i18n="home">Accueil</a>
+            <a onclick="gotoPage('shop')" data-i18n="shop">Boutique</a>
             <a onclick="gotoPage('tools')">Tools</a>
-            <a onclick="gotoPage('subs')">Abonnements</a>
-            <a onclick="gotoPage('features')">Fonctionnalités</a>
-            <a onclick="gotoPage('contact')">Contact</a>
-            <a onclick="gotoPage('about')">À propos</a>
+            <a onclick="gotoPage('subs')" data-i18n="subs">Abonnements</a>
+            <a onclick="gotoPage('features')" data-i18n="features">Fonctionnalités</a>
+            <a onclick="gotoPage('contact')" data-i18n="contact">Contact</a>
+            <a onclick="gotoPage('about')" data-i18n="about">À propos</a>
           </div>
         </div>
-        
+
         <div class="footer-col">
-          <h4>Communauté</h4>
-          <p style="margin-bottom:10px">Support & News sur Discord.</p>
+          <h4 data-i18n="communityTitle">Communauté</h4>
+          <p style="margin-bottom:10px" data-i18n="communityDesc">Support & News sur Discord.</p>
           <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="padding:10px 16px; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; width:fit-content; background:#5865f2; color:#fff">
             <img src="logo/discord.png" alt="" style="width:16px; height:16px; margin-right:8px">
-            Rejoindre Discord
+            <span data-i18n="joinDiscord">Rejoindre le Discord</span>
           </a>
         </div>
       </div>
@@ -612,7 +625,7 @@
 </div>
 
 <!-- ═══ ITEM MODAL ═══ -->
-<div class="modal-bg" id="item-modal">
+<div class="modal-bg" id="item-modal" role="dialog" aria-modal="true">
   <div class="modal-box" style="max-width:600px;padding:0;overflow:hidden">
     <div id="item-modal-content">
       <!-- Loaded via JS -->

@@ -1,6 +1,7 @@
 // api/update-user.js
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import { verifySession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -9,7 +10,8 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { user_id, pseudo, email, new_password, verify_password } = req.body;
+  const { token, pseudo, email, new_password, verify_password } = req.body;
+  const user_id = verifySession(token);
   if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
   // Get current user to verify password

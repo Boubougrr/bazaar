@@ -13,10 +13,6 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
 .footer-bottom{max-width:1400px;margin:40px auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
 .footer-bottom p{font-size:12px;color:var(--text3);font-weight:500;}
 
-@media(max-width:1100px){.plans-grid{grid-template-columns:1fr 1fr;}.auth-left{display:none;}.auth-right{width:100%;border-radius:20px;border:1px solid var(--border2);}}
-@media(max-width:900px){.stats-row{grid-template-columns:1fr 1fr;}.how-steps,.two-col,.plans-grid,.contact-grid{grid-template-columns:1fr;}.footer-inner{grid-template-columns:1fr;}.footer-bottom{flex-direction:column;align-items:flex-start;}}
-@media(max-width:600px){nav{padding:0 12px;}.main-content{padding:22px 14px;}.hero h1{font-size:36px;}.search-panel{padding:18px 16px;}.auth-right{padding:32px 24px;}}
-
 /* REVIEWS MARQUEE */
 .reviews-marquee-wrap{overflow:hidden;background:rgba(0,0,0,.2);border:1px solid var(--border);border-radius:var(--r2);padding:25px 0;margin-top:10px;mask-image:linear-gradient(90deg,transparent,black 15%,black 85%,transparent);}
 .reviews-marquee{display:flex;gap:20px;width:max-content;animation:marquee 17s linear infinite;will-change:transform;}
@@ -24,43 +20,11 @@ footer{border-top:1px solid var(--border);padding:40px 40px 20px;background:var(
 .review-card:hover{transform:translateY(-5px);border-color:var(--accent);}
 @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
-/* Layout & Containers */
-.item-card, .plan-card, .info-card, .stat-card, .how-step, .auth-outer, .modal-box {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.plan-card { overflow: visible !important; }
-.plan-card-body { position: relative; overflow: hidden; border-radius: var(--r2); display: flex; flex-direction: column; gap: 14px; padding: 0; height: 100%; width: 100%; }
+/* ACCESSIBILITY — kept last so it wins the cascade over outline:none elsewhere */
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+[role="button"]{cursor:pointer;}
 
-/* ROTATING BORDER */
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
-}
-
-.item-card::before, .plan-card-body::before, .info-card::before, .stat-card::before, .how-step::before, .auth-outer::before, .modal-box::before {
-  content: '';
-  position: absolute;
-  inset: -2px;
-  background: conic-gradient(from var(--angle), transparent 70%, #ffffff 85%, #ffffff 95%, transparent 100%);
-  border-radius: inherit;
-  padding: 2px;
-  animation: rotateBorder 3s linear infinite;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  z-index: 10;
-}
-
-.item-card:hover::before, .plan-card:hover .plan-card-body::before, .info-card:hover::before, .stat-card:hover::before, .how-step:hover::before, .auth-outer:hover::before, .modal-box:hover::before {
-  opacity: 1;
-}
-
-@keyframes rotateBorder {
-  to { --angle: 360deg; }
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after { animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  .reviews-marquee { animation:none !important; }
 }

@@ -1,6 +1,7 @@
 // api/login.js — Vercel Serverless Function
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import { signSession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -29,8 +30,14 @@ export default async function handler(req, res) {
     }
   }
 
-  // Verify password
-  const valid = await bcrypt.compare(password, user.password_hash);
+  // Verify password. Legacy accounts created before password hashing was
+  // fixed may still have the raw password in password_hash — detect that
+  // (bcrypt hashes always start with $2) and transparently migrate them to
+  // a real hash on successful login instead of locking everyone out.
+  const isBcryptHash = typeof user.password_hash === 'string' && user.password_hash.startsWith('$2');
+  const valid = isBcryptHash
+    ? await bcrypt.compare(password, user.password_hash)
+    : password === user.password_hash;
   if (!valid) return res.status(400).json({ error: 'Mot de passe incorrect.' });
 
   // Update last_login + login_count + IP
@@ -40,6 +47,7 @@ export default async function handler(req, res) {
     login_count: (user.login_count || 0) + 1,
     last_ip: ip
   };
+  if (!isBcryptHash) updateFields.password_hash = await bcrypt.hash(password, 10);
 
   // ── AUTO RESET CREDITS ──
   if (user.credits_exhausted_at) {
@@ -52,7 +60,11 @@ export default async function handler(req, res) {
 
   const { data: updatedUser } = await supabase.from('users').update(updateFields).eq('id', user.id).select('*').single();
 
-  return res.json({ ok: true, user: safeUser(updatedUser || user) });
+  let token;
+  try { token = signSession((updatedUser || user).id); }
+  catch { return res.status(500).json({ error: 'Configuration serveur invalide (SESSION_SECRET manquant).' }); }
+
+  return res.json({ ok: true, user: safeUser(updatedUser || user), token });
 }
 
 function safeUser(u) {

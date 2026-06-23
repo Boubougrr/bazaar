@@ -1,5 +1,6 @@
 // api/coupon.js — Server-side coupon validation
 import { createClient } from '@supabase/supabase-js';
+import { verifySession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -14,8 +15,11 @@ const CODES = {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { user_id, code } = req.body;
-  if (!user_id || !code) return res.status(400).json({ error: 'Paramètres manquants.' });
+  const { token, code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Paramètres manquants.' });
+
+  const user_id = verifySession(token);
+  if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
   const upperCode = code.toUpperCase().trim();
   const { data: user } = await supabase.from('users').select('*').eq('id', user_id).single();
@@ -39,7 +43,24 @@ export default async function handler(req, res) {
   }
 
   const { data: updated } = await supabase.from('users').update(update).eq('id', user.id)
-    .select('credits_max,credits_used,vip_active').single();
+    .select('*').single();
 
-  return res.json({ ok: true, type: coupon.type, user: updated });
+  return res.json({ ok: true, type: coupon.type, user: safeUser(updated) });
+}
+
+function safeUser(u) {
+  if (!u) return null;
+  return {
+    id: u.id, email: u.email, pseudo: u.pseudo,
+    plan: u.plan || 'standard', 
+    credits_max: u.credits_max || 5,
+    credits_used: u.credits_used || 0, 
+    credits_exhausted_at: u.credits_exhausted_at,
+    vip_active: u.vip_active || false, 
+    total_searches: u.total_searches || 0,
+    login_count: u.login_count || 1, 
+    joined_at: u.joined_at,
+    last_login: u.last_login,
+    role: u.role || 'user'
+  };
 }

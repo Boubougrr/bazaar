@@ -1,6 +1,8 @@
 // api/signup.js — Vercel Serverless Function
 // Runs SERVER-SIDE only. Never exposed to browser.
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
+import { signSession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -19,11 +21,13 @@ export default async function handler(req, res) {
   const { data: existing } = await supabase.from('users').select('id').eq('email', email).single();
   if (existing) return res.status(400).json({ error: 'Ce compte existe déjà.' });
 
+  const password_hash = await bcrypt.hash(password, 10);
+
   // Create account
   const { data: user, error } = await supabase.from('users').insert({
     email,
     pseudo,
-    password_hash: password, // will be hashed by trigger or stored as is if trigger exists
+    password_hash,
     last_verif: new Date().toISOString(),
     joined_at: new Date().toISOString(),
     last_login: new Date().toISOString(),
@@ -40,7 +44,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Erreur création compte.' });
   }
 
-  return res.json({ ok: true, user: safeUser(user) });
+  let token;
+  try { token = signSession(user.id); }
+  catch { return res.status(500).json({ error: 'Configuration serveur invalide (SESSION_SECRET manquant).' }); }
+
+  return res.json({ ok: true, user: safeUser(user), token });
 }
 
 function safeUser(u) {

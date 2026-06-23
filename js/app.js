@@ -2,7 +2,10 @@
 //  BAZAAR — APP.JS v6
 // ============================================================
 let currentUser = null;
+let sessionToken = null;
 let currentItemForDl = null;
+let currentShopFilter = 'Discord';
+let currentProfileSection = null;
 let searchMode = 'auto';
 let searchCooldown = false;
 let cooldownEnd = 0;
@@ -22,6 +25,46 @@ const I18N = {
     heroSub:'Nom, email, téléphone, IP, Discord ID — croisez des millions d\'enregistrements.',
     startSearch:'Commencer une recherche',joinDiscord:'Rejoindre le Discord',
     credits:'crédits',
+    // shop / tools
+    shopEmpty:'Aucun article dans cette catégorie pour le moment.', lockedDesc:'Contenu réservé.',
+    viewBtn:'Voir', unlockBtn:'Débloquer', freeBadge:'✓ Gratuit', premiumBadge:'Premium',
+    paidToolDesc:'Outil payant.', vipRequiredMsg:'🔒 Accès restreint — entrez votre code VIP dans le menu profil',
+    // plans
+    unlimitedSearches:'Illimitées', searchesPerDay:'recherches/jour', bestValue:'👑 MEILLEURE OFFRE',
+    currentPlan:'Plan actuel', subscribeBtn:'S\'abonner', openTicketToActivate:'Ouvrez un ticket Discord pour activer',
+    // item modal
+    detailsTitle:'Détails', priceLabel:'Prix', freeLabel:'GRATUIT', downloadBtn:'Télécharger',
+    orderBtn:'Commander', downloadStarted:'⬇ Téléchargement lancé !',
+    // profile / stats
+    myStats:'Mes Statistiques', creditsLabel:'Crédits', rankLabel:'Rang', staffRank:'STAFF',
+    vipRank:'VIP', memberRank:'Membre', searchesLabel:'Recherches', loginsLabel:'Connexions',
+    joinedLabel:'Inscrit le', planInfoTitle:'Information Plan',
+    planInfoPrefix:'Votre compte est actuellement sur le plan', planInfoSuffix:'.',
+    buyCreditsTitle:'Acheter des crédits', creditPriceLine:'1 Crédit = 0.25€',
+    creditsInfoText:'• Les crédits sont ajoutés manuellement.<br>• Paiement via PayPal, LTC ou PSC.<br>• Ouvrez un ticket sur notre Discord.',
+    openDiscordTicket:'Ouvrir un ticket Discord',
+    changePseudoTitle:'Changer le pseudo', newPseudoLabel:'Nouveau pseudo', currentPasswordLabel:'Mot de passe actuel',
+    changePasswordTitle:'Changer le mot de passe', newPasswordLabel:'Nouveau mot de passe',
+    confirmNewPasswordLabel:'Confirmer mot de passe', oldPasswordLabel:'Ancien mot de passe',
+    changeEmailTitle:'Changer l\'email', newEmailLabel:'Nouvel email', updateBtn:'Mettre à jour',
+    applyCouponTitle:'Appliquer un coupon', applyCouponDesc:'Entrez un code promo ou VIP pour l\'activer sur votre compte.',
+    activateCodeBtn:'Activer le code',
+    // notifications
+    invalidEmail:'Email invalide.', connecting:'Connexion…', connectedOk:'✓ Connecté !',
+    enterTarget:'Veuillez entrer une cible.', loginRequired:'🔑 Connexion requise.',
+    loginRequiredSection:'🔑 Connexion requise pour accéder à cette section.', welcomeMsg:'👋 Bienvenue, ',
+    passwordsMismatch:'Les mots de passe ne correspondent pas.', changeDone:'✓ Changement effectué !',
+    enterCode:'Entrez un code.', codeActivated:'✓ Code activé !',
+    loginToReview:'🔑 Connectez-vous pour laisser un avis.', reviewTooShort:'Avis trop court.',
+    sending:'Envoi…', reviewSent:'✓ Avis envoyé !', noReviewsYet:'Aucun avis pour le moment.',
+    ltcCopied:'✓ Adresse LTC copiée !', captchaWrong:'❌ Raté !', captchaOk:'✓ Ok !', captchaRequired:'⚠️ Captcha !',
+    // static footer/captcha
+    navTitle:'Navigation', communityTitle:'Communauté', communityDesc:'Support & News sur Discord.',
+    captchaPrompt:'Sécurité : Cliquez sur le triangle', captchaHint:'Veuillez prouver que vous êtes humain',
+    passStrength:'Force du mot de passe',
+    veryWeak:'Très faible', weak:'Faible', medium:'Moyen', good:'Bon', strong:'Fort',
+    ruleLen:'• Au moins 8 caractères', ruleUp:'• Contient une majuscule',
+    ruleLow:'• Contient une minuscule', ruleNum:'• Contient un chiffre',
   },
   en: {
     home:'Home',shop:'Shop',subs:'Subscriptions',features:'Features',
@@ -36,8 +79,50 @@ const I18N = {
     heroSub:'Name, email, phone, IP, Discord ID — cross millions of records in seconds.',
     startSearch:'Start a search',joinDiscord:'Join Discord',
     credits:'credits',
+    // shop / tools
+    shopEmpty:'No items in this category yet.', lockedDesc:'Restricted content.',
+    viewBtn:'View', unlockBtn:'Unlock', freeBadge:'✓ Free', premiumBadge:'Premium',
+    paidToolDesc:'Paid tool.', vipRequiredMsg:'🔒 Restricted access — enter your VIP code in the profile menu',
+    // plans
+    unlimitedSearches:'Unlimited', searchesPerDay:'searches/day', bestValue:'👑 BEST VALUE',
+    currentPlan:'Current plan', subscribeBtn:'Subscribe', openTicketToActivate:'Open a Discord ticket to activate',
+    // item modal
+    detailsTitle:'Details', priceLabel:'Price', freeLabel:'FREE', downloadBtn:'Download',
+    orderBtn:'Order', downloadStarted:'⬇ Download started!',
+    // profile / stats
+    myStats:'My Stats', creditsLabel:'Credits', rankLabel:'Rank', staffRank:'STAFF',
+    vipRank:'VIP', memberRank:'Member', searchesLabel:'Searches', loginsLabel:'Logins',
+    joinedLabel:'Joined on', planInfoTitle:'Plan information',
+    planInfoPrefix:'Your account is currently on the', planInfoSuffix:' plan.',
+    buyCreditsTitle:'Buy credits', creditPriceLine:'1 Credit = €0.25',
+    creditsInfoText:'• Credits are added manually.<br>• Payment via PayPal, LTC or PSC.<br>• Open a ticket on our Discord.',
+    openDiscordTicket:'Open a Discord ticket',
+    changePseudoTitle:'Change username', newPseudoLabel:'New username', currentPasswordLabel:'Current password',
+    changePasswordTitle:'Change password', newPasswordLabel:'New password',
+    confirmNewPasswordLabel:'Confirm password', oldPasswordLabel:'Old password',
+    changeEmailTitle:'Change email', newEmailLabel:'New email', updateBtn:'Update',
+    applyCouponTitle:'Apply a coupon', applyCouponDesc:'Enter a promo or VIP code to activate it on your account.',
+    activateCodeBtn:'Activate code',
+    // notifications
+    invalidEmail:'Invalid email.', connecting:'Connecting…', connectedOk:'✓ Connected!',
+    enterTarget:'Please enter a target.', loginRequired:'🔑 Login required.',
+    loginRequiredSection:'🔑 Login required to access this section.', welcomeMsg:'👋 Welcome, ',
+    passwordsMismatch:'Passwords do not match.', changeDone:'✓ Change applied!',
+    enterCode:'Enter a code.', codeActivated:'✓ Code activated!',
+    loginToReview:'🔑 Log in to leave a review.', reviewTooShort:'Review too short.',
+    sending:'Sending…', reviewSent:'✓ Review sent!', noReviewsYet:'No reviews yet.',
+    ltcCopied:'✓ LTC address copied!', captchaWrong:'❌ Missed!', captchaOk:'✓ OK!', captchaRequired:'⚠️ Captcha!',
+    // static footer/captcha
+    navTitle:'Navigation', communityTitle:'Community', communityDesc:'Support & news on Discord.',
+    captchaPrompt:'Security check: click the triangle', captchaHint:'Please prove you are human',
+    passStrength:'Password strength',
+    veryWeak:'Very Weak', weak:'Weak', medium:'Medium', good:'Good', strong:'Strong',
+    ruleLen:'• At least 8 characters long', ruleUp:'• Contains uppercase letter',
+    ruleLow:'• Contains lowercase letter', ruleNum:'• Contains number',
   }
 };
+
+function t(key){ return (I18N[settings.lang] || I18N.fr)[key] || key; }
 
 // ── SETTINGS ──────────────────────────────────────────────────
 const SETTINGS_DEFAULTS = { lang:'fr', theme:'dark', cursor:true, anim:true, searchMode:'auto' };
@@ -72,12 +157,18 @@ function applySettings(){
 }
 
 function applyLang(lang){
-  const t = I18N[lang] || I18N.fr;
+  const dict = I18N[lang] || I18N.fr;
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key = el.getAttribute('data-i18n');
-    if(t[key]) el.textContent = t[key];
+    if(dict[key]) el.textContent = dict[key];
   });
   document.documentElement.setAttribute('lang', lang);
+
+  // Re-render dynamically generated content so it picks up the new language too
+  if(document.getElementById('shop-grid')) renderShop(currentShopFilter);
+  if(document.getElementById('tools-grid')) renderTools();
+  if(document.getElementById('plans-grid')) renderPlans();
+  if(currentProfileSection) openProfile(currentProfileSection);
 }
 
 function setLang(lang){ settings.lang=lang; saveSettings(); applySettings(); }
@@ -101,24 +192,11 @@ document.addEventListener('mousedown', () => cursorEl.classList.add('click'));
 document.addEventListener('mouseup',   () => cursorEl.classList.remove('click'));
 const hQ = 'a,button,.nav-link,.item-card,.filter-btn,.mode-tab,.plan-card,.dd-item,.btn,.credits-pill,.auth-tab,.setting-btn';
 document.addEventListener('mouseover', e => { if(e.target.closest(hQ)) cursorEl.classList.add('hover'); });
-document.addEventListener('mouseout',  e => { if(e.target.closest(hQ)) cursorEl.classList.remove('hover'); });
-
-// ── BG CANVAS ─────────────────────────────────────────────────
-(function(){
-  const c = document.getElementById('bg-canvas'), ctx = c.getContext('2d');
-  let w, h; function resize(){ w=c.width=innerWidth; h=c.height=innerHeight; }
-  window.addEventListener('resize', resize, {passive:true}); resize();
-  let off = 0;
-  function draw(){
-    ctx.clearRect(0,0,w,h); off=(off+0.15)%80;
-    const vpx=w*.5,vpy=h*.55,depth=600,far=1200,spread=2400;
-    ctx.lineWidth=.6;
-    for(let i=-22;i<=22;i++){const x=i*80;for(let z=40;z<far;z+=10){const z1=z-off,z2=z-off+10,s1=depth/(depth+z1),s2=depth/(depth+z2);ctx.strokeStyle=`rgba(123,110,246,${.05*s1})`;ctx.beginPath();ctx.moveTo(vpx+(x-vpx)*s1,vpy+(h*.9-vpy)*s1);ctx.lineTo(vpx+(x-vpx)*s2,vpy+(h*.9-vpy)*s2);ctx.stroke();}}
-    for(let z=40;z<far;z+=80){const zz=z-(off%80),s=depth/(depth+zz),y=vpy+(h*.9-vpy)*s,hw=spread*s;ctx.strokeStyle=`rgba(123,110,246,${.035*s})`;ctx.beginPath();ctx.moveTo(vpx-hw,y);ctx.lineTo(vpx+hw,y);ctx.stroke();}
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
+document.addEventListener('mouseout',  e => {
+  const related = e.relatedTarget;
+  // Only remove hover if we're truly leaving the hoverable element (not just moving to a child)
+  if(!related || !e.target.closest(hQ)?.contains(related)) cursorEl.classList.remove('hover');
+});
 
 // ── TYPEWRITER ────────────────────────────────────────────────
 (function(){
@@ -148,17 +226,30 @@ async function initApp() {
   loadSettings();
   try {
     const saved = localStorage.getItem('bzr_session');
+    const tok = localStorage.getItem('bzr_token');
     if(saved && saved !== 'undefined'){ currentUser = JSON.parse(saved); }
+    if(tok) sessionToken = tok;
   } catch(e) {}
 
   bootApp(true);
 
   if(currentUser && currentUser.id){
-    try {
-      const res = await api('get-user', { user_id: currentUser.id });
-      saveSession(res.user); currentUser = res.user;
+    if(!sessionToken){
+      // Pre-existing local session from before signed tokens — force a clean re-login.
+      currentUser = null;
+      localStorage.removeItem('bzr_session');
       bootApp(true);
-    } catch(e) {}
+    } else {
+      try {
+        const res = await api('get-user', { token: sessionToken });
+        saveSession(res.user); currentUser = res.user;
+        bootApp(true);
+      } catch(e) {
+        currentUser = null; sessionToken = null;
+        localStorage.removeItem('bzr_session'); localStorage.removeItem('bzr_token');
+        bootApp(true);
+      }
+    }
   }
 
   generateCaptcha(); initAuthEvents();
@@ -185,11 +276,13 @@ function bootApp(silent = false){
       if(navAuth) navAuth.style.display='none';
       if(navLogin) navLogin.style.display='block';
       if(badge) badge.style.display='none';
+      const guestMsg = document.getElementById('search-guest-msg');
+      if(guestMsg) guestMsg.style.display='block';
       ['shop','tools','subs','features','contact','about'].forEach(id => {
         const el = document.getElementById('nav-'+id);
         if(el) {
           el.classList.add('locked-nav');
-          el.setAttribute('onclick', "notify('🔑 Connexion requise pour accéder à cette section.', true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
+          el.setAttribute('onclick', "notify(t('loginRequiredSection'), true); switchAuthTab('login'); document.getElementById('auth-screen').classList.remove('hidden')");
           el.style.textDecoration = 'line-through'; el.style.opacity = '0.5';
         }
       });
@@ -198,6 +291,8 @@ function bootApp(silent = false){
     document.getElementById('auth-screen')?.classList.add('hidden');
     if(navAuth) navAuth.style.display='contents';
     if(navLogin) navLogin.style.display='none';
+    const guestMsg = document.getElementById('search-guest-msg');
+    if(guestMsg) guestMsg.style.display='none';
     const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
     const nameEl = document.getElementById('user-name-nav');
     if(nameEl) nameEl.textContent = name;
@@ -210,7 +305,7 @@ function bootApp(silent = false){
     });
     if(badge) badge.style.display = currentUser.role === 'dev' ? 'block' : 'none';
     applyUserStyling(); startResetTimer(); updateCreditsUI();
-    if(!silent) notify('👋 Bienvenue, ' + name + '!');
+    if(!silent) notify(t('welcomeMsg') + name + '!');
     loadReviews();
   } catch(e) { console.error('bootApp crashed', e); }
 }
@@ -220,7 +315,11 @@ function applyUserStyling() {
   if(currentUser.email === 'phoenix.guecko@gmail.com') { nameNav.style.color = '#ff4d4d'; nameNav.style.fontWeight = '900'; }
 }
 
-function saveSession(u){ currentUser=u; localStorage.setItem('bzr_session',JSON.stringify(u)); }
+function saveSession(u, token = sessionToken){
+  currentUser = u;
+  localStorage.setItem('bzr_session', JSON.stringify(u));
+  if(token){ sessionToken = token; localStorage.setItem('bzr_token', token); }
+}
 
 // ── AUTH ──────────────────────────────────────────────────────
 function switchAuthTab(tab){
@@ -230,11 +329,11 @@ function switchAuthTab(tab){
 }
 async function doLogin(){
   const email=document.getElementById('login-email').value.trim(), pass=document.getElementById('login-password').value;
-  if(!email.includes('@')){ notify('Email invalide.',true); return; }
-  setAuthNote('login-note','Connexion…','inf');
+  if(!email.includes('@')){ notify(t('invalidEmail'),true); return; }
+  setAuthNote('login-note',t('connecting'),'inf');
   try{
     const res=await api('login',{email,password:pass});
-    saveSession(res.user); setAuthNote('login-note','✓ Connecté !','ok'); setTimeout(() => { bootApp(); }, 400);
+    saveSession(res.user, res.token); setAuthNote('login-note',t('connectedOk'),'ok'); setTimeout(() => { bootApp(); }, 400);
   }catch(e){ setAuthNote('login-note',e.message,'err'); }
 }
 
@@ -245,28 +344,73 @@ function generateCaptcha() {
   game.innerHTML = ''; captchaSolved = false; const shapes = ['square', 'square', 'square', 'triangle']; shapes.sort(() => Math.random() - 0.5);
   shapes.forEach(type => {
     const el = document.createElement('div'); el.className = `captcha-shape ${type}`;
+    el.tabIndex = 0; el.setAttribute('role','button');
+    el.setAttribute('aria-label', type === 'triangle' ? 'Triangle' : 'Carré');
     el.onclick = () => {
-      if(type === 'triangle') { captchaSolved = true; document.getElementById('captcha-status').textContent = '✓ Ok !'; generateCaptcha(); }
-      else { notify('❌ Raté !', true); generateCaptcha(); }
+      if(type === 'triangle') { captchaSolved = true; document.getElementById('captcha-status').textContent = t('captchaOk'); generateCaptcha(); }
+      else { notify(t('captchaWrong'), true); generateCaptcha(); }
     };
     game.appendChild(el);
   });
 }
 function initAuthEvents() {
   const signupBtn = document.querySelector('#auth-signup .btn-primary');
-  if(signupBtn) signupBtn.onclick = () => { if(!captchaSolved) { notify('⚠️ Captcha !', true); return; } doSignup(); };
+  if(signupBtn) signupBtn.onclick = () => { if(!captchaSolved) { notify(t('captchaRequired'), true); return; } doSignup(); };
+}
+
+function checkPassStrength(){
+  const val = document.getElementById('signup-password').value;
+  const wrap = document.getElementById('pass-strength-wrap');
+  if(!wrap) return;
+  wrap.style.display = val ? 'block' : 'none';
+  if(!val) return;
+
+  // Translate rule labels
+  const ruleEl = document.getElementById('rule-len');
+  if(ruleEl){
+    const next = ruleEl.parentElement;
+    const lis = next.querySelectorAll('li');
+    if(lis[0]) lis[0].textContent = t('ruleLen');
+    if(lis[1]) lis[1].textContent = t('ruleUp');
+    if(lis[2]) lis[2].textContent = t('ruleLow');
+    if(lis[3]) lis[3].textContent = t('ruleNum');
+  }
+  // Translate strength label header
+  const strengthHeader = wrap.querySelector('span');
+  if(strengthHeader && strengthHeader.closest('div').querySelector('.fa, [style]')) {
+    // Already has the header
+  }
+
+  const rules = { len: val.length >= 8, up: /[A-Z]/.test(val), low: /[a-z]/.test(val), num: /[0-9]/.test(val) };
+  Object.entries(rules).forEach(([key, ok]) => {
+    const li = document.getElementById('rule-'+key);
+    if(li) li.style.color = ok ? 'var(--green)' : 'var(--text3)';
+  });
+
+  const levels = [
+    { label:t('veryWeak'), color:'var(--red)',    width:'20%' },
+    { label:t('weak'),      color:'var(--red)',    width:'40%' },
+    { label:t('medium'),    color:'var(--yellow)', width:'60%' },
+    { label:t('good'),      color:'var(--accent)', width:'80%' },
+    { label:t('strong'),    color:'var(--green)',  width:'100%' },
+  ];
+  const lvl = levels[Object.values(rules).filter(Boolean).length] || levels[0];
+  const bar = document.getElementById('pass-strength-bar'), label = document.getElementById('pass-strength-label');
+  if(bar){ bar.style.width = lvl.width; bar.style.background = lvl.color; }
+  if(label){ label.textContent = lvl.label; label.style.color = lvl.color; }
 }
 
 async function doSignup(){
-  const pseudo=document.getElementById('signup-pseudo').value.trim(), email=document.getElementById('signup-email').value.trim(), pass=document.getElementById('signup-password').value;
+  const pseudo=document.getElementById('signup-pseudo').value.trim(), email=document.getElementById('signup-email').value.trim(), pass=document.getElementById('signup-password').value, confirm=document.getElementById('signup-confirm').value;
+  if(pass !== confirm) return setAuthNote('signup-note', t('passwordsMismatch'), 'err');
   try{
     const res=await api('signup',{email,pseudo,password:pass});
-    saveSession(res.user); setTimeout(bootApp,400);
+    saveSession(res.user, res.token); setTimeout(bootApp,400);
   }catch(e){ setAuthNote('signup-note',e.message,'err'); }
 }
 
 function setAuthNote(id,msg,type=''){ const el=document.getElementById(id);if(el)el.textContent=msg; }
-function logout(){ localStorage.removeItem('bzr_session'); location.reload(); }
+function logout(){ localStorage.removeItem('bzr_session'); localStorage.removeItem('bzr_token'); location.reload(); }
 
 function toggleDropdown(){ document.getElementById('user-dropdown').classList.toggle('open'); }
 
@@ -274,6 +418,7 @@ function openProfile(section){
   try {
     const box = document.getElementById('profile-content');
     if(!box) return;
+    currentProfileSection = section;
     if(section==='stats') renderStats(box);
     else if(section==='credits') renderCreditsInfo(box);
     else if(section==='pseudo') renderChangePseudo(box);
@@ -287,17 +432,17 @@ function openProfile(section){
 function renderStats(box){
   const u = currentUser;
   box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Mes Statistiques</h3>
+    <h3 style="color:#fff;margin-bottom:16px">${t('myStats')}</h3>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
-      <div class="info-card"><h4>Crédits</h4><p>${u.credits_max - u.credits_used} / ${u.credits_max}</p></div>
-      <div class="info-card"><h4>Rang</h4><p>${u.role === 'dev' ? 'STAFF' : (u.vip_active ? 'VIP' : 'Membre')}</p></div>
-      <div class="info-card"><h4>Recherches</h4><p>${u.total_searches || 0}</p></div>
-      <div class="info-card"><h4>Connexions</h4><p>${u.login_count || 1}</p></div>
-      <div class="info-card"><h4>Inscrit le</h4><p>${new Date(u.joined_at || u.created_at).toLocaleDateString()}</p></div>
+      <div class="info-card"><h4>${t('creditsLabel')}</h4><p>${u.credits_max - u.credits_used} / ${u.credits_max}</p></div>
+      <div class="info-card"><h4>${t('rankLabel')}</h4><p>${u.role === 'dev' ? t('staffRank') : (u.vip_active ? t('vipRank') : t('memberRank'))}</p></div>
+      <div class="info-card"><h4>${t('searchesLabel')}</h4><p>${u.total_searches || 0}</p></div>
+      <div class="info-card"><h4>${t('loginsLabel')}</h4><p>${u.login_count || 1}</p></div>
+      <div class="info-card"><h4>${t('joinedLabel')}</h4><p>${new Date(u.joined_at || u.created_at).toLocaleDateString()}</p></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px">
-      <h4 style="color:var(--white);font-size:12px;margin-bottom:8px">Information Plan</h4>
-      <p style="font-size:13px;color:var(--text2)">Votre compte est actuellement sur le plan <strong style="color:var(--accent)">${(u.plan || 'standard').toUpperCase()}</strong>.</p>
+      <h4 style="color:var(--white);font-size:12px;margin-bottom:8px">${t('planInfoTitle')}</h4>
+      <p style="font-size:13px;color:var(--text2)">${t('planInfoPrefix')} <strong style="color:var(--accent)">${(u.plan || 'standard').toUpperCase()}</strong>${t('planInfoSuffix')}</p>
     </div>
   </div>`;
 }
@@ -305,62 +450,62 @@ function renderStats(box){
 function renderCreditsInfo(box){
   box.innerHTML=`<div style="padding:24px;text-align:center">
     <img src="logo/coins.png" style="width:60px;margin-bottom:16px">
-    <h3 style="color:#fff;margin-bottom:8px">Acheter des crédits</h3>
-    <p style="color:var(--text2);font-size:14px;margin-bottom:16px">1 Crédit = 0.25€</p>
+    <h3 style="color:#fff;margin-bottom:8px">${t('buyCreditsTitle')}</h3>
+    <p style="color:var(--text2);font-size:14px;margin-bottom:16px">${t('creditPriceLine')}</p>
     <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:20px;text-align:left">
-      <p style="font-size:13px;color:var(--text2);line-height:1.6">• Les crédits sont ajoutés manuellement.<br>• Paiement via PayPal, LTC ou PSC.<br>• Ouvrez un ticket sur notre Discord.</p>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">${t('creditsInfoText')}</p>
     </div>
-    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%">Ouvrir un ticket Discord</a>
+    <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="width:100%">${t('openDiscordTicket')}</a>
   </div>`;
 }
 
 function renderChangePseudo(box){
   box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer le pseudo</h3>
-    <label class="lbl">Nouveau pseudo</label>
+    <h3 style="color:#fff;margin-bottom:16px">${t('changePseudoTitle')}</h3>
+    <label class="lbl">${t('newPseudoLabel')}</label>
     <input class="inp" id="new-pseudo" placeholder="MonNouveauPseudo">
-    <label class="lbl">Mot de passe actuel</label>
+    <label class="lbl">${t('currentPasswordLabel')}</label>
     <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('pseudo')">Mettre à jour</button>
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('pseudo')">${t('updateBtn')}</button>
   </div>`;
 }
 
 function renderChangePassword(box){
   box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer le mot de passe</h3>
-    <label class="lbl">Nouveau mot de passe</label>
+    <h3 style="color:#fff;margin-bottom:16px">${t('changePasswordTitle')}</h3>
+    <label class="lbl">${t('newPasswordLabel')}</label>
     <input class="inp" type="password" id="new-pass" placeholder="••••••••">
-    <label class="lbl">Confirmer mot de passe</label>
+    <label class="lbl">${t('confirmNewPasswordLabel')}</label>
     <input class="inp" type="password" id="confirm-new-pass" placeholder="••••••••">
     <hr style="border:none;border-top:1px solid var(--border);margin:12px 0">
-    <label class="lbl">Ancien mot de passe</label>
+    <label class="lbl">${t('oldPasswordLabel')}</label>
     <input class="inp" type="password" id="old-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('password')">Mettre à jour</button>
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('password')">${t('updateBtn')}</button>
   </div>`;
 }
 
 function renderChangeEmail(box){
   box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Changer l'email</h3>
-    <label class="lbl">Nouvel email</label>
+    <h3 style="color:#fff;margin-bottom:16px">${t('changeEmailTitle')}</h3>
+    <label class="lbl">${t('newEmailLabel')}</label>
     <input class="inp" type="email" id="new-email" placeholder="nouveau@domaine.com">
-    <label class="lbl">Mot de passe actuel</label>
+    <label class="lbl">${t('currentPasswordLabel')}</label>
     <input class="inp" type="password" id="confirm-pass" placeholder="••••••••">
-    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('email')">Mettre à jour</button>
+    <button class="btn btn-primary" style="width:100%" onclick="updateUserField('email')">${t('updateBtn')}</button>
   </div>`;
 }
 
 function renderApplyCoupon(box){
   box.innerHTML=`<div style="padding:24px">
-    <h3 style="color:#fff;margin-bottom:16px">Appliquer un coupon</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Entrez un code promo ou VIP pour l'activer sur votre compte.</p>
+    <h3 style="color:#fff;margin-bottom:16px">${t('applyCouponTitle')}</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">${t('applyCouponDesc')}</p>
     <input class="inp" id="coupon-code" placeholder="BAZAAR-XXXX">
-    <button class="btn btn-primary" style="width:100%" onclick="applyCoupon()">Activer le code</button>
+    <button class="btn btn-primary" style="width:100%" onclick="applyCoupon()">${t('activateCodeBtn')}</button>
   </div>`;
 }
 
 async function updateUserField(field){
-  const body = { user_id: currentUser.id };
+  const body = { token: sessionToken };
   if(field === 'pseudo') {
     body.pseudo = document.getElementById('new-pseudo').value.trim();
     body.verify_password = document.getElementById('confirm-pass').value;
@@ -370,25 +515,25 @@ async function updateUserField(field){
   } else if(field === 'password') {
     const np = document.getElementById('new-pass').value;
     const cp = document.getElementById('confirm-new-pass').value;
-    if(np !== cp) return notify('Les mots de passe ne correspondent pas.', true);
+    if(np !== cp) return notify(t('passwordsMismatch'), true);
     body.new_password = np;
     body.verify_password = document.getElementById('old-pass').value;
   }
   try {
     const res = await api('update-user', body);
-    saveSession(res.user); notify('✓ Changement effectué !'); closeProfile(); bootApp(true);
+    saveSession(res.user); notify(t('changeDone')); closeProfile(); bootApp(true);
   } catch(e) { notify(e.message, true); }
 }
 async function applyCoupon(){
   const code = document.getElementById('coupon-code').value.trim();
-  if(!code) return notify('Entrez un code.', true);
+  if(!code) return notify(t('enterCode'), true);
   try {
-    const res = await api('coupon', { user_id: currentUser.id, code });
-    saveSession(res.user); notify('✓ Code activé !'); closeProfile(); bootApp(true);
+    const res = await api('coupon', { token: sessionToken, code });
+    saveSession(res.user); notify(t('codeActivated')); closeProfile(); bootApp(true);
   } catch(e) { notify(e.message, true); }
 }
 
-function closeProfile(){document.getElementById('profile-modal').classList.remove('open');}
+function closeProfile(){document.getElementById('profile-modal').classList.remove('open');currentProfileSection=null;}
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
@@ -398,7 +543,7 @@ function gotoPage(name){
 }
 
 function getCreditsLeft(){ return currentUser ? (currentUser.credits_max - currentUser.credits_used) : 0; }
-function updateCreditsUI(){ const left=getCreditsLeft(); const el=document.getElementById('sq-left'); if(el) el.textContent = left; }
+function updateCreditsUI(){ const left=getCreditsLeft(); const el=document.getElementById('sq-left'); if(el) el.textContent = left; const sr=document.getElementById('sr-left'); if(sr) sr.textContent = left; }
 function startResetTimer(){ setInterval(()=>{},1000); }
 
 function setSearchMode(mode){
@@ -410,18 +555,67 @@ function setSearchMode(mode){
 
 async function doSearch(){
   const q=document.getElementById('search-input').value.trim();
-  if(!q) return notify('Veuillez entrer une cible.', true);
-  if(!currentUser) return notify('🔑 Connexion requise.', true);
+  if(!q) return notify(t('enterTarget'), true);
+  if(!currentUser) return notify(t('loginRequired'), true);
+
+  // Show loading bar
+  const loading = document.getElementById('search-loading');
+  const cooldown = document.getElementById('search-cooldown');
+  const resultsWrap = document.getElementById('results-wrap');
+  const quotaWarn = document.getElementById('quota-warn');
+  const fill = document.getElementById('search-fill');
+  const loadText = document.getElementById('search-loading-text');
+  if(loading) loading.classList.add('show');
+  if(cooldown) cooldown.classList.remove('show');
+  if(resultsWrap) resultsWrap.innerHTML = '';
+  if(quotaWarn) quotaWarn.style.display = 'none';
+  if(fill) { fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = 'searchLoad 5s linear forwards'; }
+  if(loadText) loadText.textContent = 'Interrogation des sources OSINT…';
+
   try{
-    const res=await api('search',{user_id:currentUser.id, query:q, type:searchMode==='auto'?'auto':document.getElementById('search-type').value});
+    const res=await api('search',{token:sessionToken, query:q, type:searchMode==='auto'?'auto':document.getElementById('search-type').value});
     saveSession(res.user);
-    // Render results logic here...
-  }catch(e){ notify(e.message, true); }
+    updateCreditsUI();
+
+    if(loading) loading.classList.remove('show');
+
+    // Render search results
+    if(!resultsWrap) return;
+    if(res.results && res.results.length > 0){
+      resultsWrap.innerHTML = res.results.map((r, i) => `
+        <div class="result-item" style="animation-delay:${i*80}ms">
+          <h4>${esc(r.source || 'Source '+(i+1))}</h4>
+          <p>${Object.entries(r.data || {}).map(([k,v]) => `<strong>${esc(k)}:</strong> ${esc(v)}`).join('<br>')}</p>
+          ${r.tag ? `<span class="result-tag">${esc(r.tag)}</span>` : ''}
+        </div>
+      `).join('');
+    } else {
+      resultsWrap.innerHTML = `<div class="result-item"><h4>Aucun résultat</h4><p>Aucune donnée trouvée pour cette cible avec les sources disponibles.</p></div>`;
+    }
+
+    // Show cooldown
+    if(cooldown){
+      cooldown.classList.add('show');
+      let cdLeft = 60;
+      const cdInterval = setInterval(() => {
+        cdLeft--;
+        cooldown.textContent = `⏳ Prochaine recherche dans ${cdLeft}s`;
+        if(cdLeft <= 0){ clearInterval(cdInterval); cooldown.classList.remove('show'); }
+      }, 1000);
+    }
+  }catch(e){
+    if(loading) loading.classList.remove('show');
+    notify(e.message, true);
+    if(quotaWarn && e.message.includes('Quota')){
+      quotaWarn.style.display = 'flex';
+    }
+  }
 }
 
 // ── RENDER ────────────────────────────────────────────────────
 function renderShop(filter='Discord'){
   const grid = document.getElementById('shop-grid'); if(!grid) return;
+  currentShopFilter = filter;
   // Update filter buttons UI
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${filter}'`));
@@ -430,15 +624,15 @@ function renderShop(filter='Discord'){
   const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
   const items=CONFIG.shop.filter(i=>i.category===filter);
   if(items.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">Aucun article dans cette catégorie pour le moment.</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">${t('shopEmpty')}</div>`;
     return;
   }
   grid.innerHTML=items.map((item, idx)=>{
     const locked=item.premium&&!vip;
     return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
       <div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.premium?'<span class="premium-crown">👑</span>':''}${locked?'<div class="lock-overlay">🔒</div>':''}</div>
-      <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?'Contenu réservé.':item.desc.substring(0,80)+'…'}</p></div>
-      <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">Voir</button></div>
+      <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?t('lockedDesc'):item.desc.substring(0,80)+'…'}</p></div>
+      <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">${t('viewBtn')}</button></div>
     </div>`;
   }).join('');
 }
@@ -448,24 +642,24 @@ function renderTools(){
   const visible=CONFIG.tools.filter(i=>i.category==='FreeTools' || (i.category==='Tools' && vip));
   const locked=CONFIG.tools.filter(i=>i.category==='Tools' && !vip);
   grid.innerHTML=[
-    ...visible.map((item, idx)=>`<div class="item-card${item.category==='Tools'?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.category==='Tools'?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="${item.category==='Tools'?'premium-price':'card-free'}">${item.category==='Tools'?'Premium':'✓ Gratuit'}</span><button class="btn-sm">Voir</button></div></div>`),
-    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="lock-overlay">🔒</div><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">Outil payant.</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">Débloquer</button></div></div>`)
+    ...visible.map((item, idx)=>`<div class="item-card${item.category==='Tools'?' premium-card':''}" style="animation:fadeUp .3s ease forwards; animation-delay:${idx*40}ms" onclick="openItem('${item.id}','tools')"><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.category==='Tools'?'<span class="premium-crown">👑</span>':''}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${item.desc.substring(0,80)}…</p></div><div class="card-footer-inner"><span class="${item.category==='Tools'?'premium-price':'card-free'}">${item.category==='Tools'?t('premiumBadge'):t('freeBadge')}</span><button class="btn-sm">${t('viewBtn')}</button></div></div>`),
+    ...locked.map((item, idx)=>`<div class="item-card premium-card locked-card" style="animation:fadeUp .3s ease forwards; animation-delay:${(visible.length+idx)*40}ms" onclick="notifyVipRequired()"><div class="lock-overlay">🔒</div><div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}</div><div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${t('paidToolDesc')}</p></div><div class="card-footer-inner"><span class="premium-price">🔒</span><button class="btn-sm">${t('unlockBtn')}</button></div></div>`)
   ].join('');
 }
 function renderPlans(){
   const grid=document.getElementById('plans-grid'); if(!grid) return;
   grid.innerHTML=CONFIG.plans.map((p, idx)=>`
     <div class="plan-card" style="animation:fadeUp .4s ease forwards; animation-delay:${idx*60}ms">
-      ${p.highlight?'<div class="plan-best">👑 BEST VALUE</div>':''}
+      ${p.highlight?`<div class="plan-best">${t('bestValue')}</div>`:''}
       <div class="plan-card-body" style="padding: 24px 20px; border: 1px solid var(--border2); background: var(--panel);">
         <div class="plan-name" style="color:${p.color}">${p.name}</div>
         <div class="plan-subtitle">${p.subtitle}</div>
         <div class="plan-price">${p.price}<span class="plan-period"> ${p.period}</span></div>
-        <div class="plan-searches-badge">${p.searches>=999999?'Illimitées':p.searches} recherches/jour</div>
+        <div class="plan-searches-badge">${p.searches>=999999?t('unlimitedSearches'):p.searches} ${t('searchesPerDay')}</div>
         <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
         <ul class="plan-features">${p.features.map(f=>`<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span>${f.text}</li>`).join('')}</ul>
-        <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?'Plan actuel':'S\'abonner'}</a>
-        <p class="plan-ticket-note">Ouvrez un ticket Discord pour activer</p>
+        <a href="${CONFIG.site.discord}" target="_blank" class="btn-plan-cta"><img src="logo/discord.png" alt="">${(currentUser && p.id==='plan_free')?t('currentPlan'):t('subscribeBtn')}</a>
+        <p class="plan-ticket-note">${t('openTicketToActivate')}</p>
       </div>
     </div>`).join('');
 }
@@ -482,13 +676,13 @@ function renderFounders(){
     </div>`).join('');
 }
 
-function notifyVipRequired(){notify('🔒 Accès restreint — entrez votre code VIP dans le menu profil',true);}
+function notifyVipRequired(){notify(t('vipRequiredMsg'),true);}
 
 function openItem(id,src){
   const item=src==='shop'?CONFIG.shop.find(i=>i.id===id):CONFIG.tools.find(i=>i.id===id); if(!item)return; currentItemForDl=item;
   const box = document.getElementById('item-modal-content');
   box.innerHTML = `
-    <div style="padding:20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:18px;font-weight:800;color:var(--white)">Détails</h2><button class="modal-close-btn" onclick="closeItemView()">✕</button></div>
+    <div style="padding:20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:18px;font-weight:800;color:var(--white)">${t('detailsTitle')}</h2><button class="modal-close-btn" onclick="closeItemView()">✕</button></div>
     <div style="padding:24px">
       <div style="display:flex;gap:20px;margin-bottom:20px">
         <div style="width:100px;height:100px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0">${item.icon.startsWith('logo/')?`<img src="${item.icon}" style="width:50px;height:50px">`:`<span style="font-size:40px">${item.icon}</span>`}</div>
@@ -496,35 +690,35 @@ function openItem(id,src){
       </div>
       <div style="background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:16px">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-          <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:2px">Prix</div><div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?'GRATUIT':item.price}</div></div>
-          <div style="display:flex;align-items:center;gap:10px">${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()">Télécharger</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord">Commander</a>`}</div>
+          <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:2px">${t('priceLabel')}</div><div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?t('freeLabel'):item.price}</div></div>
+          <div style="display:flex;align-items:center;gap:10px">${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()">${t('downloadBtn')}</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord">${t('orderBtn')}</a>`}</div>
         </div>
       </div>
     </div>`;
   document.getElementById('item-modal').classList.add('open');
 }
 function closeItemView(){document.getElementById('item-modal').classList.remove('open');}
-function downloadTool(){ if(!currentItemForDl)return; const blob=new Blob([currentItemForDl.dlContent||`=== ${currentItemForDl.name} ===\ndiscord.gg/ssYFSXRGPP`],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(currentItemForDl.name||'tool').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.txt';a.click();URL.revokeObjectURL(a.href); notify('⬇ Téléchargement lancé !'); }
+function downloadTool(){ if(!currentItemForDl)return; const blob=new Blob([currentItemForDl.dlContent||`=== ${currentItemForDl.name} ===\ndiscord.gg/ssYFSXRGPP`],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(currentItemForDl.name||'tool').replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.txt';a.click();URL.revokeObjectURL(a.href); notify(t('downloadStarted')); }
 
 let nq=[],nActive=false;
 function notify(msg,err=false){nq.push({msg,err});if(!nActive)processNotif();}
 function processNotif(){ if(!nq.length){nActive=false;return;}nActive=true; const{msg,err}=nq.shift();const el=document.getElementById('notif'); el.textContent=msg;el.className='notif show'+(err?' notif-err':''); clearTimeout(el._t);el._t=setTimeout(()=>{el.className='notif';setTimeout(processNotif,300);},2800); }
 
 let reviewStars = 5;
-function openReviewModal() { if(!currentUser) { notify('🔑 Connectez-vous pour laisser un avis.', true); return; } document.getElementById('review-pseudo').value = currentUser.pseudo; document.getElementById('review-modal').classList.add('open'); setReviewStars(5); }
+function openReviewModal() { if(!currentUser) { notify(t('loginToReview'), true); return; } document.getElementById('review-pseudo').value = currentUser.pseudo; document.getElementById('review-modal').classList.add('open'); setReviewStars(5); }
 function closeReviewModal() { document.getElementById('review-modal').classList.remove('open'); }
 function setReviewStars(n) { reviewStars = n; document.getElementById('review-stars-val').textContent = n + '/5'; document.querySelectorAll('.star-btn').forEach((s, i) => { s.style.color = i < n ? 'var(--yellow)' : 'var(--text3)'; }); }
 async function submitReview() {
   const btn = document.querySelector('#review-modal .btn-primary'), text = document.getElementById('review-text').value.trim();
-  if(text.length < 5) { setNote('review-note', 'Avis trop court.', 'err'); return; }
-  if(btn.disabled) return; btn.disabled = true; setNote('review-note', 'Envoi…', 'inf');
-  try { await api('submit-review', { user_id: currentUser.id, text, stars: reviewStars, pseudo: currentUser.pseudo }); setNote('review-note', '✓ Avis envoyé !', 'ok'); setTimeout(() => { closeReviewModal(); loadReviews(); btn.disabled = false; }, 1200); } catch(e) { setNote('review-note', e.message, 'err'); btn.disabled = false; }
+  if(text.length < 5) { setNote('review-note', t('reviewTooShort'), 'err'); return; }
+  if(btn.disabled) return; btn.disabled = true; setNote('review-note', t('sending'), 'inf');
+  try { await api('submit-review', { token: sessionToken, text, stars: reviewStars }); setNote('review-note', t('reviewSent'), 'ok'); setTimeout(() => { closeReviewModal(); loadReviews(); btn.disabled = false; }, 1200); } catch(e) { setNote('review-note', e.message, 'err'); btn.disabled = false; }
 }
 
 async function loadReviews() {
   try {
     const res = await api('get-reviews', {}); const m = document.getElementById('reviews-marquee'); if(!m) return;
-    if(!res.reviews || res.reviews.length === 0) { m.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">Aucun avis pour le moment.</div>'; return; }
+    if(!res.reviews || res.reviews.length === 0) { m.innerHTML = `<div style="color:var(--text3);font-size:12px;text-align:center;width:100%">${t('noReviewsYet')}</div>`; return; }
     let items = res.reviews;
     if(items.length > 0 && items.length < 15) {
       let repeated = [];
@@ -537,9 +731,20 @@ async function loadReviews() {
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify('✓ Adresse LTC copiée !'));}
+function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify(t('ltcCopied')));}
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeItemView();closeProfile();closeSettings();}
+  if(e.key==='Escape'){closeItemView();closeProfile();closeSettings();closeReviewModal();}
   if(e.key==='Enter'){ if(document.getElementById('auth-signup')?.classList.contains('active'))doSignup(); else if(document.getElementById('auth-login')?.classList.contains('active'))doLogin(); }
+  // Generic keyboard activation for div/span elements used as buttons (role="button")
+  if((e.key==='Enter'||e.key===' ') && e.target.getAttribute && e.target.getAttribute('role')==='button'){
+    e.preventDefault(); e.target.click();
+  }
+});
+
+// Close modals when clicking the backdrop (not when clicking inside the box)
+document.addEventListener('click', e => {
+  if(e.target.classList?.contains('modal-bg')){
+    closeItemView(); closeProfile(); closeSettings(); closeReviewModal();
+  }
 });

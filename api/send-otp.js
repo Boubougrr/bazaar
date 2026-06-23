@@ -11,11 +11,21 @@ export default async function handler(req, res) {
   const { email, purpose } = req.body;
   if (!email || !purpose) return res.status(400).json({ error: 'Paramètres manquants.' });
 
+  // Rate-limit: max 3 codes per email/purpose per 10 minutes, to stop email-bombing abuse.
+  const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { count: recent } = await supabase
+    .from('otp_codes')
+    .select('*', { count: 'exact', head: true })
+    .eq('email', email).eq('purpose', purpose)
+    .gte('created_at', since);
+  if ((recent || 0) >= 3) return res.status(429).json({ error: 'Trop de demandes, réessayez plus tard.' });
+
   // Delete old codes
   await supabase.from('otp_codes').delete().eq('email', email).eq('purpose', purpose);
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
-  await supabase.from('otp_codes').insert({ email, code, purpose });
+  const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  await supabase.from('otp_codes').insert({ email, code, purpose, expires_at });
 
   // Send via EmailJS
   try {

@@ -14,11 +14,6 @@ const CONFIG = {
     templateId: "template_8wtc9vk",
     publicKey:  "M-eHZGppCNRyWiLMi",
   },
-  // Codes secrets — jamais affichés dans l'UI
-  _codes: {
-    refund: "BAZAAR-REFUNDS",
-    vip:    "BAZAAR-VIP2565",
-  },
   founders: [
     { name:"Boubou",  role:"Founder",    discord:"france.eu",       gunslol:"https://guns.lol/ps0",    gunslolLabel:"guns.lol/ps0",   img:"logo/boubou.jpg" },
     { name:"ZIamana", role:"Co-Founder", discord:"canalisation_", gunslol:"https://guns.lol/ziamana",  gunslolLabel:"guns.lol/ziamana", img:"logo/ziamna.png" },

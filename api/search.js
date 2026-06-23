@@ -1,5 +1,6 @@
 // api/search.js — Server-side search handler
 import { createClient } from '@supabase/supabase-js';
+import { verifySession } from './_session.js';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -8,8 +9,11 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { user_id, query, type } = req.body;
-  if (!user_id || !query) return res.status(400).json({ error: 'Paramètres manquants.' });
+  const { token, query, type } = req.body;
+  if (!query) return res.status(400).json({ error: 'Paramètres manquants.' });
+
+  const user_id = verifySession(token);
+  if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
   const { data: user } = await supabase.from('users').select('*').eq('id', user_id).single();
   if (!user) return res.status(401).json({ error: 'Non autorisé.' });
@@ -57,6 +61,7 @@ function safeUser(u) {
     last_login: u.last_login,
     week_searches: u.week_searches || {}, 
     month_searches: u.month_searches || {},
+    role: u.role || 'user'
   };
 }
 
