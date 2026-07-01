@@ -4,11 +4,37 @@
 let currentUser = null;
 let sessionToken = null;
 let currentItemForDl = null;
-let currentShopFilter = 'Discord';
+let currentShopFilter = 'discord';
 let currentProfileSection = null;
 let searchMode = 'auto';
 let searchCooldown = false;
 let cooldownEnd = 0;
+
+function startCooldown(seconds) {
+  const end = Date.now() + seconds * 1000;
+  localStorage.setItem('bzCooldownEnd', end);
+  runCooldownTimer();
+}
+
+function runCooldownTimer() {
+  const cooldown = document.getElementById('search-cooldown');
+  if(!cooldown) return;
+  const end = parseInt(localStorage.getItem('bzCooldownEnd') || '0');
+  const left = Math.ceil((end - Date.now()) / 1000);
+  if(left <= 0){ cooldown.classList.remove('show'); return; }
+  cooldown.classList.add('show');
+  cooldown.textContent = `⏳ Prochaine recherche dans ${left}s`;
+  const timer = setInterval(() => {
+    const remaining = Math.ceil((end - Date.now()) / 1000);
+    if(remaining <= 0){
+      clearInterval(timer);
+      cooldown.classList.remove('show');
+      localStorage.removeItem('bzCooldownEnd');
+    } else {
+      cooldown.textContent = `⏳ Prochaine recherche dans ${remaining}s`;
+    }
+  }, 1000);
+}
 
 // ── TRANSLATIONS ──────────────────────────────────────────────
 const I18N = {
@@ -22,7 +48,7 @@ const I18N = {
     or:'ou',noAccount:'Pas encore de compte ?',hasAccount:'Déjà un compte ?',
     createAccount:'Créer un compte',signupSub:'Rejoignez Bazaar — gratuit, rapide, sécurisé.',
     pseudo:'Pseudo',confirmPassword:'Confirmer le mot de passe',createBtn:'Créer mon compte',
-    heroSub:'Nom, email, téléphone, IP, Discord ID — croisez des millions d\'enregistrements.',
+    heroSub:'Nom, email, téléphone, IP, Discord ID — croisez des millions de fuites de données.',
     startSearch:'Commencer une recherche',joinDiscord:'Rejoindre le Discord',
     credits:'crédits',
     // shop / tools
@@ -76,7 +102,7 @@ const I18N = {
     or:'or',noAccount:'No account yet?',hasAccount:'Already have an account?',
     createAccount:'Create account',signupSub:'Join Bazaar — free, fast, secure.',
     pseudo:'Username',confirmPassword:'Confirm password',createBtn:'Create my account',
-    heroSub:'Name, email, phone, IP, Discord ID — cross millions of records in seconds.',
+    heroSub:'Name, email, phone, IP, Discord ID — cross millions of data leaks in seconds.',
     startSearch:'Start a search',joinDiscord:'Join Discord',
     credits:'credits',
     // shop / tools
@@ -137,10 +163,27 @@ function loadSettings(){
 function saveSettings(){ localStorage.setItem('bzr_settings', JSON.stringify(settings)); }
 
 function applySettings(){
+  document.body.classList.toggle('theme-light',  settings.theme === 'light');
   document.body.classList.toggle('theme-darker', settings.theme === 'darker');
   document.body.classList.toggle('custom-cursor', settings.cursor);
   applyLang(settings.lang);
-  
+
+  // Sync toggle buttons (stgl-btn) — match by ID pattern
+  const active = {
+    'p-lang-fr':      settings.lang === 'fr',
+    'p-lang-en':      settings.lang === 'en',
+    'p-theme-dark':   settings.theme === 'dark',
+    'p-theme-light':  settings.theme === 'light',
+    'p-cursor-on':    settings.cursor === true,
+    'p-cursor-off':   settings.cursor === false,
+    'p-anim-on':      settings.anim === true,
+    'p-anim-off':     settings.anim === false,
+  };
+  Object.entries(active).forEach(([id, on]) => {
+    document.getElementById(id)?.classList.toggle('active', on);
+  });
+
+  // legacy setting-btn support
   document.querySelectorAll('.setting-btn').forEach(btn => {
     const id = btn.id;
     if(id.includes('lang-' + settings.lang)) btn.classList.add('active');
@@ -165,7 +208,7 @@ function applyLang(lang){
   document.documentElement.setAttribute('lang', lang);
 
   // Re-render dynamically generated content so it picks up the new language too
-  if(document.getElementById('shop-grid')) renderShop(currentShopFilter);
+  if(document.getElementById('shop-grid')) renderShop();
   if(document.getElementById('tools-grid')) renderTools();
   if(document.getElementById('plans-grid')) renderPlans();
   if(currentProfileSection) openProfile(currentProfileSection);
@@ -177,8 +220,8 @@ function setCursor(v){ settings.cursor=v; saveSettings(); applySettings(); }
 function setAnim(v){ settings.anim=v; saveSettings(); applySettings(); }
 function setDefaultSearchMode(m){ settings.searchMode=m; saveSettings(); applySettings(); setSearchMode(m); }
 
-function openSettings(){ document.getElementById('settings-modal').classList.add('open'); }
-function closeSettings(){ document.getElementById('settings-modal')?.classList.remove('open'); }
+function openSettings(){ gotoPage('settings'); document.getElementById('auth-screen')?.classList.add('hidden'); }
+function closeSettings(){ }
 function toggleGear(){ openSettings(); }
 
 // ── CURSOR ────────────────────────────────────────────────────
@@ -253,19 +296,33 @@ async function initApp() {
   }
 
   generateCaptcha(); initAuthEvents();
-  renderShop('Discord'); renderTools(); renderFounders(); renderPlans();
+  renderShop(); renderTools(); renderFounders(); renderPlans();
+  startOfferCountdown();
   loadReviews();
   selectSearchType('auto');
   initCardSpotlight();
 
-  // Splash Loader (1.5s)
+  // Splash Loader (0.5s)
+  const pctEl = document.getElementById('loader-percent');
+  let pct = 0;
+  const pctTimer = setInterval(() => {
+    pct = Math.min(100, pct + 2);
+    if(pctEl) pctEl.textContent = pct + '%';
+    if(pct >= 100) clearInterval(pctTimer);
+  }, 10);
   setTimeout(() => {
     document.getElementById('app-loader')?.classList.add('hidden');
-  }, 1500);
+  }, 500);
 }
 
 if(document.readyState === 'complete') initApp();
 else window.addEventListener('load', initApp);
+
+// Close search dropdown when clicking outside
+document.addEventListener('click', function() {
+  document.getElementById('std-panel')?.classList.remove('open');
+  document.getElementById('std-trigger')?.classList.remove('active');
+});
 
 function bootApp(silent = false){
   try {
@@ -300,6 +357,9 @@ function bootApp(silent = false){
     const name = currentUser.pseudo || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
     const nameEl = document.getElementById('user-name-nav');
     if(nameEl) nameEl.textContent = name;
+    const navAvatar = document.getElementById('nav-avatar-img');
+    if(navAvatar && currentUser.avatar_url) { navAvatar.src = currentUser.avatar_url; navAvatar.style.borderRadius='50%'; }
+    updateSettingsProfile();
     ['shop','tools','subs','features','contact','about'].forEach(id => {
       const el = document.getElementById('nav-'+id);
       if(el) {
@@ -317,6 +377,171 @@ function bootApp(silent = false){
 function applyUserStyling() {
   const nameNav = document.getElementById('user-name-nav'); if(!nameNav || !currentUser) return;
   if(currentUser.email === 'phoenix.guecko@gmail.com') { nameNav.style.color = '#ff4d4d'; nameNav.style.fontWeight = '900'; }
+}
+
+function updateSettingsProfile() {
+  if(!currentUser) return;
+  const u = currentUser;
+  // Avatar
+  const img = document.getElementById('settings-avatar-img');
+  const init = document.getElementById('settings-avatar-initial');
+  if(img && u.avatar_url) { img.src = u.avatar_url; img.style.display = 'block'; if(init) init.style.display = 'none'; }
+  else if(init) { init.textContent = (u.pseudo || u.email || '?')[0].toUpperCase(); }
+  // Text fields
+  const ps = document.getElementById('settings-pseudo-display'); if(ps) ps.textContent = u.pseudo || '—';
+  const em = document.getElementById('settings-email-display'); if(em) em.textContent = u.email || '—';
+  const pl = document.getElementById('settings-plan-display'); if(pl) pl.textContent = (u.plan || 'standard').toUpperCase();
+  // Stats grid
+  const used = u.credits_used || 0;
+  const max = u.credits_max || 5;
+  const cr = document.getElementById('st-credits'); if(cr) cr.textContent = `${Math.max(0, max-used)}/${max}`;
+  const se = document.getElementById('st-searches'); if(se) se.textContent = u.total_searches || 0;
+  const lo = document.getElementById('st-logins'); if(lo) lo.textContent = u.login_count || 0;
+  const pl2 = document.getElementById('st-plan'); if(pl2) pl2.textContent = (u.plan || 'std').toUpperCase();
+  // Stats rows
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('fr-FR', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const jn = document.getElementById('st-joined'); if(jn) jn.textContent = fmtDate(u.joined_at || u.created_at);
+  const ll = document.getElementById('st-last-login'); if(ll) ll.textContent = fmtDate(u.last_login);
+  const ro = document.getElementById('st-role'); if(ro) {
+    const roleMap = { dev:'Staff', admin:'Admin', vip:'VIP', user:'Membre' };
+    ro.textContent = roleMap[u.role] || 'Membre';
+    ro.style.color = u.role === 'dev' ? '#ff4d4d' : u.vip_active ? 'var(--accent)' : 'var(--text2)';
+  }
+}
+
+// ── CREDITS MODAL ─────────────────────────────
+function openCreditsModal() {
+  if(!currentUser) return;
+  const left = (currentUser.credits_max||5) - (currentUser.credits_used||0);
+  const el1 = document.getElementById('cm-credits-left'); if(el1) el1.textContent = Math.max(0, left);
+  const el2 = document.getElementById('cm-credits-max'); if(el2) el2.textContent = currentUser.credits_max || 5;
+  document.getElementById('credits-modal')?.classList.add('open');
+}
+function closeCreditsModal() { document.getElementById('credits-modal')?.classList.remove('open'); }
+
+// ── MY REVIEWS MODAL ──────────────────────────
+function openMyReviewsModal() {
+  document.getElementById('my-reviews-modal')?.classList.add('open');
+  loadMyReviewsModal();
+}
+function closeMyReviewsModal() { document.getElementById('my-reviews-modal')?.classList.remove('open'); }
+
+async function loadMyReviewsModal() {
+  const wrap = document.getElementById('modal-my-reviews-content'); if(!wrap) return;
+  if(!currentUser) { wrap.innerHTML = '<div style="padding:20px 24px;font-size:12px;color:var(--text3)">Connectez-vous pour voir vos avis.</div>'; return; }
+  wrap.innerHTML = '<div style="padding:20px 24px;font-size:13px;color:var(--text3)">Chargement…</div>';
+  try {
+    const res = await api('get-reviews', { user_id: currentUser.id });
+    const reviews = res.reviews || [];
+    if(!reviews.length) {
+      wrap.innerHTML = '<div style="padding:20px 24px;font-size:13px;color:var(--text3)">Aucun avis publié pour le moment.</div>';
+      return;
+    }
+    wrap.innerHTML = reviews.map(r => `
+      <div class="my-review-item" id="modal-review-${r.id}">
+        <div style="flex:1;min-width:0">
+          <div class="my-review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+          <div class="my-review-text" id="modal-review-text-${r.id}">${esc(r.text)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace">${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
+        </div>
+        <div class="my-review-actions">
+          <button class="my-review-btn" onclick="editModalReview('${r.id}')">✏️ Modifier</button>
+          <button class="my-review-btn del" onclick="deleteModalReview('${r.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { wrap.innerHTML = '<div style="padding:20px 24px;font-size:12px;color:var(--red)">Erreur de chargement.</div>'; }
+}
+
+async function deleteModalReview(id) {
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await api('delete-review', { token: sessionToken, review_id: id });
+    document.getElementById(`modal-review-${id}`)?.remove();
+    notify('✓ Avis supprimé.'); loadReviews();
+  } catch(e) { notify(e.message, true); }
+}
+
+function editModalReview(id) {
+  const item = document.getElementById(`modal-review-${id}`); if(!item) return;
+  const textEl = document.getElementById(`modal-review-text-${id}`); if(!textEl) return;
+  const currentText = textEl.textContent;
+  item.innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <textarea id="modal-edit-ta-${id}" class="inp" style="min-height:70px;font-size:12px;resize:vertical">${currentText}</textarea>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        <button class="my-review-btn" onclick="loadMyReviewsModal()">Annuler</button>
+        <button class="my-review-btn" style="border-color:var(--accent);color:var(--accent)" onclick="saveModalReview('${id}')">✓ Sauvegarder</button>
+      </div>
+    </div>`;
+}
+
+async function saveModalReview(id) {
+  const ta = document.getElementById(`modal-edit-ta-${id}`); if(!ta) return;
+  const text = ta.value.trim(); if(text.length < 5) { notify('Avis trop court.', true); return; }
+  try {
+    await api('submit-review', { token: sessionToken, text, stars: 5, review_id: id });
+    notify('✓ Avis mis à jour.'); loadMyReviewsModal(); loadReviews();
+  } catch(e) { notify(e.message, true); }
+}
+
+// ── MY REVIEWS IN SETTINGS ────────────────────
+async function loadMyReviews() {
+  const wrap = document.getElementById('settings-my-reviews'); if(!wrap) return;
+  if(!currentUser) { wrap.innerHTML = '<div style="padding:12px 20px;font-size:12px;color:var(--text3)">Connectez-vous pour voir vos avis.</div>'; return; }
+  wrap.innerHTML = '<div style="padding:12px 20px;font-size:12px;color:var(--text3)">Chargement…</div>';
+  try {
+    const res = await api('get-reviews', { user_id: currentUser.id });
+    const reviews = res.reviews || [];
+    if(!reviews.length) {
+      wrap.innerHTML = '<div style="padding:12px 20px;font-size:12px;color:var(--text3)">Aucun avis publié pour le moment.</div>';
+      return;
+    }
+    wrap.innerHTML = reviews.map(r => `
+      <div class="my-review-item" id="my-review-${r.id}">
+        <div style="flex:1;min-width:0">
+          <div class="my-review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+          <div class="my-review-text" id="my-review-text-${r.id}">${esc(r.text)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:'JetBrains Mono',monospace">${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
+        </div>
+        <div class="my-review-actions">
+          <button class="my-review-btn" onclick="editMyReview('${r.id}')">✏️ Modifier</button>
+          <button class="my-review-btn del" onclick="deleteMyReview('${r.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  } catch(e) { wrap.innerHTML = '<div style="padding:12px 20px;font-size:12px;color:var(--red)">Erreur de chargement.</div>'; }
+}
+
+async function deleteMyReview(id) {
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await api('delete-review', { token: sessionToken, review_id: id });
+    document.getElementById(`my-review-${id}`)?.remove();
+    notify('✓ Avis supprimé.');
+    loadReviews();
+  } catch(e) { notify(e.message, true); }
+}
+
+function editMyReview(id) {
+  const item = document.getElementById(`my-review-${id}`); if(!item) return;
+  const textEl = document.getElementById(`my-review-text-${id}`); if(!textEl) return;
+  const currentText = textEl.textContent;
+  item.innerHTML = `
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <textarea id="edit-review-ta-${id}" class="inp" style="min-height:70px;font-size:12px;resize:vertical">${currentText}</textarea>
+      <div style="display:flex;gap:6px;justify-content:flex-end">
+        <button class="my-review-btn" onclick="loadMyReviews()">Annuler</button>
+        <button class="my-review-btn" style="border-color:var(--accent);color:var(--accent)" onclick="saveMyReview('${id}')">✓ Sauvegarder</button>
+      </div>
+    </div>`;
+}
+
+async function saveMyReview(id) {
+  const ta = document.getElementById(`edit-review-ta-${id}`); if(!ta) return;
+  const text = ta.value.trim(); if(text.length < 5) { notify('Avis trop court.', true); return; }
+  try {
+    await api('submit-review', { token: sessionToken, text, stars: 5, review_id: id });
+    notify('✓ Avis mis à jour.'); loadMyReviews(); loadReviews();
+  } catch(e) { notify(e.message, true); }
 }
 
 function saveSession(u, token = sessionToken){
@@ -414,7 +639,13 @@ async function doSignup(){
   if(pass !== confirm) return setAuthNote('signup-note', t('passwordsMismatch'), 'err');
   try{
     const res=await api('signup',{email,pseudo,password:pass});
-    saveSession(res.user, res.token); setTimeout(bootApp,400);
+    saveSession(res.user, res.token);
+    // Upload avatar if chosen during signup
+    if(signupAvatarBase64 && res.token){
+      try { await api('upload-avatar',{token:res.token,imageBase64:signupAvatarBase64,mimeType:signupAvatarMime}); } catch(e){}
+      signupAvatarBase64=null; signupAvatarMime=null;
+    }
+    setTimeout(bootApp,400);
   }catch(e){ setAuthNote('signup-note',e.message,'err'); }
 }
 
@@ -553,13 +784,62 @@ async function applyCoupon(){
 }
 
 function closeProfile(){document.getElementById('profile-modal').classList.remove('open');currentProfileSection=null;}
+
+// ── DELETE ACCOUNT ────────────────────────────
+function openDeleteAccount(){
+  const box = document.getElementById('profile-content');
+  if(!box) return;
+  currentProfileSection = 'delete';
+  box.innerHTML = `<div style="padding:24px">
+    <h3 style="color:var(--red,#f87171);margin-bottom:8px">🗑️ Supprimer mon compte</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:18px">Cette action est irréversible. Tous vos avis et données seront supprimés définitivement.</p>
+    <label class="lbl">Mot de passe actuel</label>
+    <input class="inp" type="password" id="del-password" placeholder="••••••••" style="margin-bottom:14px">
+    <button class="btn" style="width:100%;background:rgba(248,113,113,.15);border-color:rgba(248,113,113,.4);color:var(--red,#f87171);font-weight:700" onclick="confirmDeleteAccount()">Supprimer définitivement mon compte</button>
+    <p class="modal-note" id="del-note" style="min-height:16px;margin-top:10px"></p>
+  </div>`;
+  document.getElementById('profile-modal')?.classList.add('open');
+}
+
+async function confirmDeleteAccount(){
+  const pw = document.getElementById('del-password')?.value;
+  if(!pw) return setNote('del-note', 'Entrez votre mot de passe.', 'err');
+  setNote('del-note', 'Suppression en cours…', 'inf');
+  try {
+    await api('delete-account', { token: sessionToken, password: pw });
+    notify('✓ Compte supprimé.');
+    localStorage.removeItem('bzr_session'); localStorage.removeItem('bzr_token');
+    setTimeout(() => location.reload(), 1200);
+  } catch(e) { setNote('del-note', e.message, 'err'); }
+}
+
+// ── SIGNUP AVATAR PREVIEW ──────────────────────
+let signupAvatarBase64 = null;
+let signupAvatarMime = null;
+function previewSignupAvatar(e){
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    signupAvatarBase64 = ev.target.result;
+    signupAvatarMime = file.type;
+    const prev = document.getElementById('signup-avatar-preview');
+    if(prev){ prev.style.background='none'; prev.innerHTML=`<img src="${signupAvatarBase64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`; }
+  };
+  reader.readAsDataURL(file);
+}
+function clearSignupAvatar(){
+  signupAvatarBase64 = null; signupAvatarMime = null;
+  const prev = document.getElementById('signup-avatar-preview');
+  if(prev){ prev.style.background='linear-gradient(135deg,var(--accent),var(--accent2))'; prev.innerHTML='?'; }
+  const fi = document.getElementById('signup-avatar-file'); if(fi) fi.value='';
+}
 function gotoPage(name){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
   document.getElementById('page-'+name)?.classList.add('active');
   const pages=['home','shop','tools','subs','features','contact','about','settings'];
   const idx=pages.indexOf(name); if(idx>=0)document.querySelectorAll('.nav-link')[idx]?.classList.add('active');
-  if(name==='settings') applySettings();
+  if(name==='settings') { applySettings(); updateSettingsProfile(); }
 }
 
 function openSettings(){ gotoPage('settings'); closeDropdown?.(); }
@@ -575,12 +855,97 @@ function startResetTimer(){ setInterval(()=>{},1000); }
 
 let selectedSearchType = 'auto';
 
+function toggleSearchDD(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('std-panel');
+  const trigger = document.getElementById('std-trigger');
+  if(!panel) return;
+  const willOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open', willOpen);
+  trigger?.classList.toggle('active', willOpen);
+}
+
+function pickTypeTab(el) {
+  selectSearchType(el.dataset.value);
+  const iconEl = document.getElementById('std-icon');
+  const input  = document.getElementById('search-input');
+  if(iconEl && el.dataset.icon) iconEl.src = el.dataset.icon;
+  if(input  && el.dataset.ph)   input.placeholder = el.dataset.ph;
+  document.querySelectorAll('.stt-btn').forEach(b => b.classList.toggle('active', b === el));
+  // Hide detect label when switching to a non-auto tab
+  if(el.dataset.value !== 'auto') hideAutoDetect();
+  else if(input?.value.trim()) showAutoDetect(input.value.trim());
+}
+
+const AUTO_DETECT_TYPES = [
+  { id:'ipv4',    label:'IPv4 Address',   icon:'🌐', test: v => /^(\d{1,3}\.){3}\d{1,3}$/.test(v) && v.split('.').every(n=>+n<=255) },
+  { id:'ipv6',    label:'IPv6 Address',   icon:'🌐', test: v => /^[0-9a-fA-F:]{2,}:[0-9a-fA-F:]{2,}$/.test(v) },
+  { id:'mail',    label:'Email',          icon:'✉️',  test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+  { id:'discord', label:'Discord ID',     icon:'🎮', test: v => /^\d{17,19}$/.test(v) },
+  { id:'discord', label:'Discord Tag',    icon:'🎮', test: v => /^.+#\d{4}$/.test(v) },
+  { id:'phone',   label:'Phone Number',   icon:'📞', test: v => /^\+?[\d\s\-().]{7,}$/.test(v) && (v.match(/\d/g)||[]).length >= 7 },
+  { id:'name',    label:'Full Name',      icon:'👤', test: v => /^[a-zA-ZÀ-ÿ'-]+ [a-zA-ZÀ-ÿ'-]+/.test(v) && !/\d/.test(v) },
+  { id:'username',label:'Username',       icon:'🔑', test: v => /^[a-zA-Z0-9._\-]{3,}$/.test(v) },
+];
+
+function detectInputType(val) {
+  for(const t of AUTO_DETECT_TYPES) if(t.test(val)) return t;
+  return null;
+}
+
+function showAutoDetect(val) {
+  const wrap = document.getElementById('auto-detect-label');
+  const iconEl = document.getElementById('auto-detect-icon');
+  const textEl = document.getElementById('auto-detect-text');
+  if(!wrap) return;
+  const det = detectInputType(val);
+  if(det){
+    iconEl.textContent = det.icon + ' ';
+    textEl.textContent = 'Type détecté : ' + det.label;
+    wrap.className = 'auto-detect-label show det-' + det.id;
+    wrap.style.display = '';
+  } else {
+    hideAutoDetect();
+  }
+}
+
+function hideAutoDetect() {
+  const wrap = document.getElementById('auto-detect-label');
+  if(wrap){ wrap.style.display = 'none'; wrap.className = 'auto-detect-label'; }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore cooldown after page reload
+  if(parseInt(localStorage.getItem('bzCooldownEnd') || '0') > Date.now()) runCooldownTimer();
+
+  const input = document.getElementById('search-input');
+  if(input) input.addEventListener('input', () => {
+    if(selectedSearchType === 'auto') {
+      const v = input.value.trim();
+      if(v) showAutoDetect(v); else hideAutoDetect();
+    }
+  });
+});
+
+function pickSearchType(el) {
+  selectedSearchType = el.dataset.value;
+  const iconEl = document.getElementById('std-icon');
+  const labelEl = document.getElementById('std-label');
+  if(iconEl) iconEl.src = el.dataset.icon || 'logo/loupe.png';
+  if(labelEl) labelEl.textContent = el.textContent.trim();
+  document.querySelectorAll('.std-opt').forEach(o => o.classList.toggle('active', o === el));
+  document.getElementById('std-panel')?.classList.remove('open');
+  document.getElementById('std-trigger')?.classList.remove('active');
+  const sel = document.getElementById('search-type');
+  if(sel) sel.value = selectedSearchType;
+}
+
+function onSearchTypeChange(sel) { selectedSearchType = sel.value; }
+
 function selectSearchType(type) {
   selectedSearchType = type;
-  document.querySelectorAll('.s-type-pill').forEach(p => p.classList.toggle('active', p.dataset.type === type));
-  // Keep legacy select in sync
   const sel = document.getElementById('search-type');
-  if(sel) sel.value = type === 'auto' ? 'auto' : type;
+  if(sel) sel.value = type;
   searchMode = type === 'auto' ? 'auto' : 'manual';
 }
 
@@ -593,6 +958,9 @@ async function doSearch(){
   const q=document.getElementById('search-input').value.trim();
   if(!q) return notify(t('enterTarget'), true);
   if(!currentUser) return notify(t('loginRequired'), true);
+  // Sync type from dropdown
+  const sel = document.getElementById('search-type');
+  if(sel) selectedSearchType = sel.value;
 
   // Show loading bar
   const loading = document.getElementById('search-loading');
@@ -609,6 +977,70 @@ async function doSearch(){
   if(loadText) loadText.textContent = 'Interrogation des sources OSINT…';
 
   try{
+    // ── IP lookup via ipquery.io ─────────────────────────────────
+    const detectedType = detectInputType(q);
+    const isIpQuery = selectedSearchType === 'ip' ||
+      (selectedSearchType === 'auto' && (detectedType?.id === 'ipv4' || detectedType?.id === 'ipv6'));
+    if(isIpQuery){
+      const ipRes = await fetch(`https://api.ipquery.io/${q}`);
+      if(!ipRes.ok){
+        const errMap = {400:'Adresse IP invalide.', 429:'Trop de requêtes, réessaie dans un instant.', 500:'Erreur serveur ipquery.io.'};
+        throw new Error(errMap[ipRes.status] || `Erreur ${ipRes.status}`);
+      }
+      const d = await ipRes.json();
+      if(loading) loading.classList.remove('show');
+      if(!resultsWrap) return;
+
+      const riskBadge = (val, labelTrue, labelFalse) =>
+        `<span class="ip-badge${val?' ip-bad':' ip-ok'}">${val ? '⚠ '+labelTrue : '✓ '+labelFalse}</span>`;
+      const riskScore = d.risk?.risk_score ?? 0;
+      const scoreColor = riskScore >= 70 ? '#ef4444' : riskScore >= 30 ? '#f59e0b' : '#22c55e';
+
+      resultsWrap.innerHTML = `
+        <div class="result-item ip-result" style="animation-delay:0ms">
+          <div class="ip-header">
+            <span class="ip-address">${esc(d.ip)}</span>
+            <span class="ip-risk-score" style="--sc:${scoreColor}">Risk: ${riskScore}/100</span>
+          </div>
+          <div class="ip-sections">
+            <div class="ip-section">
+              <div class="ip-section-title">📍 Localisation</div>
+              <div class="ip-rows">
+                <div class="ip-row"><span>Pays</span><span>${esc(d.location?.country||'—')} ${d.location?.country_code ? `(${esc(d.location.country_code)})` : ''}</span></div>
+                <div class="ip-row"><span>Ville</span><span>${esc(d.location?.city||'—')}</span></div>
+                <div class="ip-row"><span>Région</span><span>${esc(d.location?.state||'—')}</span></div>
+                <div class="ip-row"><span>Code postal</span><span>${esc(d.location?.zipcode||'—')}</span></div>
+                <div class="ip-row"><span>Timezone</span><span>${esc(d.location?.timezone||'—')}</span></div>
+                <div class="ip-row"><span>Heure locale</span><span>${esc(d.location?.localtime||'—')}</span></div>
+                ${d.location?.latitude != null ? `<div class="ip-row"><span>Coordonnées</span><span>${d.location.latitude.toFixed(4)}, ${d.location.longitude.toFixed(4)}</span></div>` : ''}
+              </div>
+            </div>
+            <div class="ip-section">
+              <div class="ip-section-title">🌐 ISP / Réseau</div>
+              <div class="ip-rows">
+                <div class="ip-row"><span>ISP</span><span>${esc(d.isp?.isp||'—')}</span></div>
+                <div class="ip-row"><span>Organisation</span><span>${esc(d.isp?.org||'—')}</span></div>
+                <div class="ip-row"><span>ASN</span><span>${esc(d.isp?.asn||'—')}</span></div>
+              </div>
+            </div>
+            <div class="ip-section">
+              <div class="ip-section-title">🛡 Analyse de risque</div>
+              <div class="ip-badges">
+                ${riskBadge(d.risk?.is_vpn,    'VPN',        'Pas de VPN')}
+                ${riskBadge(d.risk?.is_proxy,  'Proxy',      'Pas de proxy')}
+                ${riskBadge(d.risk?.is_tor,    'Tor',        'Pas de Tor')}
+                ${riskBadge(d.risk?.is_mobile, 'Mobile',     'Non mobile')}
+                ${riskBadge(d.risk?.is_datacenter, 'Datacenter', 'Pas datacenter')}
+              </div>
+            </div>
+          </div>
+          <div class="ip-geo-warning">⚠ La géolocalisation IP est approximative — ville, code postal et coordonnées peuvent être inexacts, surtout sur IP résidentielle ou IPv6.</div>
+        </div>`;
+
+      startCooldown(15);
+      return;
+    }
+    // ── Other search types via backend ───────────────────────────
     const res=await api('search',{token:sessionToken, query:q, type:selectedSearchType});
     saveSession(res.user);
     updateCreditsUI();
@@ -629,16 +1061,7 @@ async function doSearch(){
       resultsWrap.innerHTML = `<div class="result-item"><h4>Aucun résultat</h4><p>Aucune donnée trouvée pour cette cible avec les sources disponibles.</p></div>`;
     }
 
-    // Show cooldown
-    if(cooldown){
-      cooldown.classList.add('show');
-      let cdLeft = 60;
-      const cdInterval = setInterval(() => {
-        cdLeft--;
-        cooldown.textContent = `⏳ Prochaine recherche dans ${cdLeft}s`;
-        if(cdLeft <= 0){ clearInterval(cdInterval); cooldown.classList.remove('show'); }
-      }, 1000);
-    }
+    startCooldown(60);
   }catch(e){
     if(loading) loading.classList.remove('show');
     notify(e.message, true);
@@ -649,29 +1072,73 @@ async function doSearch(){
 }
 
 // ── RENDER ────────────────────────────────────────────────────
-function renderShop(filter='Discord'){
-  const grid = document.getElementById('shop-grid'); if(!grid) return;
-  currentShopFilter = filter;
-  // Update filter buttons UI
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${filter}'`));
-  });
+let currentShopGroup = null;
+function renderShop(mainCat, groupId){
+  if(mainCat) { currentShopFilter = mainCat; currentShopGroup = null; }
+  const grid = document.getElementById('shop-grid');
+  const subbar = document.getElementById('shop-subfilters');
+  if(!grid) return;
 
-  const vip=currentUser&&(currentUser.vip_active || currentUser.role === 'dev');
-  const items=CONFIG.shop.filter(i=>i.category===filter);
-  if(items.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text3)">${t('shopEmpty')}</div>`;
-    return;
+  // Main category tabs
+  document.querySelectorAll('.filter-btn').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.filter === currentShopFilter));
+
+  const cat = CONFIG.shopCategories.find(c => c.id === currentShopFilter);
+  if(!cat){ grid.innerHTML=''; if(subbar) subbar.innerHTML=''; return; }
+
+  // Pick sub-group
+  if(!groupId || !cat.groups.find(g => g.id === groupId))
+    groupId = cat.groups[0]?.id;
+  currentShopGroup = groupId;
+
+  // Sub-category pills
+  if(subbar){
+    subbar.innerHTML = cat.groups.map(g => `
+      <button class="subfilter-btn${g.id===currentShopGroup?' active':''}"
+        data-group="${g.id}" onclick="renderShop(null,'${g.id}')">
+        <img src="${g.icon}" alt=""> ${g.name}
+      </button>`).join('');
   }
-  grid.innerHTML=items.map((item, idx)=>{
-    const locked=item.premium&&!vip;
-    return`<div class="item-card${item.premium?' premium-card':''}${locked?' locked-card':''}" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
-      <div class="card-img">${item.icon.startsWith('logo/')?`<img src="${item.icon}" alt="">`:item.icon}${item.premium?'<span class="premium-crown">👑</span>':''}${locked?'<div class="lock-overlay">🔒</div>':''}</div>
-      <div class="card-body-inner"><div class="card-name">${item.name}</div><div class="card-cat">${item.category}</div><p class="card-desc-text">${locked?t('lockedDesc'):item.desc.substring(0,80)+'…'}</p></div>
-      <div class="card-footer-inner"><span class="card-price${item.premium?' premium-price':''}">${locked?'🔒':item.price}</span><button class="btn-sm">${t('viewBtn')}</button></div>
+
+  const vip = currentUser && (currentUser.vip_active || currentUser.role==='dev');
+  const catLocked = cat.premium && !vip;
+  const grp = cat.groups.find(g => g.id === currentShopGroup);
+  if(!grp){ grid.innerHTML=''; return; }
+
+  grid.innerHTML = grp.items.map(item => {
+    const locked = catLocked;
+    return `<div class="item-card${locked?' locked-card':''}" style="--glow:${grp.color||'#7b6ef6'}" onclick="${locked?'notifyVipRequired()':'openItem(\''+item.id+'\',\'shop\')'}">
+      <div class="card-img"><img src="${grp.icon}" alt="">${locked?'<div class="lock-overlay">🔒</div>':''}<div class="card-glow"></div></div>
+      <div class="card-body-inner">
+        <div class="card-name">${item.name}</div>
+        <div class="card-cat">${grp.name}</div>
+        <p class="card-desc-text">${locked?'Abonnement requis.':item.desc}</p>
+      </div>
+      <div class="card-footer-inner">
+        <span class="card-price${locked?' premium-price':''}">${locked?'🔒':item.price}</span>
+        <button class="btn-sm">${t('viewBtn')}</button>
+      </div>
     </div>`;
   }).join('');
   initCardSpotlight();
+}
+
+// ── OFFER COUNTDOWN ───────────────────────────
+const OFFER_END = new Date('2026-07-12T23:59:59');
+function startOfferCountdown() {
+  function update() {
+    const els = document.querySelectorAll('.offer-countdown');
+    if (!els.length) return;
+    const diff = OFFER_END - Date.now();
+    if (diff <= 0) { els.forEach(el => el.textContent = 'EXPIRÉ'); return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000)  / 60000);
+    const s = Math.floor((diff % 60000)    / 1000);
+    const pad = n => String(n).padStart(2, '0');
+    els.forEach(el => el.textContent = `${d}j ${pad(h)}h ${pad(m)}m ${pad(s)}s`);
+  }
+  update(); setInterval(update, 1000);
 }
 function renderTools(){
   const grid = document.getElementById('tools-grid'); if(!grid) return;
@@ -712,23 +1179,63 @@ function renderFounders(){
     </div>`).join('');
 }
 
-function notifyVipRequired(){notify(t('vipRequiredMsg'),true);}
+function notifyVipRequired(){notify('🔒 Abonnement supérieur requis.',true);}
+
+function findShopGroup(itemId){
+  for(const cat of CONFIG.shopCategories)
+    for(const grp of cat.groups)
+      if(grp.items.find(i=>i.id===itemId)) return grp;
+  return null;
+}
 
 function openItem(id,src){
-  const item=src==='shop'?CONFIG.shop.find(i=>i.id===id):CONFIG.tools.find(i=>i.id===id); if(!item)return; currentItemForDl=item;
+  const item = src==='shop' ? CONFIG.shop.find(i=>i.id===id) : CONFIG.tools.find(i=>i.id===id);
+  if(!item) return; currentItemForDl=item;
+  const grp = src==='shop' ? findShopGroup(id) : null;
+  const isShop = src==='shop';
   const box = document.getElementById('item-modal-content');
-  box.innerHTML = `
-    <div style="padding:20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:18px;font-weight:800;color:var(--white)">${t('detailsTitle')}</h2><button class="modal-close-btn" onclick="closeItemView()">✕</button></div>
-    <div style="padding:24px">
-      <div style="display:flex;gap:20px;margin-bottom:20px">
-        <div style="width:100px;height:100px;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0">${item.icon.startsWith('logo/')?`<img src="${item.icon}" style="width:50px;height:50px">`:`<span style="font-size:40px">${item.icon}</span>`}</div>
-        <div style="flex:1"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:4px">${item.category}</div><h1 style="font-size:20px;font-weight:900;color:var(--white);margin-bottom:8px">${item.name}</h1><p style="font-size:13px;color:var(--text2);line-height:1.6">${item.desc}</p></div>
+  const icon = item.icon.startsWith('logo/') ? `<img src="${item.icon}" style="width:52px;height:52px;object-fit:contain">` : `<span style="font-size:42px">${item.icon}</span>`;
+  const badgesHtml = grp?.badges ? `
+    <div class="im-badges">${grp.badges.map(b=>`<span class="im-badge">${b}</span>`).join('')}</div>` : '';
+  const longDescHtml = grp?.longDesc ? `<p class="im-longdesc">${grp.longDesc}</p>` : '';
+  const warningHtml = grp?.warning ? `
+    <div class="im-warning"><img src="logo/construction.png" alt="" style="width:14px;height:14px;opacity:.7"> ${grp.warning}</div>` : '';
+  const howHtml = isShop ? `
+    <div class="im-how">
+      <div class="im-how-title">Comment commander</div>
+      <div class="im-how-steps">
+        <div class="im-how-step"><span class="im-step-n">1</span>Clique sur "Commander sur Discord" ci-dessous</div>
+        <div class="im-how-step"><span class="im-step-n">2</span>Ouvre un ticket et indique le produit souhaité</div>
+        <div class="im-how-step"><span class="im-step-n">3</span>Effectue le paiement et reçois ta livraison</div>
       </div>
-      <div style="background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:16px">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-          <div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:2px">${t('priceLabel')}</div><div style="font-size:22px;font-weight:900;color:${src==='tools'?'var(--green)':'var(--white)'}">${src==='tools'?t('freeLabel'):item.price}</div></div>
-          <div style="display:flex;align-items:center;gap:10px">${src==='tools' ? `<button class="btn btn-primary" onclick="downloadTool()">${t('downloadBtn')}</button>` : `<a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord">${t('orderBtn')}</a>`}</div>
+    </div>` : '';
+
+  box.innerHTML = `
+    <div class="im-header">
+      <h2>${isShop ? 'Détails du produit' : 'Outil — Détails'}</h2>
+      <button class="modal-close-btn" onclick="closeItemView()">✕</button>
+    </div>
+    <div class="im-body">
+      <div class="im-top">
+        <div class="im-icon-wrap">${icon}</div>
+        <div class="im-info">
+          <div class="im-cat">${item.category}</div>
+          <h1 class="im-name">${item.name}</h1>
+          <p class="im-desc">${item.desc}</p>
         </div>
+      </div>
+      ${badgesHtml}
+      ${longDescHtml}
+      ${howHtml}
+      ${warningHtml}
+      <div class="im-cta-row">
+        <div class="im-price-block">
+          <div class="im-price-lbl">${isShop ? 'Prix' : 'Gratuit'}</div>
+          <div class="im-price-val" style="color:${isShop?'var(--white)':'var(--green)'}">${isShop ? item.price : 'FREE'}</div>
+        </div>
+        <a href="${CONFIG.site.discord}" target="_blank" class="btn btn-discord" style="flex:1;justify-content:center">
+          <img src="logo/discord.png" alt="">${isShop ? 'Commander sur Discord' : 'Rejoindre le serveur Discord'}
+        </a>
       </div>
     </div>`;
   document.getElementById('item-modal').classList.add('open');
@@ -764,20 +1271,21 @@ async function loadReviews() {
     }
     m.innerHTML = items.map(r => {
       const initial = (r.pseudo || '?')[0].toUpperCase();
-      const avatar = r.avatar_url
-        ? `<img src="${esc(r.avatar_url)}" class="review-avatar" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        : '';
-      const placeholder = `<div class="review-avatar-placeholder" style="${r.avatar_url?'display:none':''}">${initial}</div>`;
+      const avatarHtml = r.avatar_url
+        ? `<div class="rc-avatar-wrap"><img src="${esc(r.avatar_url)}" class="review-avatar" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="review-avatar-placeholder" style="display:none">${initial}</div></div>`
+        : `<div class="rc-avatar-wrap"><div class="review-avatar-placeholder">${initial}</div></div>`;
+      const stars = '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars);
+      const textShort = esc(r.text).substring(0, 220);
       return `<div class="review-card">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          ${avatar}${placeholder}
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;color:var(--white);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.pseudo)}</div>
-            <div style="color:var(--yellow);font-size:11px">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+        <div class="rc-header">
+          ${avatarHtml}
+          <div class="rc-meta">
+            <div class="rc-pseudo">${esc(r.pseudo)}</div>
+            <div class="rc-stars">${stars}</div>
           </div>
         </div>
-        <p style="font-size:12px;color:var(--text2);line-height:1.55;margin-bottom:8px">${esc(r.text)}</p>
-        <div style="font-size:10px;color:var(--text3)">${new Date(r.created_at).toLocaleDateString()}</div>
+        <p class="rc-text">${textShort}${r.text.length > 220 ? '…' : ''}</p>
+        <div class="rc-date">${new Date(r.created_at).toLocaleDateString('fr-FR')}</div>
       </div>`;
     }).join('');
   } catch(e) {}
@@ -843,6 +1351,11 @@ async function handleAvatarFile(e) {
       const res = await api('upload-avatar', { token: sessionToken, imageBase64: b64, mimeType: file.type });
       currentUser.avatar_url = res.avatar_url;
       saveSession(currentUser);
+      // Update nav avatar and settings avatar immediately
+      const navAv = document.getElementById('nav-avatar-img');
+      if(navAv) { navAv.src = res.avatar_url; navAv.style.borderRadius='50%'; }
+      const settAv = document.getElementById('settings-avatar-img');
+      if(settAv) { settAv.src = res.avatar_url; settAv.style.display = 'block'; document.getElementById('settings-avatar-initial')?.style && (document.getElementById('settings-avatar-initial').style.display='none'); }
       setNote('avatar-note', '✓ Photo mise à jour !', 'ok');
     } catch(err) { setNote('avatar-note', err.message, 'err'); }
   };
@@ -860,7 +1373,15 @@ function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeItemView();closeProfile();closeSettings();closeReviewModal();}
-  if(e.key==='Enter'){ if(document.getElementById('auth-signup')?.classList.contains('active'))doSignup(); else if(document.getElementById('auth-login')?.classList.contains('active'))doLogin(); }
+  if(e.key==='Enter'){
+    const authVisible = !document.getElementById('auth-screen')?.classList.contains('hidden');
+    if(authVisible){
+      if(document.getElementById('auth-signup')?.classList.contains('active')) doSignup();
+      else if(document.getElementById('auth-login')?.classList.contains('active')) doLogin();
+    } else if(e.target.id==='search-input'){
+      doSearch();
+    }
+  }
   // Generic keyboard activation for div/span elements used as buttons (role="button")
   if((e.key==='Enter'||e.key===' ') && e.target.getAttribute && e.target.getAttribute('role')==='button'){
     e.preventDefault(); e.target.click();

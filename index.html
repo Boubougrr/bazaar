@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bazaar Services</title>
-<link rel="icon" type="image/png" href="logo/coins.png">
+<link rel="icon" type="image/png" href="logo/cybersecurite.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/extra.css">
@@ -13,10 +13,12 @@
 <div id="app-loader">
   <div class="loader-logo">BAZAAR</div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
+  <div class="loader-percent" id="loader-percent">0%</div>
 </div>
 <div id="cursor" aria-hidden="true"></div>
 <div id="mouse-light" aria-hidden="true"></div>
-<div class="dot-bg"></div><div class="dot-bg-right"></div>
+<div class="dot-bg"></div>
+<div class="page-particles" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
 <div id="notif" class="notif"></div>
 
 <!-- ═══ SETTINGS MODAL ═══ -->
@@ -40,7 +42,7 @@
         <div class="setting-label" data-i18n="theme">Thème</div>
         <div class="setting-options">
           <button class="setting-btn active" id="theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
-          <button class="setting-btn" id="theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
+          <button class="setting-btn" id="theme-darker" onclick="setTheme('light')">☀️ Clair</button>
         </div>
       </div>
 
@@ -160,6 +162,19 @@
             </label>
           </div>
 
+          <!-- Optional avatar upload -->
+          <div style="margin-bottom:14px">
+            <label class="lbl">Photo de profil <span style="color:var(--text3);font-weight:400">(optionnel)</span></label>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div id="signup-avatar-preview" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;flex-shrink:0;border:2px solid var(--border2)">?</div>
+              <label class="btn btn-outline" style="font-size:12px;padding:6px 14px;cursor:pointer;margin:0">
+                📸 Choisir une image
+                <input type="file" id="signup-avatar-file" accept="image/*" style="display:none" onchange="previewSignupAvatar(event)">
+              </label>
+              <button type="button" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;padding:0" onclick="clearSignupAvatar()">✕ Effacer</button>
+            </div>
+          </div>
+
           <div id="captcha-wrap" style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:15px;margin-bottom:14px">
             <p style="font-size:11px;color:var(--text3);text-transform:uppercase;font-weight:800;margin-bottom:8px;text-align:center" data-i18n="captchaPrompt">Sécurité : Cliquez sur le triangle</p>
             <div id="captcha-game" style="display:flex;justify-content:center;gap:15px;padding:10px;background:rgba(0,0,0,0.2);border-radius:8px">
@@ -223,8 +238,8 @@
     <a class="nav-logo" onclick="gotoPage('home')">BAZAAR</a>
     <div class="nav-links">
       <span class="nav-link active" tabindex="0" role="button" onclick="gotoPage('home')">    <img src="logo/home.png"    alt=""><span data-i18n="home">Accueil</span></span>
-      <span class="nav-link" id="nav-shop" tabindex="0" role="button"     onclick="gotoPage('shop')">    <img src="logo/dollars.png" alt=""><span data-i18n="shop">Boutique</span></span>
-      <span class="nav-link" id="nav-tools" tabindex="0" role="button"    onclick="gotoPage('tools')">   <img src="logo/tools.png"   alt=""><span>Tools</span></span>
+      <span class="nav-link" id="nav-shop" tabindex="0" role="button"     onclick="gotoPage('shop')">    <img src="logo/boutique.png" alt=""><span data-i18n="shop">Boutique</span></span>
+      <span class="nav-link" id="nav-tools" tabindex="0" role="button"    onclick="gotoPage('tools')">   <img src="logo/boite-a-outils.png"   alt=""><span>Tools</span></span>
       <span class="nav-link" id="nav-subs" tabindex="0" role="button"     onclick="gotoPage('subs')">    <img src="logo/coins.png"   alt=""><span data-i18n="subs">Abonnements</span></span>
       <span class="nav-link" id="nav-features" tabindex="0" role="button" onclick="gotoPage('features')"><img src="logo/fonction.png"alt=""><span data-i18n="features">Fonctionnalités</span></span>
       <span class="nav-link" id="nav-contact" tabindex="0" role="button"  onclick="gotoPage('contact')"> <img src="logo/mail.png"    alt=""><span data-i18n="contact">Contact</span></span>
@@ -234,37 +249,14 @@
       <div id="dev-badge" class="dev-badge" style="display:none">STAFF</div>
       <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="nav-discord"><img src="logo/discord.png" alt="">Discord</a>
       <div id="nav-auth-only" style="display:contents">
-        <div class="credits-pill" title="Crédits restants" onclick="openProfile('credits')"><img src="logo/coins.png" alt=""><span id="sq-left">5</span><span>/</span><span id="sq-max">5</span></div>
-        <!-- Gear settings dropdown -->
-        <div class="gear-wrap" id="gear-wrap">
-          <button class="gear-btn" onclick="toggleGear()" title="Paramètres">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          </button>
-        </div>
-        <div class="user-menu-wrap">
-          <div class="user-menu-btn" tabindex="0" role="button" onclick="toggleDropdown()">
-            <img src="logo/user.png" alt="">
-            <span id="user-name-nav">—</span>
-            <span class="arr">▾</span>
-          </div>
-          <div id="user-dropdown">
-            <div class="dd-label">Mon compte</div>
-            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('avatar')">🖼️ Photo de profil</div>
-            <div class="dd-item" id="dd-pseudo" tabindex="0" role="button" onclick="openProfile('pseudo')"><img src="logo/user.png" alt="">Changer le pseudo</div>
-
-            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('password')"><img src="logo/pass.png" alt="">Changer le mot de passe</div>
-            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('email')"><img src="logo/mail.png" alt="">Changer l'email</div>
-            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('coupon')"><img src="logo/coins.png" alt="">Appliquer un code</div>
-            <div class="dd-sep"></div>
-            <div class="dd-item" tabindex="0" role="button" onclick="openProfile('stats')"><img src="logo/loupe.png" alt="">Mes statistiques</div>
-            <div class="dd-item" tabindex="0" role="button" onclick="openSettings()">
-              <img src="logo/fonction.png" alt="" style="width:14px;height:14px">
-              Paramètres
-            </div>
-            <div class="dd-sep"></div>
-            <div class="dd-item red" tabindex="0" role="button" onclick="logout()"><span style="font-size:14px;width:15px;text-align:center">🚪</span>Déconnexion</div>
-          </div>
-        </div>
+        <div class="credits-pill" title="Crédits restants" onclick="openCreditsModal()"><img src="logo/coins.png" alt=""><span id="sq-left">5</span><span>/</span><span id="sq-max">5</span></div>
+        <button class="user-menu-btn" onclick="gotoPage('settings')" title="Profil">
+          <img id="nav-avatar-img" src="logo/user.png" alt="" class="nav-avatar-img">
+          <span id="user-name-nav">—</span>
+        </button>
+        <button class="nav-settings-btn" onclick="gotoPage('settings')" title="Paramètres">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
       <button id="nav-login-btn" class="btn btn-outline" style="padding:6px 14px; font-size:12px" onclick="document.getElementById('auth-screen').classList.remove('hidden')">Se connecter</button>
     </div>
@@ -273,7 +265,35 @@
   <!-- HOME -->
   <div class="page active" id="page-home">
     <div class="main-content">
-      <div class="hero">
+      <!-- Announcements -->
+      <div class="announce-banner announce-offer" style="margin-bottom:10px">
+        <img src="logo/advert.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">🎁 Offre — Starter Gratuit</div>
+          <div class="announce-desc">Invite <strong>10 personnes</strong> sur Discord → plan <strong>Starter</strong> offert · <span class="offer-countdown announce-count">--j --h --m --s</span></div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord announce-cta"><img src="logo/discord.png" alt="">Rejoindre</a>
+      </div>
+      <div class="announce-banner announce-recruit" style="margin-bottom:14px">
+        <img src="logo/discordagent.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">📋 Recrutement Helper</div>
+          <div class="announce-desc">Rejoins l'équipe Bazaar en tant que <strong>Helper</strong> — ouvre un ticket sur Discord.</div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn announce-cta" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);color:var(--white);white-space:nowrap"><img src="logo/discord.png" alt="">Ticket</a>
+      </div>
+
+      <!-- Beta notice -->
+      <div class="beta-banner">
+        <span class="beta-icon">⚠️</span>
+        <span>Site en bêta — des bugs peuvent survenir, signalez-les sur notre <a href="https://discord.gg/ssYFSXRGPP" target="_blank" style="color:rgba(251,191,36,.7);text-decoration:underline">Discord</a>.</span>
+      </div>
+
+      <div class="hero" style="position:relative">
+        <div class="hero-stars" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
         <h1>BAZAAR</h1>
         <h2 style="font-size:clamp(17px,2.4vw,26px);font-weight:600;color:var(--text2);margin-bottom:16px;letter-spacing:-.3px">
           La plateforme OSINT pour <span class="hero-type-text" id="hero-type">les enquêtes.</span><span class="hero-cursor"></span>
@@ -293,7 +313,7 @@
           </svg>
         </div>
 
-        <p data-i18n="heroSub">Nom, email, téléphone, IP, Discord ID — croisez des millions d'enregistrements en quelques secondes.</p>
+        <p data-i18n="heroSub">Nom, email, téléphone, IP, Discord ID — croisez des millions de fuites de données en quelques secondes.</p>
         <div class="hero-btns">
           <button class="btn btn-primary" onclick="document.getElementById('search-input').focus()">🔍 <span data-i18n="startSearch">Commencer une recherche</span></button>
           <button class="btn btn-outline" style="background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1)" onclick="document.querySelector('.reviews-section').scrollIntoView({behavior:'smooth'})">⭐ Avis Clients</button>
@@ -315,42 +335,44 @@
         </div>
       </div>
 
-      <div class="search-panel">
-        <!-- Hidden legacy selects kept for JS compatibility -->
-        <div class="search-mode-tabs" style="display:none">
-          <div class="mode-tab active" tabindex="0" role="button" data-mode="auto" onclick="setSearchMode('auto')">Auto</div>
-          <div class="mode-tab" tabindex="0" role="button" data-mode="manual" onclick="setSearchMode('manual')">Manuel</div>
+      <div class="search-panel search-maintenance">
+        <!-- Maintenance banner -->
+        <div class="search-maint-banner">
+          <span class="search-maint-dot"></span>
+          <span>Outil OSINT temporairement en maintenance — de retour très prochainement.</span>
         </div>
+        <!-- Type tabs -->
+        <div class="search-type-tabs" style="pointer-events:none;opacity:.35;">
+          <button class="stt-btn active" data-value="auto"     data-icon="logo/auto.png"    data-ph="Recherche automatique…"  onclick="pickTypeTab(this)"><img src="logo/auto.png"    alt=""> Automated</button>
+          <button class="stt-btn"        data-value="phone"    data-icon="logo/phone.png"   data-ph="Numéro de téléphone…"    onclick="pickTypeTab(this)"><img src="logo/phone.png"   alt=""> Téléphone</button>
+          <button class="stt-btn"        data-value="mail"     data-icon="logo/mail.png"    data-ph="Adresse email…"          onclick="pickTypeTab(this)"><img src="logo/mail.png"    alt=""> Email</button>
+          <button class="stt-btn"        data-value="username" data-icon="logo/user.png"    data-ph="Nom d'utilisateur…"      onclick="pickTypeTab(this)"><img src="logo/user.png"    alt=""> Username</button>
+          <button class="stt-btn"        data-value="discord"  data-icon="logo/discord.png" data-ph="Discord ID…"             onclick="pickTypeTab(this)"><img src="logo/discord.png" alt=""> Discord</button>
+          <button class="stt-btn"        data-value="ip"       data-icon="logo/ip.png"      data-ph="IPv4 / IPv6 accepted…"  onclick="pickTypeTab(this)"><img src="logo/ip.png"      alt=""> IP Address</button>
+        </div>
+        <!-- Input row -->
+        <div class="search-input-row" style="pointer-events:none;opacity:.35;">
+          <img class="search-active-icon" id="std-icon" src="logo/auto.png" alt="">
+          <input class="search-input" id="search-input" placeholder="Maintenance en cours…" autocomplete="off" disabled>
+          <button class="search-submit-new" id="search-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+        </div>
+        <!-- Auto-detect type label -->
+        <div id="auto-detect-label" class="auto-detect-label" style="display:none">
+          <span id="auto-detect-icon"></span>
+          <span id="auto-detect-text"></span>
+        </div>
+        <!-- Hidden compat -->
+        <span id="std-label" style="display:none">Automated</span>
         <select id="search-type" style="display:none">
-          <option value="auto">Auto</option>
-          <option value="phone">Téléphone</option>
-          <option value="mail">Email</option>
-          <option value="username">Username</option>
-          <option value="discord">Discord ID</option>
-          <option value="ip">Adresse IP</option>
+          <option value="auto">auto</option>
+          <option value="phone">phone</option>
+          <option value="mail">mail</option>
+          <option value="username">username</option>
+          <option value="discord">discord</option>
+          <option value="ip">ip</option>
         </select>
-
-        <!-- Compact search row -->
-        <div class="search-main-row">
-          <div class="search-input-wrap">
-            <img class="search-icon-left" src="logo/loupe.png" alt="">
-            <input class="search-input" id="search-input" placeholder="Entrez une cible…" autocomplete="off">
-          </div>
-          <button class="btn btn-primary search-submit-btn" id="search-btn" onclick="doSearch()">Rechercher →</button>
-        </div>
-
-        <!-- Type selector pills -->
-        <div class="search-type-selector">
-          <span class="search-type-label">Type de recherche :</span>
-          <div class="search-type-pills">
-            <button class="s-type-pill active" data-type="auto" onclick="selectSearchType('auto')">🔮 Auto</button>
-            <button class="s-type-pill" data-type="mail" onclick="selectSearchType('mail')"><img src="logo/mail.png" alt=""> Email</button>
-            <button class="s-type-pill" data-type="username" onclick="selectSearchType('username')"><img src="logo/user.png" alt=""> Username</button>
-            <button class="s-type-pill" data-type="discord" onclick="selectSearchType('discord')"><img src="logo/discord.png" alt=""> Discord ID</button>
-            <button class="s-type-pill" data-type="ip" onclick="selectSearchType('ip')"><img src="logo/ip.png" alt=""> IP</button>
-            <button class="s-type-pill" data-type="phone" onclick="selectSearchType('phone')"><img src="logo/phone.png" alt=""> Phone</button>
-          </div>
-        </div>
 
         <div id="search-guest-msg" style="display:none;margin-top:14px;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);border-radius:var(--r);padding:12px;text-align:center">
           <p style="font-size:13px;color:var(--red);font-weight:700;margin-bottom:8px">Connexion requise pour rechercher</p>
@@ -412,27 +434,52 @@
   <!-- SHOP -->
   <div class="page" id="page-shop">
     <div class="main-content">
-      <div class="page-header"><h1><img src="logo/dollars.png" alt="">Boutique</h1><p>Comptes et services premium. Paiement via Discord.</p></div>
+      <div class="page-header"><h1><img src="logo/boutique.png" alt="">Boutique</h1><p>Comptes et services premium. Paiement via Discord.</p></div>
       <div class="shop-filters">
-        <button class="filter-btn active" onclick="renderShop('Discord')"><img src="logo/discord.png" alt="">Discord</button>
-        <button class="filter-btn"        onclick="renderShop('Compte')"><img src="logo/user.png" alt="">Comptes</button>
-        <button class="filter-btn"        onclick="renderShop('Boost')"><img src="logo/boost.png" alt="">Boost</button>
-        <button class="filter-btn"        onclick="renderShop('Bots')"><img src="logo/code.png" alt="">Bots</button>
-        <button class="filter-btn"        onclick="renderShop('Exchange')"><img src="logo/dollars.png" alt="">Échange</button>
-        <button class="filter-btn"        onclick="renderShop('Premium')">👑 Premium</button>
+        <button class="filter-btn active" style="--c:#5865f2" data-filter="discord"   onclick="renderShop('discord')"><img src="logo/discordagent.png" alt="">Discord</button>
+        <button class="filter-btn"        style="--c:#1db954" data-filter="streaming" onclick="renderShop('streaming')"><img src="logo/boite-a-outils.png" alt="">Streaming</button>
+        <button class="filter-btn"        style="--c:#22c55e" data-filter="games"     onclick="renderShop('games')"><img src="logo/trophee.png" alt="">Games</button>
+        <button class="filter-btn"        style="--c:#0ea5e9" data-filter="vpn"       onclick="renderShop('vpn')"><img src="logo/vpn.png" alt="">VPN</button>
+        <button class="filter-btn"        style="--c:#60a5fa" data-filter="transfert" onclick="renderShop('transfert')"><img src="logo/cryptotopaypal.png" alt="">Transfert</button>
+        <button class="filter-btn"        style="--c:#f59e0b" data-filter="premium"   onclick="renderShop('premium')"><img src="logo/couronneperso.png" alt="">Premium</button>
+      </div>
+      <div class="shop-subfilters" id="shop-subfilters"></div>
+      <div class="announce-banner announce-offer">
+        <img src="logo/advert.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">🎁 Offre Spéciale — Starter Gratuit</div>
+          <div class="announce-desc">Invite <strong>10 personnes</strong> sur notre Discord et reçois l'abonnement <strong>Starter</strong> gratuitement. Offre valable jusqu'au 12 juillet 2026.</div>
+          <div class="announce-timer">Expire dans : <span class="offer-countdown announce-count">--j --h --m --s</span></div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord announce-cta"><img src="logo/discord.png" alt="">Rejoindre</a>
+      </div>
+      <div class="announce-banner announce-recruit" style="margin-bottom:20px">
+        <img src="logo/discordagent.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">📋 Recrutement — Helper Discord</div>
+          <div class="announce-desc">Nous recrutons des <strong>Helpers</strong> pour notre serveur Discord. Ouvre un ticket si tu souhaites postuler.</div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn announce-cta" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:var(--white)"><img src="logo/discord.png" alt="">Ticket</a>
       </div>
       <div class="cards-grid" id="shop-grid"></div>
       <div class="payment-info-box">
-        <h4>💳 Accepted Payment Methods</h4>
-        <p><strong>PayPal</strong> (Friends &amp; Family only) &nbsp;·&nbsp; <strong>LTC</strong> (Litecoin)</p>
-        <p><strong>Currency:</strong> EUR (€) only</p>
-        <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px">
-          <p class="warn">⚠️ Payments in USD not accepted due to conversion fees.</p>
-          <p class="warn">⚠️ PayPal F&amp;F mandatory — Goods &amp; Services refused.</p>
-          <p>• <strong>PayPal :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></p>
-          <p>• <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></p>
+        <div class="pay-title"><img src="logo/dollars.png" alt="">Moyens de paiement acceptés</div>
+        <div class="pay-methods">
+          <div class="pay-method"><img src="logo/paypal.png" alt=""><div><strong>PayPal</strong><span>Friends &amp; Family uniquement</span></div></div>
+          <div class="pay-method"><img src="logo/ltc.png" alt=""><div><strong>LTC</strong><span>Litecoin</span></div></div>
+          <div class="pay-method"><img src="logo/bitcoin.png" alt=""><div><strong>BTC</strong><span>Bitcoin</span></div></div>
+          <div class="pay-method"><img src="logo/etherum.png" alt=""><div><strong>ETH</strong><span>Ethereum</span></div></div>
+          <div class="pay-method"><img src="logo/paysafecard.png" alt=""><div><strong>PSC</strong><span>Paysafecard</span></div></div>
         </div>
-        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="margin-top:12px;display:inline-flex"><img src="logo/discord.png" alt="">Créer un ticket</a>
+        <div class="pay-warns">
+          <p>⚠️ Paiements en USD non acceptés — EUR uniquement.</p>
+          <p>⚠️ PayPal F&amp;F obligatoire — Goods &amp; Services refusé.</p>
+        </div>
+        <div class="pay-coords">
+          <div><img src="logo/paypal.png" alt=""> <strong>PayPal :</strong> <span style="color:var(--blue)">phoenix.guecko@gmail.com</span></div>
+          <div><img src="logo/ltc.png" alt=""> <strong>LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="margin-top:14px;display:inline-flex"><img src="logo/discord.png" alt="">Créer un ticket</a>
       </div>
     </div>
   </div>
@@ -441,6 +488,14 @@
   <div class="page" id="page-tools">
     <div class="main-content">
       <div class="page-header"><h1><img src="logo/tools.png" alt="">Tools</h1><p>Outils OSINT &amp; packs téléchargeables.</p></div>
+      <div class="announce-banner announce-offer" style="margin-bottom:16px">
+        <img src="logo/advert.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">🎁 Offre — Starter Gratuit</div>
+          <div class="announce-desc">Invite 10 personnes sur Discord → Starter offert. Expire : <span class="offer-countdown announce-count">--j --h --m --s</span></div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord announce-cta"><img src="logo/discord.png" alt="">Rejoindre</a>
+      </div>
       <div style="background:rgba(74,222,128,.05);border:1px solid rgba(74,222,128,.15);border-radius:var(--r);padding:12px 17px;margin-bottom:18px"><p style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:0">✓ Tous les outils standards sont gratuits et téléchargeables directement.</p></div>
       <div class="cards-grid" id="tools-grid"></div>
     </div>
@@ -450,6 +505,14 @@
   <div class="page" id="page-subs">
     <div class="main-content">
       <div class="page-header"><h1><img src="logo/coins.png" alt="">Abonnements</h1><p>Choisissez le plan qui vous convient et boostez vos capacités.</p></div>
+      <div class="announce-banner announce-offer" style="margin-bottom:20px">
+        <img src="logo/advert.png" alt="" class="announce-icon">
+        <div class="announce-body">
+          <div class="announce-title">🎁 Offre — Starter Gratuit</div>
+          <div class="announce-desc">Invite <strong>10 personnes</strong> sur Discord → reçois le plan <strong>Starter</strong> gratuitement. <span class="offer-countdown announce-count">--j --h --m --s</span></div>
+        </div>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord announce-cta"><img src="logo/discord.png" alt="">Rejoindre</a>
+      </div>
 
       <div style="background:linear-gradient(135deg,rgba(88,101,242,.15),rgba(251,191,36,.05));border:1px solid rgba(123,110,246,.3);border-radius:var(--r2);padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:18px;animation:fadeUp .4s ease">
         <img src="logo/boost.png" alt="" style="width:40px;height:40px;animation:crown 3s infinite">
@@ -460,7 +523,12 @@
         <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="margin-left:auto;font-size:12px;padding:8px 16px">Booster le serveur</a>
       </div>
 
-      <div class="plans-wrapper"><div class="plans-grid" id="plans-grid"></div></div>
+      <div class="plans-wrapper" style="position:relative">
+        <div class="section-particles plans-particles" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="plans-grid" id="plans-grid"></div>
+      </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px">
         <div class="info-card" style="text-align:left;align-items:flex-start">
@@ -608,7 +676,7 @@
         <div class="info-card" style="text-align:center">
           <div style="font-size:32px;margin-bottom:10px">💳</div>
           <h3 style="font-size:14px;margin-bottom:8px">PayPal F&amp;F</h3>
-          <p style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);word-break:break-all">phoenix.guecko<br>@gmail.com</p>
+          <p style="font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">phoenix.guecko@gmail.com</p>
         </div>
         <div class="info-card" style="text-align:center">
           <div style="font-size:32px;margin-bottom:10px">⚡</div>
@@ -664,9 +732,9 @@
               <span style="font-size:13px;color:var(--text2)">Sources OSINT</span>
               <span style="font-weight:800;color:var(--accent)">47</span>
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 0;border-bottom:1px solid var(--border)">
               <span style="font-size:13px;color:var(--text2)">Disponibilité</span>
-              <span style="font-weight:800;color:#4ade80">99.2%</span>
+              <span style="font-weight:800;color:#4ade80;flex-shrink:0">99.2%</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
               <span style="font-size:13px;color:var(--text2)">Support</span>
@@ -713,101 +781,145 @@
 
   <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
-    <div class="main-content" style="max-width:900px;margin:0 auto">
+    <div class="main-content" style="max-width:760px;margin:0 auto">
       <div class="page-header"><h1>⚙️ Paramètres</h1><p>Personnalisez votre expérience Bazaar.</p></div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px">
+      <div style="display:flex;flex-direction:column;gap:16px;width:100%">
 
-        <!-- Langue -->
-        <div class="info-card">
-          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🌍 Langue</h3>
-          <div class="setting-group-v">
-            <div class="setting-label">Interface language</div>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-lang-fr" onclick="setLang('fr')">🇫🇷 Français</button>
-              <button class="setting-btn" id="p-lang-en" onclick="setLang('en')">🇬🇧 English</button>
+        <!-- INTERFACE -->
+        <div class="sblock">
+          <div class="sblock-title">🎨 Interface</div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Langue</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="p-lang-fr" onclick="setLang('fr')" style="display:flex;align-items:center;gap:5px"><img src="logo/france.png" alt="" style="width:14px;height:14px;object-fit:cover;border-radius:2px"> FR</button>
+              <button class="stgl-btn" id="p-lang-en" onclick="setLang('en')" style="display:flex;align-items:center;gap:5px"><img src="logo/royaumeunis.png" alt="" style="width:14px;height:14px;object-fit:cover;border-radius:2px"> EN</button>
+            </div>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Thème</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="p-theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
+              <button class="stgl-btn" id="p-theme-light" onclick="setTheme('light')">☀️ Clair</button>
+            </div>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Curseur personnalisé</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="p-cursor-on" onclick="setCursor(true)">✓ Activé</button>
+              <button class="stgl-btn" id="p-cursor-off" onclick="setCursor(false)">✕ Désactivé</button>
+            </div>
+          </div>
+          <div class="sblock-row" style="border:none">
+            <span class="sblock-lbl">Animations</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="p-anim-on" onclick="setAnim(true)">✓ Activées</button>
+              <button class="stgl-btn" id="p-anim-off" onclick="setAnim(false)">✕ Désactivées</button>
             </div>
           </div>
         </div>
 
-        <!-- Apparence -->
-        <div class="info-card">
-          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🎨 Apparence</h3>
-          <div class="setting-group-v">
-            <div class="setting-label">Thème</div>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-theme-dark" onclick="setTheme('dark')">🌙 Sombre</button>
-              <button class="setting-btn" id="p-theme-darker" onclick="setTheme('darker')">⬛ Ultra-sombre</button>
+        <!-- UTILISATEUR -->
+        <div class="sblock" id="settings-account-card">
+          <div class="sblock-title">👤 Utilisateur</div>
+
+          <!-- Avatar + infos -->
+          <div class="sblock-profile-row">
+            <div id="settings-avatar-wrap" class="sblock-avatar" onclick="openProfile('avatar')" title="Changer la photo">
+              <img id="settings-avatar-img" src="logo/user.png" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:none">
+              <span id="settings-avatar-initial" style="font-size:22px;font-weight:900;color:#fff">?</span>
+              <div class="sblock-avatar-edit">✏️</div>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div id="settings-pseudo-display" style="font-size:16px;font-weight:800;color:var(--white);margin-bottom:2px">—</div>
+              <div id="settings-email-display" style="font-size:12px;color:var(--text3)">—</div>
+              <div id="settings-plan-display" style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;margin-top:4px;letter-spacing:.5px">—</div>
             </div>
           </div>
-          <div class="setting-group-v" style="margin-top:14px">
-            <div class="setting-label">Curseur personnalisé</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">Le cercle blanc qui suit votre souris.</p>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-cursor-on" onclick="setCursor(true)">✓ Activé</button>
-              <button class="setting-btn" id="p-cursor-off" onclick="setCursor(false)">✕ Désactivé</button>
-            </div>
+
+          <div class="sblock-row">
+            <span class="sblock-lbl">Pseudo</span>
+            <button class="sblock-action-btn" onclick="openProfile('pseudo')">Modifier</button>
           </div>
-          <div class="setting-group-v" style="margin-top:14px">
-            <div class="setting-label">Animations UI</div>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-anim-on" onclick="setAnim(true)">✓ Activées</button>
-              <button class="setting-btn" id="p-anim-off" onclick="setAnim(false)">✕ Désactivées</button>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Mot de passe</span>
+            <button class="sblock-action-btn" onclick="openProfile('password')">Changer</button>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Email</span>
+            <button class="sblock-action-btn" onclick="openProfile('email')">Modifier</button>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Photo de profil</span>
+            <button class="sblock-action-btn" onclick="openProfile('avatar')">Changer</button>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Mes avis</span>
+            <button class="sblock-action-btn" onclick="openMyReviewsModal()">Voir</button>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl" style="color:var(--text2)">Se déconnecter</span>
+            <button class="sblock-action-btn" onclick="logout()">Déconnexion</button>
+          </div>
+          <div class="sblock-row" style="border:none">
+            <span class="sblock-lbl" style="color:var(--red)">Supprimer le compte</span>
+            <button class="sblock-action-btn sblock-action-danger" onclick="openDeleteAccount()">Supprimer</button>
+          </div>
+        </div>
+
+        <!-- STATISTIQUES -->
+        <div class="sblock" id="settings-stats-block">
+          <div class="sblock-title">📊 Statistiques</div>
+          <div class="sblock-stats-grid">
+            <div class="sblock-stat"><span class="sblock-stat-val" id="st-credits">—</span><span class="sblock-stat-lbl">Crédits</span></div>
+            <div class="sblock-stat"><span class="sblock-stat-val" id="st-searches">—</span><span class="sblock-stat-lbl">Recherches</span></div>
+            <div class="sblock-stat"><span class="sblock-stat-val" id="st-logins">—</span><span class="sblock-stat-lbl">Connexions</span></div>
+            <div class="sblock-stat"><span class="sblock-stat-val" id="st-plan">—</span><span class="sblock-stat-lbl">Plan</span></div>
+          </div>
+          <div class="sblock-stats-rows">
+            <div class="sblock-row" style="border-top:1px solid var(--border)">
+              <span class="sblock-lbl">Membre depuis</span>
+              <span class="sblock-stat-inline" id="st-joined">—</span>
+            </div>
+            <div class="sblock-row">
+              <span class="sblock-lbl">Dernière connexion</span>
+              <span class="sblock-stat-inline" id="st-last-login">—</span>
+            </div>
+            <div class="sblock-row" style="border:none">
+              <span class="sblock-lbl">Rôle</span>
+              <span class="sblock-stat-inline" id="st-role">—</span>
             </div>
           </div>
         </div>
 
-        <!-- Recherche -->
-        <div class="info-card">
-          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">🔍 Recherche</h3>
-          <div class="setting-group-v">
-            <div class="setting-label">Mode par défaut</div>
-            <p style="font-size:12px;color:var(--text3);margin-bottom:8px">L'auto-détection identifie le type de cible automatiquement.</p>
-            <div class="setting-options">
-              <button class="setting-btn" id="p-sm-auto" onclick="setDefaultSearchMode('auto')">🔮 Auto-détection</button>
-              <button class="setting-btn" id="p-sm-manual" onclick="setDefaultSearchMode('manual')">⚙️ Manuel</button>
-            </div>
+        <!-- PROJET -->
+        <div class="sblock">
+          <div class="sblock-title">ℹ️ Projet</div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Version</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent);font-weight:700">v2.1</span>
           </div>
-        </div>
-
-        <!-- Compte -->
-        <div class="info-card" id="settings-account-card">
-          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">👤 Compte</h3>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="gotoPage('settings');openProfile('avatar')">🖼️ Changer la photo de profil</button>
-            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('pseudo')">✏️ Changer le pseudo</button>
-            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('password')">🔑 Changer le mot de passe</button>
-            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('email')">📧 Changer l'email</button>
-            <button class="btn btn-outline" style="width:100%;justify-content:flex-start;gap:10px;text-align:left" onclick="openProfile('coupon')">🎟️ Appliquer un code promo</button>
-            <div class="dd-sep" style="margin:4px 0"></div>
-            <button class="btn" style="width:100%;background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.3);color:var(--red);justify-content:flex-start;gap:10px" onclick="logout()">🚪 Se déconnecter</button>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Créateurs</span>
+            <span style="font-size:12px;color:var(--text2)">Boubou &amp; ZIamana</span>
           </div>
-        </div>
-
-        <!-- Version / infos -->
-        <div class="info-card">
-          <h3 style="display:flex;align-items:center;gap:8px;margin-bottom:18px">ℹ️ À propos de l'app</h3>
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="color:var(--text3)">Version</span>
-              <span style="font-family:'JetBrains Mono',monospace;color:var(--white);font-weight:700">v2.1</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="color:var(--text3)">Plateforme</span>
-              <span style="color:var(--white)">Bazaar Services</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)">
-              <span style="color:var(--text3)">Fondé en</span>
-              <span style="color:var(--white)">2026</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0">
-              <span style="color:var(--text3)">Créateurs</span>
-              <span style="color:var(--white)">Boubou &amp; ZIamana</span>
-            </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Disponibilité</span>
+            <span style="font-size:12px;color:#4ade80;font-weight:700">99.2%</span>
           </div>
-          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:16px;font-size:12px;width:100%;justify-content:center">
-            <img src="logo/discord.png" alt="">Rejoindre le Discord
-          </a>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Sources OSINT</span>
+            <span style="font-size:12px;color:var(--white);font-weight:700">47</span>
+          </div>
+          <div class="sblock-row">
+            <span class="sblock-lbl">Fondé en</span>
+            <span style="font-size:12px;color:var(--text2)">2026</span>
+          </div>
+          <div class="sblock-row" style="border:none">
+            <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="font-size:12px;padding:7px 16px">
+              <img src="logo/discord.png" alt="">Rejoindre le Discord
+            </a>
+          </div>
         </div>
 
       </div>
@@ -886,5 +998,35 @@
 
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+
+<!-- CREDITS MODAL -->
+<div class="modal-bg" id="credits-modal" onclick="if(event.target===this)closeCreditsModal()">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header"><h2>💰 Crédits</h2><button class="modal-close-btn" onclick="closeCreditsModal()">✕</button></div>
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:14px 16px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Crédits restants</div>
+          <div style="font-size:28px;font-weight:900;color:var(--yellow);font-family:'JetBrains Mono',monospace"><span id="cm-credits-left">5</span><span style="font-size:16px;color:var(--text3)"> / <span id="cm-credits-max">5</span></span></div>
+        </div>
+        <img src="logo/coins.png" alt="" style="width:36px;height:36px;opacity:.8">
+      </div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">
+        Les crédits se rechargent automatiquement <strong style="color:var(--white)">toutes les 48h</strong>. Pour obtenir plus de crédits ou un rechargement instantané, passez à un plan supérieur.
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="closeCreditsModal();gotoPage('subs')">🚀 Voir les abonnements</button>
+    </div>
+  </div>
+</div>
+
+<!-- MY REVIEWS MODAL -->
+<div class="modal-bg" id="my-reviews-modal" onclick="if(event.target===this)closeMyReviewsModal()">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header"><h2>📝 Mes avis</h2><button class="modal-close-btn" onclick="closeMyReviewsModal()">✕</button></div>
+    <div id="modal-my-reviews-content" style="padding:8px 0;max-height:60vh;overflow-y:auto">
+      <div style="padding:20px 24px;font-size:13px;color:var(--text3)">Chargement…</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

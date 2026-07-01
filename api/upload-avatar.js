@@ -36,6 +36,8 @@ export default async function handler(req, res) {
   const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filename);
 
   await supabase.from('users').update({ avatar_url: publicUrl }).eq('id', user_id);
+  // Sync avatar to all existing reviews from this user
+  await supabase.from('reviews').update({ avatar_url: publicUrl }).eq('user_id', user_id);
 
   return res.json({ ok: true, avatar_url: publicUrl });
 }

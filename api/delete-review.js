@@ -15,9 +15,13 @@ export default async function handler(req, res) {
   const user_id = verifySession(token);
   if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
-  // Verify if user is admin/dev
   const { data: user } = await supabase.from('users').select('role').eq('id', user_id).single();
-  if (!user || user.role !== 'dev') return res.status(403).json({ error: 'Non autorisé.' });
+  if (!user) return res.status(401).json({ error: 'Non autorisé.' });
+
+  // Allow owner or admin to delete
+  const { data: review } = await supabase.from('reviews').select('user_id').eq('id', review_id).single();
+  if (!review) return res.status(404).json({ error: 'Avis introuvable.' });
+  if (review.user_id !== user_id && user.role !== 'dev') return res.status(403).json({ error: 'Non autorisé.' });
 
   const { error } = await supabase.from('reviews').delete().eq('id', review_id);
 

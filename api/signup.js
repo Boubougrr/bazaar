@@ -54,16 +54,18 @@ export default async function handler(req, res) {
 function safeUser(u) {
   return {
     id: u.id, email: u.email, pseudo: u.pseudo,
-    plan: u.plan || 'standard', 
+    avatar_url: u.avatar_url || null,
+    plan: u.plan || 'standard',
     credits_max: u.credits_max || 5,
-    credits_used: u.credits_used || 0, 
+    credits_used: u.credits_used || 0,
     credits_exhausted_at: u.credits_exhausted_at,
-    vip_active: u.vip_active || false, 
+    vip_active: u.vip_active || false,
     total_searches: u.total_searches || 0,
-    login_count: u.login_count || 1, 
+    login_count: u.login_count || 1,
     joined_at: u.joined_at,
     last_login: u.last_login,
-    week_searches: u.week_searches || {}, 
+    week_searches: u.week_searches || {},
     month_searches: u.month_searches || {},
+    role: u.role || 'user',
   };
 }
