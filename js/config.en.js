@@ -307,7 +307,7 @@ const CONFIG_EN = {
     t8: { name: "Purple Grabber - Boubou", desc: "A Grabber with a lot of features ..." },
     t9: { name: "Database pack", desc: "Database pack (+10) - Buy on discord" },
     t10: { name: "Discord private vocal", desc: "Private vocal in the discord server" },
-    t11: { name: "Searcher", desc: "Description coming soon." },
-    t12: { name: "CrosshairX - cracked by boubou", desc: "Description coming soon." },
+    t11: { name: "Database Searcher", desc: "Long file search tool." },
+    t12: { name: "CrosshairX - cracked by boubou", desc: "In-game crosshair overlay." },
   },
 };

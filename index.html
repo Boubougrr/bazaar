@@ -263,6 +263,7 @@
       <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="nav-discord"><img src="logo/discord.png" alt="">Discord</a>
       <button class="cart-nav-btn" onclick="gotoPage('cart');closeMobileNav()" title="Panier">
         <img src="logo/panier.png" alt="">
+        <span data-i18n="accessCart">Accéder au panier</span>
         <span class="cart-badge" id="cart-badge" style="display:none">0</span>
       </button>
       <div id="nav-auth-only" style="display:contents">
@@ -361,16 +362,34 @@
       </div>
 
       <div class="search-panel reveal">
+        <!-- Search bar -->
+        <div class="search-input-row">
+          <img class="search-active-icon" id="std-icon" src="logo/loupe.png" alt="">
+          <input class="search-input" id="search-input" placeholder="Recherche automatique…" autocomplete="off">
+          <img src="logo/coffre-fort.png" class="search-lock-icon" alt="" title="Recherche sécurisée">
+          <button class="search-submit-new" id="search-btn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          </button>
+        </div>
+        <!-- Auto-detect type label -->
+        <div id="auto-detect-label" class="auto-detect-label" style="display:none">
+          <span id="auto-detect-icon"></span>
+          <span id="auto-detect-text"></span>
+        </div>
+
         <!-- Manual/Automated mode toggle -->
         <div class="search-mode-row">
           <div class="search-mode-toggle">
             <button class="smode-btn active" id="smode-manual" onclick="setSearchTopMode('manual')">
-              <img src="logo/manette.png" alt="">Manual <span class="smode-cost">1 Credit</span>
+              <img src="logo/manette.png" alt="">Manual
             </button>
             <button class="smode-btn" id="smode-automated" onclick="setSearchTopMode('automated')">
-              <img src="logo/robot.png" alt="">Automated <span class="smode-cost">2 Credits</span>
+              <img src="logo/robot.png" alt="">Automated
             </button>
           </div>
+          <span class="search-warning-badge" title="Manual : 1 crédit · Automated : 2 crédits">
+            <img src="logo/construction.png" alt="">Warning
+          </span>
           <div class="search-trust-badges">
             <span class="search-trust-badge"><img src="logo/coffre-fort.png" alt="">Secure Search</span>
             <span class="search-trust-badge"><img src="logo/satellite.png" alt="">47+ Sources</span>
@@ -381,19 +400,6 @@
         <div id="manual-search-grid">
           <div class="search-cat-tabs" id="search-cat-tabs"></div>
           <div class="search-type-tabs" id="search-type-tabs"></div>
-        </div>
-        <!-- Input row -->
-        <div class="search-input-row">
-          <img class="search-active-icon" id="std-icon" src="logo/auto.png" alt="">
-          <input class="search-input" id="search-input" placeholder="Recherche automatique…" autocomplete="off">
-          <button class="search-submit-new" id="search-btn">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-          </button>
-        </div>
-        <!-- Auto-detect type label -->
-        <div id="auto-detect-label" class="auto-detect-label" style="display:none">
-          <span id="auto-detect-icon"></span>
-          <span id="auto-detect-text"></span>
         </div>
         <!-- Hidden compat -->
         <span id="std-label" style="display:none">Auto</span>
@@ -687,25 +693,13 @@
         </div>
       </div>
 
-      <!-- Credits table -->
+      <!-- Credits table (rendered from CONFIG.plans so it can never go stale) -->
       <div class="info-card" style="width:100%;max-width:600px">
         <h3 style="margin-bottom:16px" data-i18n="featCreditsTable">Crédits par plan</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
+        <div id="feat-credits-table" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border2);border-radius:var(--r);overflow:hidden">
           <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)" data-i18n="featColPlan">Plan</div>
           <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)" data-i18n="featColCredits">Crédits/48h</div>
           <div style="background:var(--bg2);padding:10px 14px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3)" data-i18n="featColPrice">Prix</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Standard</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">5</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:#4ade80;font-weight:700" data-i18n="featFree">Gratuit</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Starter</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">18</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--yellow);font-weight:700">2.99€/mois</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Pro</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">36</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--yellow);font-weight:700">7.99€/mois</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">Lifetime</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--accent);font-weight:700">∞</div>
-          <div style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--accent);font-weight:700">19.99€ <span data-i18n="featOnce">une fois</span></div>
         </div>
       </div>
     </div>
@@ -1140,6 +1134,9 @@
 
           <div class="order-plan-badge" id="order-plan-badge"></div>
 
+          <!-- Cart contents (only shown for cart checkouts) -->
+          <div id="order-cart-items-list" class="order-cart-items-list" style="display:none"></div>
+
           <!-- Promo code -->
           <div class="order-section">
             <h3><img src="logo/codepromo.png" alt="" class="order-section-icon"><span data-i18n="promoCodeTitle">Code promo</span></h3>
@@ -1198,6 +1195,24 @@
             </button>
             <p class="order-pay-note" data-i18n="orderPayNote">Vos informations sont cryptées et sécurisées.</p>
           </div>
+
+          <!-- Tutorial section (kept inside the form column so the sticky sidebar
+               has room to stay pinned for the whole page, not just this column) -->
+          <div class="order-tutorial">
+            <div class="order-tutorial-icon"><img src="logo/discord.png" alt="" style="width:36px;height:36px"></div>
+            <div class="order-tutorial-body">
+              <h3 data-i18n="tutorialTitle">Comment finaliser votre commande ?</h3>
+              <ol class="order-tutorial-steps">
+                <li data-i18n="tutorialStep1">Cliquez sur <strong>« Pay »</strong> ci-dessus pour générer votre code de commande.</li>
+                <li data-i18n="tutorialStep2">Copiez ce code et ouvrez un <strong>ticket Discord</strong> dans la section <strong>« Shop purchase »</strong>.</li>
+                <li data-i18n="tutorialStep3">Donnez le code de commande ainsi que votre <strong>méthode de paiement</strong> au staff.</li>
+                <li data-i18n="tutorialStep4">Les instructions de paiement vous seront communiquées par le staff sous <strong>24h maximum</strong>.</li>
+              </ol>
+              <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px">
+                <img src="logo/discord.png" alt=""><span data-i18n="openTicketCta">Ouvrir un ticket Discord</span>
+              </a>
+            </div>
+          </div>
         </div>
 
         <!-- Right: Summary + Currencies -->
@@ -1210,6 +1225,14 @@
                 <span id="order-summary-plan-name">Standard — Lifetime</span>
                 <span id="order-summary-plan-price">€0.00</span>
               </div>
+              <div class="order-summary-row" id="order-summary-items-row" style="display:none">
+                <span data-i18n="orderItemCount">Articles</span>
+                <span id="order-summary-item-count">0</span>
+              </div>
+              <div class="order-summary-row">
+                <span data-i18n="orderSubtotal">Sous-total</span>
+                <span id="order-summary-subtotal">€0.00</span>
+              </div>
               <div class="order-summary-row" id="order-summary-discount-row" style="display:none">
                 <span data-i18n="orderDiscount">Réduction</span>
                 <span id="order-summary-discount" style="color:var(--green)">-€0.00</span>
@@ -1218,6 +1241,10 @@
               <div class="order-summary-row order-summary-total">
                 <span data-i18n="orderTotal">Total</span>
                 <span id="order-summary-total">€0.00</span>
+              </div>
+              <div class="order-summary-row" id="order-summary-savings-row" style="display:none">
+                <span data-i18n="orderSavings">Économies réalisées</span>
+                <span id="order-summary-savings" style="color:var(--green)">€0.00</span>
               </div>
             </div>
             <div class="order-summary-payment" id="order-summary-payment-row">
@@ -1246,23 +1273,6 @@
           <button class="btn btn-outline" id="order-back-btn" onclick="gotoPage('subs')" style="width:100%;justify-content:center;margin-top:12px">← Retour aux abonnements</button>
         </div>
       </div>
-
-      <!-- Tutorial section -->
-      <div class="order-tutorial">
-        <div class="order-tutorial-icon"><img src="logo/discord.png" alt="" style="width:36px;height:36px"></div>
-        <div class="order-tutorial-body">
-          <h3 data-i18n="tutorialTitle">Comment finaliser votre commande ?</h3>
-          <ol class="order-tutorial-steps">
-            <li data-i18n="tutorialStep1">Cliquez sur <strong>« Pay »</strong> ci-dessus pour générer votre code de commande.</li>
-            <li data-i18n="tutorialStep2">Copiez ce code et ouvrez un <strong>ticket Discord</strong> dans la section <strong>« Shop purchase »</strong>.</li>
-            <li data-i18n="tutorialStep3">Donnez le code de commande ainsi que votre <strong>méthode de paiement</strong> au staff.</li>
-            <li data-i18n="tutorialStep4">Les instructions de paiement vous seront communiquées par le staff sous <strong>24h maximum</strong>.</li>
-          </ol>
-          <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="display:inline-flex;margin-top:12px">
-            <img src="logo/discord.png" alt=""><span data-i18n="openTicketCta">Ouvrir un ticket Discord</span>
-          </a>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1286,7 +1296,7 @@
         <div class="footer-links">
           <a onclick="gotoPage('home')" data-i18n="home">🏠 Accueil</a>
           <a onclick="gotoPage('shop')" data-i18n="shop">🛒 Boutique</a>
-          <a onclick="gotoPage('tools')">🔧 Tools</a>
+          <a onclick="gotoPage('tools')">Tools</a>
           <a onclick="gotoPage('subs')" data-i18n="subs">💎 Abonnements</a>
           <a onclick="gotoPage('features')" data-i18n="features">⚡ Fonctionnalités</a>
           <a onclick="gotoPage('about')" data-i18n="about">👥 À propos</a>

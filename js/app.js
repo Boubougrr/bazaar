@@ -68,6 +68,7 @@ const I18N = {
     promoCodeTitle:'Code promo', applyBtn:'Appliquer',
     payWithTitle:'Payer avec',
     orderSummaryTitle:'Récapitulatif', orderDiscount:'Réduction', orderTotal:'Total',
+    orderItemCount:'Articles', orderSubtotal:'Sous-total', orderSavings:'Économies réalisées',
     orderPayment:'Paiement', orderCrypto:'Crypto',
     acceptedCurrencies:'Devises acceptées',
     yourOrderCode:'Votre code de commande',
@@ -156,6 +157,8 @@ const I18N = {
     accountCreated:'Créé le', linkedEmails:'Emails liés', breachMentions:'Mentions dans des fuites', otherInfo:'Autres informations',
     stolenInfoTitle:'Informations volées', loadedLabel:'chargés', stealerLogTag:'LOG DE MALWARE',
     addToCart:'Ajouter au panier', cartAdded:'✓ Ajouté au panier', cartAlreadyIn:'Déjà dans le panier',
+    cartFull:'Panier plein (5 articles max)', removeFromCartBtn:'Retirer du panier', moreInfoBtn:'Plus d\'informations',
+    accessCart:'Accéder au panier',
     pageCartTitle:'Panier', pageCartSub:'Retrouvez ici les articles ajoutés depuis la boutique, les tools et les abonnements.',
     cartEmpty:'Votre panier est vide.', cartEmptyCta:'Découvrir la boutique', cartCheckoutBtn:'Passer la commande',
     cartOrderName:'Panier', removeFromCart:'Retirer du panier', backToCart:'← Retour au panier',
@@ -257,11 +260,11 @@ const I18N = {
     featCard6Title:'Bilingue FR / EN',
     featCard7Title:'Multi-paiement',
     featCard8Title:'Boutique intégrée',
-    featCard1Desc:'47 sources interrogées simultanément. Phone, Email, Username, Discord ID, adresse IP — un seul champ de saisie.',
+    featCard1Desc:'Data Leaks, Social & Gaming, Network — Email, téléphone, IP, Discord, GitHub, Roblox, Xbox, Minecraft, WHOIS et bien plus, en mode Manual ou Automated.',
     featCard2Desc:'Le moteur identifie automatiquement le type de cible saisie. Aucune configuration manuelle requise.',
     featCard3Desc:'Résultats agrégés en moins de 2 secondes grâce à des requêtes parallèles sur toutes les sources.',
     featCard4Desc:'Délai anti-spam entre les recherches. Tokens de session signés HMAC. Pas de stockage de résultats.',
-    featCard5Desc:'De 5 recherches / 48h en Standard à l\'illimité en Lifetime. Choisissez selon vos besoins.',
+    featCard5Desc:'De 12 recherches / 48h en Standard à 64 en Lifetime. Choisissez selon vos besoins.',
     featCard6Desc:'Interface complète en Français et Anglais. Changez instantanément dans les Paramètres.',
     featCard7Desc:'LTC, PayPal F&F, Paysafecard, et autres cryptos. Paiements traités via Discord.',
     featCard8Desc:'Nitro Discord, Server Boosts, Currency Exchange — au meilleur prix, sans intermédiaire.',
@@ -405,6 +408,7 @@ const I18N = {
     promoCodeTitle:'Promo code', applyBtn:'Apply',
     payWithTitle:'Pay with',
     orderSummaryTitle:'Order Summary', orderDiscount:'Discount', orderTotal:'Total',
+    orderItemCount:'Items', orderSubtotal:'Subtotal', orderSavings:'Total savings',
     orderPayment:'Payment', orderCrypto:'Crypto',
     acceptedCurrencies:'Accepted Currencies',
     yourOrderCode:'Your order code',
@@ -493,6 +497,8 @@ const I18N = {
     accountCreated:'Created on', linkedEmails:'Linked emails', breachMentions:'Breach mentions', otherInfo:'Other information',
     stolenInfoTitle:'Stolen Information', loadedLabel:'loaded', stealerLogTag:'STEALER LOG',
     addToCart:'Add to cart', cartAdded:'✓ Added to cart', cartAlreadyIn:'Already in cart',
+    cartFull:'Cart full (5 items max)', removeFromCartBtn:'Remove from cart', moreInfoBtn:'More information',
+    accessCart:'Go to cart',
     pageCartTitle:'Cart', pageCartSub:'Find here the items you added from the shop, tools and subscriptions.',
     cartEmpty:'Your cart is empty.', cartEmptyCta:'Discover the shop', cartCheckoutBtn:'Place order',
     cartOrderName:'Cart', removeFromCart:'Remove from cart', backToCart:'← Back to cart',
@@ -594,11 +600,11 @@ const I18N = {
     featCard6Title:'Bilingual FR / EN',
     featCard7Title:'Multi-payment',
     featCard8Title:'Integrated shop',
-    featCard1Desc:'47 sources queried simultaneously. Phone, Email, Username, Discord ID, IP address — one single input field.',
+    featCard1Desc:'Data Leaks, Social & Gaming, Network — email, phone, IP, Discord, GitHub, Roblox, Xbox, Minecraft, WHOIS and more, in Manual or Automated mode.',
     featCard2Desc:'The engine automatically identifies the target type. No manual configuration needed.',
     featCard3Desc:'Aggregated results in under 2 seconds using parallel queries across all sources.',
     featCard4Desc:'Anti-spam delay between searches. HMAC-signed session tokens. No result storage.',
-    featCard5Desc:'From 5 searches / 48h on Standard to unlimited on Lifetime. Choose according to your needs.',
+    featCard5Desc:'From 12 searches / 48h on Standard to 64 on Lifetime. Choose according to your needs.',
     featCard6Desc:'Full interface in French and English. Switch instantly in Settings.',
     featCard7Desc:'LTC, PayPal F&F, Paysafecard, and other cryptos. Payments processed via Discord.',
     featCard8Desc:'Discord Nitro, Server Boosts, Currency Exchange — best price, no middleman.',
@@ -1622,6 +1628,7 @@ function gotoPage(name){
   if(name==='settings') { applySettings(); updateSettingsProfile(); }
   if(name==='analytics') { loadAnalyticsPageGuard(); }
   if(name==='cart') { renderCartPage(); }
+  if(name==='features') { renderFeatCreditsTable(); }
   track('pageview', name);
 }
 
@@ -1777,7 +1784,6 @@ function toggleSearchDD(e) {
 // ── Manual/Automated search mode + category-grouped type picker ────
 const SEARCH_CATEGORIES = [
   { id:'data_leaks', label:'Data Leaks', icon:'logo/database.png', types:[
-    { v:'auto', icon:'logo/auto.png', label:'Auto', ph:'searchPlaceholder' },
     { v:'email', icon:'logo/mail.png', label:'Email', ph:'phEmail' },
     { v:'phone', icon:'logo/phone.png', label:'Phone', ph:'phPhone' },
     { v:'ip', icon:'logo/ip.png', label:'IP', ph:'phIp' },
@@ -1797,10 +1803,8 @@ const SEARCH_CATEGORIES = [
     { v:'reddit', icon:'logo/redit.png', label:'Reddit', ph:'phReddit' },
     { v:'social', icon:'logo/link.png', label:'Social', ph:'phSocial' },
   ]},
-  { id:'email_intel', label:'Email Intelligence', icon:'logo/coffre-fort.png', types:[
-    { v:'email_check', icon:'logo/mail.png', label:'Email Check', ph:'phEmail' },
-  ]},
   { id:'network', label:'Network', icon:'logo/satellite.png', types:[
+    { v:'email_check', icon:'logo/mail.png', label:'Email Check', ph:'phEmail' },
     { v:'ip_intel', icon:'logo/ip.png', label:'IP Intel', ph:'phIp' },
     { v:'domain_intel', icon:'logo/server.png', label:'Domain Intel', ph:'phDomainIntel' },
     { v:'whois', icon:'logo/contact.png', label:'WHOIS', ph:'phDomainIntel' },
@@ -1870,17 +1874,17 @@ function selectManualType(value){
 }
 
 const AUTO_DETECT_TYPES = [
-  { id:'email',   label:'Email',          icon:'✉️',  test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
-  { id:'username',label:'Discord ID',     icon:'🎮', test: v => /^\d{17,19}$/.test(v) },
-  { id:'username',label:'Discord Tag',    icon:'🎮', test: v => /.+#\d{4}$/.test(v) },
-  { id:'phone',   label:'Phone Number',   icon:'📞', test: v => /^\+?[\d\s\-().]{7,}$/.test(v) && (v.match(/\d/g)||[]).length >= 7 },
-  { id:'ip',      label:'IP Address',     icon:'🌐', test: v => /^(\d{1,3}\.){3}\d{1,3}$/.test(v) && v.split('.').every(n=>+n<=255) },
-  { id:'ip',      label:'IPv6 Address',   icon:'🌐', test: v => /^[0-9a-fA-F:]{2,}:[0-9a-fA-F:]{2,}$/.test(v) },
-  { id:'name',    label:'Full Name',      icon:'👤', test: v => /^[a-zA-ZÀ-ÿ'-]+ [a-zA-ZÀ-ÿ'-]+/.test(v) && !/\d/.test(v) },
-  { id:'username',label:'Username',       icon:'🔑', test: v => /^[a-zA-Z0-9._\-]{3,}$/.test(v) },
-  { id:'domain',  label:'Domain',         icon:'🌐', test: v => /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) && !/^https?:\/\//i.test(v) },
-  { id:'url',     label:'URL',            icon:'🔗', test: v => /^https?:\/\/.+/i.test(v) },
-  { id:'hash',    label:'Hash',           icon:'🔑', test: v => /^[a-fA-F0-9]{32,}$/.test(v) },
+  { id:'email',   label:'Email',          icon:'logo/mail.png',      test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+  { id:'username',label:'Discord ID',     icon:'logo/discord.png',   test: v => /^\d{17,19}$/.test(v) },
+  { id:'username',label:'Discord Tag',    icon:'logo/discord.png',   test: v => /.+#\d{4}$/.test(v) },
+  { id:'phone',   label:'Phone Number',   icon:'logo/telephone.png', test: v => /^\+?[\d\s\-().]{7,}$/.test(v) && (v.match(/\d/g)||[]).length >= 7 },
+  { id:'ip',      label:'IP Address',     icon:'logo/ip.png',        test: v => /^(\d{1,3}\.){3}\d{1,3}$/.test(v) && v.split('.').every(n=>+n<=255) },
+  { id:'ip',      label:'IPv6 Address',   icon:'logo/ip.png',        test: v => /^[0-9a-fA-F:]{2,}:[0-9a-fA-F:]{2,}$/.test(v) },
+  { id:'name',    label:'Full Name',      icon:'logo/id.png',        test: v => /^[a-zA-ZÀ-ÿ'-]+ [a-zA-ZÀ-ÿ'-]+/.test(v) && !/\d/.test(v) },
+  { id:'username',label:'Username',       icon:'logo/id.png',        test: v => /^[a-zA-Z0-9._\-]{3,}$/.test(v) },
+  { id:'domain',  label:'Domain',         icon:'logo/server.png',    test: v => /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) && !/^https?:\/\//i.test(v) },
+  { id:'url',     label:'URL',            icon:'logo/link.png',      test: v => /^https?:\/\/.+/i.test(v) },
+  { id:'hash',    label:'Hash',           icon:'logo/cmd.png',       test: v => /^[a-fA-F0-9]{32,}$/.test(v) },
 ];
 
 function detectInputType(val) {
@@ -1895,7 +1899,7 @@ function showAutoDetect(val) {
   if(!wrap) return;
   const det = detectInputType(val);
   if(det){
-    iconEl.textContent = det.icon + ' ';
+    iconEl.innerHTML = `<img src="${det.icon}" alt="" style="width:14px;height:14px;object-fit:contain;vertical-align:-2px">`;
     textEl.textContent = t('autoDetectPrefix') + det.label;
     wrap.className = 'auto-detect-label show det-' + det.id;
     wrap.style.display = '';
@@ -2126,13 +2130,28 @@ function renderPlans(){
           ? `<button class="btn-plan-cta" disabled style="opacity:.5;cursor:not-allowed"><img src="logo/user.png" alt="">${t('currentPlan')}</button>`
           : `<div class="plan-cta-row">
               ${priceNum > 0 ? `<button class="cart-add-btn" onclick="addToCart('${p.id}','plan')" title="${t('addToCart')}"><img src="logo/panier.png" alt=""></button>` : ''}
-              <button class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}" onclick="${currentUser?`openOrderPage('${p.id}')`:`switchAuthTab('login')`}"><img src="logo/paiment.png" alt="">${t('buyBtn')}</button>
+              <button class="btn-plan-cta${p.highlight?' btn-plan-cta-hl':''}" onclick="openPlanDetails('${p.id}')"><img src="logo/oeil.png" alt="">${t('moreInfoBtn')}</button>
              </div>`
         }
         <p class="plan-ticket-note">${t('openTicketToActivate')}</p>
       </div>
     </div>`}).join('');
   initCardSpotlight();
+}
+function renderFeatCreditsTable(){
+  const table = document.getElementById('feat-credits-table');
+  if(!table) return;
+  // Keep the 3 header cells (Plan/Crédits/Prix), drop any previously rendered rows.
+  [...table.querySelectorAll('.feat-credits-row-cell')].forEach(el => el.remove());
+  const rowsHtml = CONFIG.plans.map(p => {
+    const priceColor = p.price === '0€' ? '#4ade80' : (p.period === 'une fois' ? 'var(--accent)' : 'var(--yellow)');
+    const priceText = p.price === '0€' ? t('featFree') : `${p.price}${p.period ? ' '+trPeriod(p.period) : ''}`;
+    return `
+      <div class="feat-credits-row-cell" style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:600">${p.name}</div>
+      <div class="feat-credits-row-cell" style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:var(--text2)">${p.searches>=999999?'∞':p.searches}</div>
+      <div class="feat-credits-row-cell" style="padding:10px 14px;border-top:1px solid var(--border);font-size:13px;color:${priceColor};font-weight:700">${priceText}</div>`;
+  }).join('');
+  table.insertAdjacentHTML('beforeend', rowsHtml);
 }
 function renderFounders(){
   const c=document.getElementById('founders-grid'); if(!c)return;
@@ -2176,16 +2195,39 @@ function cartItemTranslation(id, type){
   if(type === 'plan') return trPlan(id);
   return null;
 }
+const CART_MAX_ITEMS = 5;
 function addToCart(id, type){
   if(cart.find(c => c.id === id && c.type === type)){ notify(t('cartAlreadyIn'), true); return; }
+  if(cart.length >= CART_MAX_ITEMS){ notify(t('cartFull'), true); return; }
   cart.push({ id, type });
   saveCart();
   notify(t('cartAdded'));
+  refreshCartToggleButtons();
 }
 function removeFromCart(id, type){
   cart = cart.filter(c => !(c.id === id && c.type === type));
   saveCart();
   renderCartPage();
+  refreshCartToggleButtons();
+}
+// Toggle button used in item/plan detail modals — shows "Add to cart" or
+// "Remove from cart" depending on current state, re-rendered in place on click
+// so the modal doesn't need to close.
+function cartToggleButtonHtml(id, type){
+  const inCart = cart.some(c => c.id === id && c.type === type);
+  const label = inCart ? t('removeFromCartBtn') : t('addToCart');
+  const bg = inCart ? 'style="flex:1;justify-content:center;gap:6px;background:linear-gradient(135deg,var(--red),#dc2626)"' : 'style="flex:1;justify-content:center;gap:6px"';
+  return `<button class="btn btn-primary cart-toggle-btn" data-cart-id="${esc(id)}" data-cart-type="${esc(type)}" onclick="toggleCartFromModal('${id}','${type}')" ${bg}><img src="logo/panier.png" alt="" style="width:16px;height:16px">${label}</button>`;
+}
+function toggleCartFromModal(id, type){
+  const inCart = cart.some(c => c.id === id && c.type === type);
+  if(inCart) removeFromCart(id, type); else addToCart(id, type);
+}
+function refreshCartToggleButtons(){
+  document.querySelectorAll('.cart-toggle-btn').forEach(btn => {
+    const id = btn.dataset.cartId, type = btn.dataset.cartType;
+    btn.outerHTML = cartToggleButtonHtml(id, type);
+  });
 }
 function renderCartPage(){
   const list = document.getElementById('cart-items-list');
@@ -2213,8 +2255,9 @@ function renderCartPage(){
     const name = tr?.name || item.name;
     const priceNum = parseFloat(String(item.price).replace('€','').replace(',','.')) || 0;
     total += priceNum;
+    const icon = c.type === 'plan' ? 'logo/etoile.png' : (item.icon || 'logo/panier.png');
     return `<div class="cart-item-row">
-      <img src="${item.icon || 'logo/panier.png'}" class="cart-item-icon" alt="">
+      <img src="${icon}" class="cart-item-icon" alt="">
       <div class="cart-item-info"><div class="cart-item-name">${esc(name)}</div><div class="cart-item-cat">${catLabels[c.type] || ''}</div></div>
       <div class="cart-item-price">${item.price}</div>
       <button class="cart-item-remove" onclick="removeFromCart('${c.id}','${c.type}')" title="${t('removeFromCart')}"><img src="logo/corbeille.png" alt=""></button>
@@ -2292,6 +2335,30 @@ function _setupOrderPage(){
   const badge = document.getElementById('order-plan-badge');
   const meta = o.isShop ? o.price : `${o.searches} ${t('searchesPerDay')} · ${o.price}${o.period}`;
   badge.innerHTML = `<span class="order-plan-name" style="color:${o.color}">${o.name}</span><span class="order-plan-meta">${meta}</span>`;
+
+  // Cart contents list (image/name/info per product) — only for cart checkouts
+  const cartList = document.getElementById('order-cart-items-list');
+  if(cartList){
+    if(o.id === 'cart' && cart.length){
+      const catLabels = { shop: t('shop'), tool: t('premiumTools'), plan: t('subs') };
+      cartList.innerHTML = cart.map(c => {
+        const item = resolveCartItem(c.id, c.type);
+        if(!item) return '';
+        const tr = cartItemTranslation(c.id, c.type);
+        const name = tr?.name || item.name;
+        const icon = c.type === 'plan' ? 'logo/etoile.png' : (item.icon || 'logo/panier.png');
+        return `<div class="order-cart-item-row">
+          <img src="${icon}" class="order-cart-item-icon" alt="">
+          <div class="order-cart-item-info"><div class="order-cart-item-name">${esc(name)}</div><div class="order-cart-item-cat">${catLabels[c.type]||''}</div></div>
+          <div class="order-cart-item-price">${item.price}</div>
+        </div>`;
+      }).join('');
+      cartList.style.display = 'flex';
+    } else {
+      cartList.style.display = 'none';
+      cartList.innerHTML = '';
+    }
+  }
 
   // Subtitle + back button (shop vs plan wording)
   const subEl = document.querySelector('.order-sub');
@@ -2413,8 +2480,26 @@ function updateOrderSummary(){
   const discountRow = document.getElementById('order-summary-discount-row');
   const discountEl = document.getElementById('order-summary-discount');
   const totalEl = document.getElementById('order-summary-total');
+  const subtotalEl = document.getElementById('order-summary-subtotal');
+  const itemsRow = document.getElementById('order-summary-items-row');
+  const itemCountEl = document.getElementById('order-summary-item-count');
+  const savingsRow = document.getElementById('order-summary-savings-row');
+  const savingsEl = document.getElementById('order-summary-savings');
+
+  if(subtotalEl) subtotalEl.textContent = plan.price;
+
+  if(itemsRow && itemCountEl){
+    if(plan.id === 'cart' && cart.length){
+      itemsRow.style.display = 'flex';
+      itemCountEl.textContent = cart.length;
+    } else {
+      itemsRow.style.display = 'none';
+    }
+  }
+
+  let discountAmount = 0;
   if(_orderDiscount > 0 && priceNum > 0){
-    const discountAmount = priceNum * _orderDiscount / 100;
+    discountAmount = priceNum * _orderDiscount / 100;
     const totalPrice = priceNum - discountAmount;
     discountRow.style.display = 'flex';
     discountEl.textContent = `-€${discountAmount.toFixed(2)}`;
@@ -2423,6 +2508,16 @@ function updateOrderSummary(){
     discountRow.style.display = 'none';
     totalEl.textContent = plan.price;
   }
+
+  if(savingsRow && savingsEl){
+    if(discountAmount > 0){
+      savingsRow.style.display = 'flex';
+      savingsEl.textContent = `€${discountAmount.toFixed(2)}`;
+    } else {
+      savingsRow.style.display = 'none';
+    }
+  }
+
   updatePayButtonText();
 }
 
@@ -2462,11 +2557,15 @@ async function applyPromoCode(){
 
 function generateOrderCode(){
   if(!_orderPlan) return '';
-  const planPart = _orderPlan.codeSlug || _orderPlan.id.replace('plan_','');
-  const promoPart = document.getElementById('order-promo-input').value.trim() || 'nopromo';
-  const method = document.querySelector('.pay-option.selected')?.getAttribute('data-value') || 'LTC';
   const idPart = Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2,6).toUpperCase();
-  return `Bazaar-${planPart}-${promoPart}-${method}-${idPart}`;
+  const method = document.querySelector('.pay-option.selected')?.getAttribute('data-value') || 'LTC';
+  const methodLetter = method[0].toLowerCase();
+  const promoInput = document.getElementById('order-promo-input').value.trim();
+  const promoPart = promoInput ? promoInput[0].toLowerCase() : 'nocp';
+  const contentPart = (_orderPlan.id === 'cart' && cart.length)
+    ? cart.map(c => c.id).join('_')
+    : (_orderPlan.codeSlug || _orderPlan.id);
+  return `${idPart}-${methodLetter}-${promoPart}-${contentPart}`;
 }
 
 function showOrderCode(){
@@ -2567,7 +2666,7 @@ function openItem(id,src){
 
   let ctaHtml;
   if(isPaid){
-    ctaHtml = `<button class="btn btn-primary" style="flex:1;justify-content:center;gap:6px" onclick="${currentUser?`openShopOrderPage('${item.id}')`:`switchAuthTab('login')`}"><img src="logo/paiment.png" alt="" style="width:16px;height:16px">${t('orderBtn')}</button>`;
+    ctaHtml = cartToggleButtonHtml(item.id, isShop ? 'shop' : 'tool');
   } else if(!isShop && item.downloadUrl){
     // Too large to host in this repo/deployment — served from an external link instead.
     ctaHtml = `<a href="${item.downloadUrl}" target="_blank" rel="noopener" class="btn btn-primary" style="flex:1;justify-content:center;gap:6px">⬇ ${t('downloadBtn')}</a>`;
@@ -2606,6 +2705,46 @@ function openItem(id,src){
   document.getElementById('item-modal').classList.add('open');
 }
 function closeItemView(){document.getElementById('item-modal').classList.remove('open');}
+
+// Subscription plan detail modal — same item-modal shell as shop/tools, same
+// cart-toggle CTA, so the whole site behaves identically no matter what's
+// being added to the cart.
+function openPlanDetails(planId){
+  const plan = CONFIG.plans.find(p => p.id === planId);
+  if(!plan) return;
+  const pTr = trPlan(plan.id);
+  const subtitle = pTr?.subtitle || plan.subtitle;
+  const priceNum = parseFloat(String(plan.price).replace('€','').replace(',','.')) || 0;
+  const box = document.getElementById('item-modal-content');
+  const featuresHtml = plan.features.map((f,i) => `<li class="${f.ok?'ok':'no'}"><span class="plan-check">${f.ok?'✓':'✗'}</span><span class="plan-feat-text">${(pTr?.features&&pTr.features[i])||f.text}</span></li>`).join('');
+
+  box.innerHTML = `
+    <div class="im-header">
+      <h2>${t('subs')}</h2>
+      <button class="modal-close-btn" onclick="closeItemView()">✕</button>
+    </div>
+    <div class="im-body">
+      <div class="im-top">
+        <div class="im-info">
+          <div class="im-cat" style="color:${plan.color}">${plan.name}</div>
+          <h1 class="im-name">${plan.name}</h1>
+          <p class="im-desc">${subtitle}</p>
+        </div>
+      </div>
+      <div class="im-badges">
+        <span class="im-badge">⚡ ${plan.searches>=999999?t('unlimitedSearches'):plan.searches} ${t('searchesPerDay')}</span>
+      </div>
+      <ul class="plan-features" style="margin:16px 2px">${featuresHtml}</ul>
+      <div class="im-cta-row">
+        <div class="im-price-block">
+          <div class="im-price-lbl">${t('priceLabel')}</div>
+          <div class="im-price-val">${plan.price}${plan.period?' '+trPeriod(plan.period):''}</div>
+        </div>
+        ${priceNum > 0 ? cartToggleButtonHtml(plan.id, 'plan') : `<button class="btn" disabled style="flex:1;justify-content:center;opacity:.5;cursor:not-allowed">${t('currentPlan')}</button>`}
+      </div>
+    </div>`;
+  document.getElementById('item-modal').classList.add('open');
+}
 
 let nq=[],nActive=false;
 function notify(msg,err=false){nq.push({msg,err});if(!nActive)processNotif();}

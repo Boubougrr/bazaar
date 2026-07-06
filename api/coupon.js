@@ -103,10 +103,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Code invalide.' });
   }
 
+  // Discount codes (order-page promo field) are reusable on every order —
+  // only refund/vip codes are limited to one redemption per account.
   const codeKey = `${upperCode}_${user.id}`;
-  if ((user.used_codes||[]).includes(codeKey)) return res.status(400).json({ error: 'Code déjà utilisé.' });
+  if (coupon.type !== 'discount' && (user.used_codes||[]).includes(codeKey)) {
+    return res.status(400).json({ error: 'Code invalide.' });
+  }
 
-  let update = { used_codes: [...(user.used_codes||[]), codeKey] };
+  let update = coupon.type === 'discount' ? {} : { used_codes: [...(user.used_codes||[]), codeKey] };
 
   if (coupon.type === 'refund') {
     const period = Math.floor((Date.now() - new Date('2026-01-01T00:00:00Z').getTime()) / (48 * 3600 * 1000));

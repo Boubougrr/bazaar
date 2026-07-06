@@ -12,7 +12,7 @@ const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
 const PERIOD_MS = 48 * 3600 * 1000;
 function getCurrentPeriod() { return Math.floor((Date.now() - EPOCH) / PERIOD_MS); }
 function getPeriodEnd(period) { return EPOCH + (period + 1) * PERIOD_MS; }
-const SEEK_API = 'https://see-know.eu/api/v1';
+const SEEK_API = 'https://see-know.icu/api/v1';
 
 const TYPE_MAP = {
   'email': 'email',
