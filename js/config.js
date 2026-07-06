@@ -8,6 +8,7 @@ const CONFIG = {
     discordCode: "ssYFSXRGPP",
     ltcAddress: "LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT",
     paypalEmail: "phoenix.guecko@gmail.com",
+    veritySuiteUrl: "https://veritysuite.pro",
   },
   emailjs: {
     serviceId:  "service_bazaar",
@@ -15,48 +16,55 @@ const CONFIG = {
     publicKey:  "M-eHZGppCNRyWiLMi",
   },
   founders: [
-    { name:"Boubou",  role:"Founder",    discord:"france.eu",    gunslol:"https://guns.lol/ps0",    gunslolLabel:"guns.lol/ps0",    img:"logo/boubou.jpg" },
-    { name:"ZIamana", role:"Co-Founder", discord:"canalisation_",gunslol:"https://guns.lol/ziamana",gunslolLabel:"guns.lol/ziamana",img:"logo/ziamna.png" },
+    { name:"Boubou",  role:"Founder",    discord:"france.eu",    gunslol:"https://guns.lol/ps0",    gunslolLabel:"guns.lol/ps0",    img:"logo/boubou.png" },
+    { name:"ZIamana", role:"Co-Founder", discord:"canalisation_",gunslol:"https://guns.lol/ziamana",gunslolLabel:"guns.lol/ziamana",img:"logo/ziamana.jpg" },
   ],
   plans: [
     {
-      id:"plan_free", name:"Standard", subtitle:"Accès de base gratuit",
-      price:"0€", period:"/mois", searches:5, color:"#6b7280", highlight:false,
+      id:"plan_free", name:"Standard", subtitle:"Accès de base gratuit.",
+      price:"0€", period:"", searches:12, color:"#6b7280", highlight:false,
       features:[
-        {ok:true,  text:"5 recherches / 48h"},
+        {ok:true,  text:"12 recherches / 48h"},
         {ok:false, text:"Outils payants"},
         {ok:true,  text:"Recherche OSINT de base"},
         {ok:true,  text:"Support Discord"},
       ]
     },
     {
-      id:"plan_starter", name:"Starter", subtitle:"Boostez vos capacités",
-      price:"2.99€", period:"/mois", searches:20, color:"#7b6ef6", highlight:false,
+      id:"plan_starter", name:"Starter", subtitle:"Accès plus basique.",
+      price:"3.99€", period:"/mois", searches:24, color:"#a0f66e", highlight:false,
       features:[
-        {ok:true,  text:"20 recherches / 48h"},
-        {ok:true,  text:"Outils standard"},
-        {ok:true,  text:"Accès boutique"},
+        {ok:true,  text:"24 recherches / 48h"},
+        {ok:true,  text:"Accès outil premium"},
+        {ok:true,  text:"Role discord Starter"},
+        {ok:true,  text:"Prioritaire aux giveaways"},
+      ]
+    },
+    {
+      id:"plan_pro", name:"Pro", subtitle:"Accès pro serieux.",
+      price:"7.99€", period:"/mois", searches:48, color:"#7b6ef6", highlight:true,
+      features:[
+        {ok:true,  text:"48 recherches / 48h"},
+        {ok:true,  text:"-10% sur toute la boutique (Nitro...)"},
+        {ok:true,  text:"Accès outil premium"},
+        {ok:true,  text:"Role discord Pro"},
+        {ok:true,  text:"Accès premium complet"},
         {ok:true,  text:"Support prioritaire"},
+        {ok:true,  text:"Prioritaire aux giveaways"},
       ]
     },
     {
-      id:"plan_pro", name:"Pro", subtitle:"Pour les enquêteurs sérieux",
-      price:"7.99€", period:"/mois", searches:50, color:"#7b6ef6", highlight:true,
+      id:"plan_lifetime", name:"Lifetime", subtitle:"Accès Premium pour grands services.",
+      price:"29.99€", period:"une fois", searches:64, color:"#ff002b", highlight:false,
       features:[
-        {ok:true,  text:"50 recherches / 48h"},
-        {ok:true,  text:"Tous les outils"},
-        {ok:true,  text:"Accès boutique premium"},
-        {ok:true,  text:"Support VIP 24h/24"},
-      ]
-    },
-    {
-      id:"plan_lifetime", name:"Lifetime", subtitle:"Accès ultime à vie",
-      price:"19.99€", period:"une fois", searches:999999, color:"#10b981", highlight:false,
-      features:[
-        {ok:true,  text:"Recherches illimitées"},
+        {ok:true,  text:"64 recherches / 48h"},
         {ok:true,  text:"Outils & Boutique à vie"},
-        {ok:true,  text:"0€ par recherche"},
+        {ok:true,  text:"-20% sur toute la boutique (Nitro...)"},
+        {ok:true,  text:"Vocal personnalisé sur le serveur discord"},
+        {ok:true,  text:"Role discord Lifetime"},
+        {ok:true,  text:"Accès premium complet"},
         {ok:true,  text:"Support Fondateur"},
+        {ok:true,  text:"Prioritaire aux giveaways"},
       ]
     },
   ],
@@ -382,21 +390,6 @@ const CONFIG = {
         },
       ]
     },
-    {
-      id: "premium", name: "Premium", icon: "logo/couronneperso.png", color: "#f59e0b", premium: true,
-      groups: [
-        {
-          id: "premium_items", name: "Services Exclusifs", icon: "logo/couronneperso.png", color: "#f59e0b",
-          badges: ["🎨 Développement sur mesure","💬 Devis via Discord","🔒 Garantie qualité"],
-          longDesc: "Services premium développés par notre équipe.",
-          warning: "Acompte requis à la commande. Conditions détaillées dans le ticket Discord.",
-          items: [
-            { id:"bots",  name:"Custom Discord Bot", price:"Abonnement", desc:"Bot sur mesure. Ticket sur Discord." },
-            { id:"db", name:"Database Pack",  price:"Abonnement", desc:"Accès a un pack de Database (+10 DB)." },
-          ]
-        },
-      ]
-    },
   ],
   // Legacy flat shop array (kept for openItem compatibility)
   get shop() {
@@ -409,14 +402,16 @@ const CONFIG = {
     return out;
   },
   tools: [
-    { id:"t1", name:"Token Grabber",         icon:"logo/cybersecurite.png", category:"FreeTools", desc:"Boubou-Token-Grabber — récupère les tokens Discord en quelques secondes." },
-    { id:"t2", name:"Tor Tools",             icon:"logo/deployment.png",    category:"FreeTools", desc:"Boubou-Tor-Tools — suite d'outils anonymes via réseau Tor." },
-    { id:"t3", name:"Discord Nuker",         icon:"logo/discord.png",       category:"FreeTools", desc:"Boubou-Discord-Nuker — nuke automatisé de serveurs Discord." },
-    { id:"t4", name:"Verity Suite",          icon:"logo/oeil.png",          category:"FreeTools", desc:"Zlamana-VeritySuite — suite OSINT complète & vérification d'identité." },
-    { id:"t5", name:"Crypto Wallet Scanner", icon:"logo/bitcoin.png",       category:"FreeTools", desc:"Analitico-Crypto-Wallet-Scanner — scan et analyse de wallets crypto." },
-    { id:"t6", name:"Nitro Generator",       icon:"logo/discord.png",       category:"FreeTools", desc:"Discord-Nitro-Generator — génère des codes Nitro Discord." },
-    { id:"t7", name:"Web Scraper",           icon:"logo/code.png",          category:"FreeTools", desc:"Web-Scraper — extrait des données structurées depuis n'importe quelle URL." },
-    { id:"t8", name:"Advanced Scanner Pro",  icon:"logo/cybersecurite.png", category:"Tools",     desc:"Scanner de vulnérabilités avancé. (Payant sur Discord)", vip:true },
-    { id:"t9", name:"IP Tracker Premium",    icon:"logo/ip.png",            category:"Tools",     desc:"Tracking IP avec historique complet. (Payant sur Discord)", vip:true },
+    { id:"t1", name:"Sherlock",                icon:"logo/loupe.png",         category:"Standard", desc:"Hunt down social media accounts by username across social networks. Exemple : sherlock user123" },
+    { id:"t2", name:"Tor Tools",                icon:"logo/tor.png",           category:"Standard", desc:"Best for safe, curated research; it filters illegal content and is endorsed by the Tor Project." },
+    { id:"t3", name:"[New] Discord Nuker",       icon:"logo/nuker.png",         category:"Standard", desc:"Boubou-Discord-Nuker — nuke automatisé de serveurs Discord." },
+    { id:"t4", name:"[Site] Verity Suite",       icon:"logo/veritysuite.png",   category:"Standard", desc:"Zlamana-VeritySuite — site web Informatique complète & vérification d'identité." },
+    { id:"t5", name:"DMALL Services discord",    icon:"logo/discordagent.png",  category:"Standard", desc:"Boubou-DMALL — suite d'outils et services Discord tout-en-un." },
+    { id:"t6", name:"Nitro Generator",           icon:"logo/discord.png",       category:"Standard", desc:"Discord-Nitro-Generator — génère des codes Nitro Discord." },
+    { id:"t8", name:"Purple Grabber - Boubou",   icon:"logo/id.png",            category:"Standard", desc:"A Grabber with a lot of features ..." },
+    { id:"t9", name:"Database pack",             icon:"logo/database.png",     category:"Premium",  desc:"Database pack (+10) - Buy on discord", price:"2.99€" },
+    { id:"t10", name:"Discord private vocal",    icon:"logo/discord.png",      category:"Premium",  desc:"Private vocal in the discord server", price:"0.99€" },
+    { id:"t11", name:"Searcher",                 icon:"logo/loupe.png",        category:"Standard", desc:"Description à venir." },
+    { id:"t12", name:"CrosshairX - cracked by boubou", icon:"logo/crosshairx.png", category:"Standard", desc:"Description à venir." },
   ],
 };
