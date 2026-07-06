@@ -14,6 +14,30 @@ function getCurrentPeriod() { return Math.floor((Date.now() - EPOCH) / PERIOD_MS
 function getPeriodEnd(period) { return EPOCH + (period + 1) * PERIOD_MS; }
 const SEEK_API = 'https://see-know.icu/api/v1';
 
+// A real browser User-Agent + Accept header reduces the odds of being caught by
+// see-know.icu's Cloudflare bot-protection, which otherwise returns an HTML
+// "Just a moment..." challenge page instead of a JSON API response.
+const SEEK_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'application/json',
+};
+
+// see-know.icu's Cloudflare challenge page is returned as HTML (not JSON) when
+// the request is flagged as a bot — surface a clean, actionable message instead
+// of dumping the raw challenge-page HTML back to the user.
+function parseSeekError(status, text) {
+  const looksLikeHtml = /^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text);
+  if (looksLikeHtml) {
+    return 'Le service de recherche est temporairement bloqué par une protection anti-bot (Cloudflare). Réessayez dans quelques instants ou contactez le support si ça persiste.';
+  }
+  try {
+    const errJson = JSON.parse(text);
+    return errJson.message || errJson.error || ('Erreur ' + status);
+  } catch (e) {
+    return text || ('Erreur ' + status);
+  }
+}
+
 const TYPE_MAP = {
   'email': 'email',
   'username': 'username',
@@ -70,9 +94,10 @@ export default async function handler(req, res) {
   // Free, public health check — no session/credits needed, just proxies see-know.eu's own status.
   if (action === 'status') {
     try {
-      const r = await fetch(`${SEEK_API}/status`, { headers: { 'X-API-Key': SEEK_API_KEY } });
-      const data = await r.json();
-      return res.json({ ok: true, status: data });
+      const r = await fetch(`${SEEK_API}/status`, { headers: { ...SEEK_HEADERS, 'X-API-Key': SEEK_API_KEY } });
+      const text = await r.text();
+      if (!r.ok) return res.status(502).json({ error: parseSeekError(r.status, text) });
+      return res.json({ ok: true, status: JSON.parse(text) });
     } catch (e) {
       return res.status(502).json({ error: 'Impossible de contacter le service.' });
     }
@@ -115,14 +140,12 @@ export default async function handler(req, res) {
     category = type;
     try {
       const url = `${SEEK_API}${special.path}?${special.param}=${encodeURIComponent(query)}`;
-      const specialRes = await fetch(url, { headers: { 'X-API-Key': SEEK_API_KEY } });
+      const specialRes = await fetch(url, { headers: { ...SEEK_HEADERS, 'X-API-Key': SEEK_API_KEY } });
+      const specialText = await specialRes.text();
       if (specialRes.ok) {
-        searchData = await specialRes.json();
+        searchData = JSON.parse(specialText);
       } else {
-        const errText = await specialRes.text();
-        let apiMsg = errText || 'Erreur ' + specialRes.status;
-        try { const errJson = JSON.parse(errText); apiMsg = errJson.message || errJson.error || apiMsg; } catch (e) {}
-        return res.status(502).json({ error: apiMsg });
+        return res.status(502).json({ error: parseSeekError(specialRes.status, specialText) });
       }
     } catch (e) {
       return res.status(502).json({ error: 'Impossible de contacter l\'API de recherche: ' + e.message });
@@ -134,18 +157,17 @@ export default async function handler(req, res) {
       const searchRes = await fetch(`${SEEK_API}/search`, {
         method: 'POST',
         headers: {
+          ...SEEK_HEADERS,
           'Authorization': `Bearer ${SEEK_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ query, type: apiType, limit: 100 }),
       });
+      const searchText = await searchRes.text();
       if (searchRes.ok) {
-        searchData = await searchRes.json();
+        searchData = JSON.parse(searchText);
       } else {
-        const errText = await searchRes.text();
-        let apiMsg = errText || 'Erreur ' + searchRes.status;
-        try { const errJson = JSON.parse(errText); apiMsg = errJson.message || errJson.error || apiMsg; } catch (e) {}
-        return res.status(502).json({ error: apiMsg });
+        return res.status(502).json({ error: parseSeekError(searchRes.status, searchText) });
       }
     } catch (e) {
       return res.status(502).json({ error: 'Impossible de contacter l\'API de recherche: ' + e.message });
@@ -156,13 +178,15 @@ export default async function handler(req, res) {
         const stealerRes = await fetch(`${SEEK_API}/stealer`, {
           method: 'POST',
           headers: {
+            ...SEEK_HEADERS,
             'Authorization': `Bearer ${SEEK_API_KEY}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ query, type: 'domain' }),
         });
+        const stealerText = await stealerRes.text();
         if (stealerRes.ok) {
-          stealerData = await stealerRes.json();
+          stealerData = JSON.parse(stealerText);
         }
       } catch (e) {}
     }
