@@ -412,6 +412,6 @@ const CONFIG = {
     { id:"t9", name:"Database pack",             icon:"logo/database.png",     category:"Premium",  desc:"Database pack (+10) - Buy on discord", price:"2.99€" },
     { id:"t10", name:"Discord private vocal",    icon:"logo/discord.png",      category:"Premium",  desc:"Private vocal in the discord server", price:"0.99€" },
     { id:"t11", name:"Searcher",                 icon:"logo/loupe.png",        category:"Standard", desc:"Description à venir." },
-    { id:"t12", name:"CrosshairX - cracked by boubou", icon:"logo/crosshairx.png", category:"Standard", desc:"Description à venir." },
+    { id:"t12", name:"CrosshairX - cracked by boubou", icon:"logo/crosshairx.png", category:"Standard", desc:"Description à venir.", downloadUrl:"https://www.mediafire.com/file/21gno03fxymnh5i/CrosshairX-cracked_by_boubou.zip/file" },
   ],
 };

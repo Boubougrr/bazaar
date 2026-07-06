@@ -24,10 +24,11 @@ const TOOL_FILES = {
   t6: 'boubou-nitrogen.zip',
   t8: 'boubougrabber.zip',
   t11: 'searcher.zip',
-  t12: 'CrosshairX-cracked by boubou.zip',
 };
 // t4 (Verity Suite) is no longer a download — it's a dedicated page linking
 // out to the real site (see #page-veritysuite in index.html).
+// t12 (CrosshairX) is too large for this repo (184MB, GitHub's limit is 100MB) —
+// it's hosted externally (MediaFire) via CONFIG.tools[].downloadUrl instead.
 // t9/t10 (Database pack, Discord vocal) sont des avantages Discord, pas des fichiers —
 // ajouter leur id ici seulement si un vrai fichier VIP est ajouté un jour.
 const VIP_TOOLS = [];

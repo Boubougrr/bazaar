@@ -2568,6 +2568,9 @@ function openItem(id,src){
   let ctaHtml;
   if(isPaid){
     ctaHtml = `<button class="btn btn-primary" style="flex:1;justify-content:center;gap:6px" onclick="${currentUser?`openShopOrderPage('${item.id}')`:`switchAuthTab('login')`}"><img src="logo/paiment.png" alt="" style="width:16px;height:16px">${t('orderBtn')}</button>`;
+  } else if(!isShop && item.downloadUrl){
+    // Too large to host in this repo/deployment — served from an external link instead.
+    ctaHtml = `<a href="${item.downloadUrl}" target="_blank" rel="noopener" class="btn btn-primary" style="flex:1;justify-content:center;gap:6px">⬇ ${t('downloadBtn')}</a>`;
   } else if(!isShop && !item.vip){
     ctaHtml = `<a href="/api/coupon?toolId=${encodeURIComponent(item.id)}&token=${encodeURIComponent(sessionToken||'')}" class="btn btn-primary" style="flex:1;justify-content:center;gap:6px">⬇ ${t('downloadBtn')}</a>`;
   } else {

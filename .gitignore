@@ -5,3 +5,5 @@ node_modules
 *.log
 .env*
 .claude
+# Too large for GitHub (>100MB) — must be hosted externally instead.
+api/tools/CrosshairX-cracked by boubou.zip
