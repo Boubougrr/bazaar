@@ -105,6 +105,11 @@ export default async function handler(req, res) {
 
   if (!query) return res.status(400).json({ error: 'Paramètres manquants.' });
 
+  const { data: status } = await supabase.from('site_status').select('osint_enabled').eq('id', 1).single();
+  if (status && status.osint_enabled === false) {
+    return res.status(503).json({ error: 'La recherche est temporairement désactivée par le staff.' });
+  }
+
   const user_id = verifySession(token);
   if (!user_id) return res.status(401).json({ error: 'Non autorisé.' });
 
