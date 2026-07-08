@@ -362,6 +362,14 @@
       </div>
 
       <div class="search-panel reveal">
+        <div id="search-off-state" class="search-off-state" style="display:none">
+          <img src="logo/construction.png" alt="">
+          <div>
+            <h3 data-i18n="osintOffTitle">Recherche temporairement indisponible</h3>
+            <p data-i18n="osintOffDesc">L'outil de recherche est en maintenance. Le reste du site reste accessible normalement.</p>
+          </div>
+        </div>
+        <div id="search-active-content">
         <!-- Search bar -->
         <div class="search-input-row">
           <img class="search-active-icon" id="std-icon" src="logo/loupe.png" alt="">
@@ -440,6 +448,7 @@
           <div class="search-loading-bar"><div class="search-loading-fill" id="search-fill"></div></div>
           <div class="search-loading-text" id="search-loading-text" data-i18n="loadingSearch">Interrogation des sources OSINT…</div>
         </div>
+        </div>
       </div>
 
       <div id="quota-warn" class="quota-warn" style="display:none">
@@ -488,6 +497,13 @@
   <!-- SHOP -->
   <div class="page" id="page-shop">
     <div class="main-content">
+      <div id="shop-disabled-state" class="service-off-state" style="display:none">
+        <img src="logo/construction.png" alt="" class="service-off-icon">
+        <h2 data-i18n="shopOffTitle">Boutique temporairement indisponible</h2>
+        <p data-i18n="shopOffDesc">La boutique est en maintenance. Reviens un peu plus tard, ou passe sur notre Discord pour plus d'infos.</p>
+        <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord"><img src="logo/discord.png" alt=""><span data-i18n="joinDiscord">Rejoindre le Discord</span></a>
+      </div>
+      <div id="shop-active-content">
       <div class="page-header"><h1><img src="logo/boutique.png" alt=""><span data-i18n="pageShopTitle">Boutique</span></h1><p data-i18n="pageShopSub">Comptes et services premium. Paiement via Discord.</p></div>
       <div class="shop-filters">
         <button class="filter-btn active" style="--c:#5865f2" data-filter="discord"   onclick="renderShop('discord')"><img src="logo/discordagent.png" alt=""><span data-i18n="filterDiscord">Discord</span></button>
@@ -533,6 +549,7 @@
           <div><img src="logo/ltc.png" alt=""> <strong data-i18n="payCoordLtc">LTC :</strong> <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow)">LgajyZa9NKaUT1oBNRD9qQttHsDEas8oVT</span></div>
         </div>
         <a href="https://discord.gg/ssYFSXRGPP" target="_blank" class="btn btn-discord" style="margin-top:14px;display:inline-flex"><img src="logo/discord.png" alt=""><span data-i18n="createTicket">Créer un ticket</span></a>
+      </div>
       </div>
     </div>
   </div>
@@ -1026,6 +1043,25 @@
           </div>
           <div class="sblock-row" style="border-top:1px solid var(--border);border-bottom:none">
             <button class="sblock-action-btn" style="width:100%;text-align:center;padding:9px" onclick="gotoPage('analytics')">Voir en détail →</button>
+          </div>
+        </div>
+
+        <!-- STATUT DU SITE (staff) -->
+        <div class="sblock" id="settings-status-block" style="display:none">
+          <div class="sblock-title">🛠️ Statut du site (staff)</div>
+          <div class="sblock-row">
+            <span class="sblock-lbl" data-i18n="siteStatusShopLabel">Boutique en ligne</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="status-shop-on" onclick="setSiteStatusToggle('shop_enabled', true)">ON</button>
+              <button class="stgl-btn" id="status-shop-off" onclick="setSiteStatusToggle('shop_enabled', false)">OFF</button>
+            </div>
+          </div>
+          <div class="sblock-row" style="border-bottom:none">
+            <span class="sblock-lbl" data-i18n="siteStatusOsintLabel">Recherche OSINT en ligne</span>
+            <div class="stgl-group">
+              <button class="stgl-btn" id="status-osint-on" onclick="setSiteStatusToggle('osint_enabled', true)">ON</button>
+              <button class="stgl-btn" id="status-osint-off" onclick="setSiteStatusToggle('osint_enabled', false)">OFF</button>
+            </div>
           </div>
         </div>
 

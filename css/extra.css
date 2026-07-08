@@ -2251,3 +2251,22 @@ footer::before {
 .cart-item-remove img { width: 14px; height: 14px; object-fit: contain; opacity: .7; }
 .cart-item-remove:hover { background: rgba(248,113,113,.18); border-color: var(--red); }
 .cart-item-remove:hover img { opacity: 1; }
+
+/* ── SERVICE OFF STATE (shop / search maintenance mode) ─────── */
+.service-off-state {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 14px; padding: 60px 24px; max-width: 480px; margin: 0 auto;
+  animation: fadeUp .3s ease;
+}
+.service-off-icon { width: 56px; height: 56px; object-fit: contain; opacity: .55; margin-bottom: 4px; }
+.service-off-state h2 { font-size: 20px; font-weight: 800; color: var(--white); }
+.service-off-state p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+.search-off-state {
+  display: flex; align-items: center; gap: 14px; padding: 20px 22px;
+  background: rgba(251,191,36,.06); border: 1px solid rgba(251,191,36,.25);
+  border-radius: var(--r2); animation: fadeUp .3s ease;
+}
+.search-off-state img { width: 30px; height: 30px; object-fit: contain; opacity: .8; flex-shrink: 0; }
+.search-off-state h3 { font-size: 14px; font-weight: 800; color: var(--white); margin-bottom: 2px; }
+.search-off-state p { font-size: 12.5px; color: var(--text2); }

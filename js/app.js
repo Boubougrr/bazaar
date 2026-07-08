@@ -159,6 +159,9 @@ const I18N = {
     addToCart:'Ajouter au panier', cartAdded:'✓ Ajouté au panier', cartAlreadyIn:'Déjà dans le panier',
     cartFull:'Panier plein (5 articles max)', removeFromCartBtn:'Retirer du panier', moreInfoBtn:'Plus d\'informations',
     accessCart:'Accéder au panier',
+    shopOffTitle:'Boutique temporairement indisponible', shopOffDesc:'La boutique est en maintenance. Reviens un peu plus tard, ou passe sur notre Discord pour plus d\'infos.',
+    osintOffTitle:'Recherche temporairement indisponible', osintOffDesc:'L\'outil de recherche est en maintenance. Le reste du site reste accessible normalement.',
+    siteStatusShopLabel:'Boutique en ligne', siteStatusOsintLabel:'Recherche OSINT en ligne', siteStatusUpdated:'✓ Statut mis à jour',
     pageCartTitle:'Panier', pageCartSub:'Retrouvez ici les articles ajoutés depuis la boutique, les tools et les abonnements.',
     cartEmpty:'Votre panier est vide.', cartEmptyCta:'Découvrir la boutique', cartCheckoutBtn:'Passer la commande',
     cartOrderName:'Panier', removeFromCart:'Retirer du panier', backToCart:'← Retour au panier',
@@ -499,6 +502,9 @@ const I18N = {
     addToCart:'Add to cart', cartAdded:'✓ Added to cart', cartAlreadyIn:'Already in cart',
     cartFull:'Cart full (5 items max)', removeFromCartBtn:'Remove from cart', moreInfoBtn:'More information',
     accessCart:'Go to cart',
+    shopOffTitle:'Shop temporarily unavailable', shopOffDesc:'The shop is under maintenance. Check back a bit later, or hop on our Discord for more info.',
+    osintOffTitle:'Search temporarily unavailable', osintOffDesc:'The search tool is under maintenance. The rest of the site remains accessible as usual.',
+    siteStatusShopLabel:'Shop online', siteStatusOsintLabel:'OSINT search online', siteStatusUpdated:'✓ Status updated',
     pageCartTitle:'Cart', pageCartSub:'Find here the items you added from the shop, tools and subscriptions.',
     cartEmpty:'Your cart is empty.', cartEmptyCta:'Discover the shop', cartCheckoutBtn:'Place order',
     cartOrderName:'Cart', removeFromCart:'Remove from cart', backToCart:'← Back to cart',
@@ -892,6 +898,32 @@ function track(event_type, page){
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+// ── Site status (staff on/off switches for shop & search) ──────
+let siteStatus = { shop_enabled: true, osint_enabled: true };
+async function loadSiteStatus(){
+  try{
+    const res = await api('site-status', {});
+    siteStatus = { shop_enabled: res.shop_enabled !== false, osint_enabled: res.osint_enabled !== false };
+  }catch(e){
+    siteStatus = { shop_enabled: true, osint_enabled: true };
+  }
+  applySiteStatus();
+}
+function applySiteStatus(){
+  const shopOff = document.getElementById('shop-disabled-state');
+  const shopOn = document.getElementById('shop-active-content');
+  if(shopOff && shopOn){
+    shopOff.style.display = siteStatus.shop_enabled ? 'none' : 'flex';
+    shopOn.style.display = siteStatus.shop_enabled ? '' : 'none';
+  }
+  const searchOff = document.getElementById('search-off-state');
+  const searchOn = document.getElementById('search-active-content');
+  if(searchOff && searchOn){
+    searchOff.style.display = siteStatus.osint_enabled ? 'none' : 'flex';
+    searchOn.style.display = siteStatus.osint_enabled ? '' : 'none';
+  }
+}
+
 async function initApp() {
   loadSettings();
   loadCart();
@@ -924,6 +956,7 @@ async function initApp() {
   }
 
   generateCaptcha(); initAuthEvents();
+  loadSiteStatus();
   const vsBtn = document.getElementById('vs-open-btn');
   if(vsBtn) vsBtn.href = CONFIG.site.veritySuiteUrl;
   startOfferCountdown();
@@ -1086,10 +1119,36 @@ function updateSettingsProfile() {
   }
   // Staff-only analytics block
   const anBlock = document.getElementById('settings-analytics-block');
+  const isStaff = u.role === 'dev' || u.role === 'admin';
   if(anBlock) {
-    const isStaff = u.role === 'dev' || u.role === 'admin';
     anBlock.style.display = isStaff ? 'block' : 'none';
     if(isStaff) loadAnalytics();
+  }
+  // Staff-only site status toggles
+  const statusBlock = document.getElementById('settings-status-block');
+  if(statusBlock){
+    statusBlock.style.display = isStaff ? 'block' : 'none';
+    if(isStaff) syncSiteStatusToggleUI();
+  }
+}
+
+function syncSiteStatusToggleUI(){
+  document.getElementById('status-shop-on')?.classList.toggle('active', siteStatus.shop_enabled);
+  document.getElementById('status-shop-off')?.classList.toggle('active', !siteStatus.shop_enabled);
+  document.getElementById('status-osint-on')?.classList.toggle('active', siteStatus.osint_enabled);
+  document.getElementById('status-osint-off')?.classList.toggle('active', !siteStatus.osint_enabled);
+}
+
+async function setSiteStatusToggle(field, value){
+  if(!currentUser){ notify(t('loginRequired'), true); return; }
+  try{
+    const res = await api('site-status', { action:'set', token: sessionToken, [field]: value });
+    siteStatus = { shop_enabled: res.shop_enabled !== false, osint_enabled: res.osint_enabled !== false };
+    syncSiteStatusToggleUI();
+    applySiteStatus();
+    notify(t('siteStatusUpdated'));
+  }catch(e){
+    notify(e.message, true);
   }
 }
 
@@ -1629,6 +1688,7 @@ function gotoPage(name){
   if(name==='analytics') { loadAnalyticsPageGuard(); }
   if(name==='cart') { renderCartPage(); }
   if(name==='features') { renderFeatCreditsTable(); }
+  if(name==='shop' || name==='home') { applySiteStatus(); }
   track('pageview', name);
 }
 
