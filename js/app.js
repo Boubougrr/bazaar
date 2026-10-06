@@ -118,6 +118,10 @@ const I18N = {
     codeSent:'✓ Code envoyé ! Vérifiez vos emails.', passwordTooShort:'Mot de passe trop court (8 caractères minimum).',
     passwordResetOk:'✓ Mot de passe réinitialisé !',
     noResults:'Aucun résultat', noResultsDesc:'Aucune donnée trouvée pour cette cible avec les sources disponibles.',
+    typeUnavailable:'Type indisponible : l\'API temporaire du fournisseur ne couvre pas cette recherche (maintenance en cours).',
+    pbNeedBoth:'Renseigne le nom de famille et la ville.',
+    results:'résultats', page:'Page', copied:'Copié.', copy:'Copier',
+    unnamedProfile:'Profil sans identité', confidence:'Confiance de la correspondance',
     resultLabel:'Résultat',
     loginToReview:'🔑 Connectez-vous pour laisser un avis.', reviewTooShort:'Avis trop court.',
     sending:'Envoi…', reviewSent:'✓ Avis envoyé !', noReviewsYet:'Aucun avis pour le moment.',
@@ -461,6 +465,10 @@ const I18N = {
     codeSent:'✓ Code sent! Check your email.', passwordTooShort:'Password too short (8 characters minimum).',
     passwordResetOk:'✓ Password reset!',
     noResults:'No results', noResultsDesc:'No data found for this target with available sources.',
+    typeUnavailable:'Unavailable type: the provider\'s temporary API does not cover this search (maintenance).',
+    pbNeedBoth:'Enter both the last name and the city.',
+    results:'results', page:'Page', copied:'Copied.', copy:'Copy',
+    unnamedProfile:'Unnamed profile', confidence:'Match confidence',
     resultLabel:'Result',
     loginToReview:'🔑 Log in to leave a review.', reviewTooShort:'Review too short.',
     sending:'Sending…', reviewSent:'✓ Review sent!', noReviewsYet:'No reviews yet.',
@@ -1842,6 +1850,11 @@ function toggleSearchDD(e) {
 }
 
 // ── Manual/Automated search mode + category-grouped type picker ────
+// Toutes les recherches passent par l'API temporaire brixhub (voir
+// api/search.js). Les types marqués `off:true` n'ont pas d'équivalent chez
+// le fournisseur pendant la maintenance : ils restent visibles dans le
+// picker, mais cliquables — ils expliquent pourquoi au lieu de renvoyer
+// 0 résultat en silence.
 const SEARCH_CATEGORIES = [
   { id:'pages_blanches', label:'PagesBlanches', icon:'logo/id.png', types:[
     { v:'pages_blanches', icon:'logo/id.png', label:'Nom + Ville', ph:'phPagesBlanches' },
@@ -1851,15 +1864,15 @@ const SEARCH_CATEGORIES = [
     { v:'phone', icon:'logo/phone.png', label:'Phone', ph:'phPhone' },
     { v:'ip', icon:'logo/ip.png', label:'IP', ph:'phIp' },
     { v:'name', icon:'logo/id.png', label:'Name', ph:'phName' },
-    { v:'machine_id', icon:'logo/fabrication.png', label:'Machine ID', ph:'phMachineId' },
+    { v:'machine_id', icon:'logo/fabrication.png', label:'Machine ID', ph:'phMachineId', off:true },
   ]},
   { id:'social_gaming', label:'Social & Gaming', icon:'logo/manette.png', types:[
-    { v:'discord_user', icon:'logo/discord.png', label:'Discord', ph:'phDiscordId' },
-    { v:'discord_roblox', icon:'logo/roblox.png', label:'D→Roblox', ph:'phDiscordId' },
-    { v:'roblox', icon:'logo/roblox.png', label:'Roblox', ph:'phRoblox' },
-    { v:'xbox', icon:'logo/trophee.png', label:'Xbox', ph:'phXbox' },
-    { v:'minecraft', icon:'logo/fabrication.png', label:'Minecraft', ph:'phMinecraft' },
-    { v:'username_history', icon:'logo/id.png', label:'History', ph:'phUsernameHistory' },
+    { v:'discord_user', icon:'logo/discord.png', label:'Discord', ph:'phDiscordId', off:true },
+    { v:'discord_roblox', icon:'logo/roblox.png', label:'D→Roblox', ph:'phDiscordId', off:true },
+    { v:'roblox', icon:'logo/roblox.png', label:'Roblox', ph:'phRoblox', off:true },
+    { v:'xbox', icon:'logo/trophee.png', label:'Xbox', ph:'phXbox', off:true },
+    { v:'minecraft', icon:'logo/fabrication.png', label:'Minecraft', ph:'phMinecraft', off:true },
+    { v:'username_history', icon:'logo/user.png', label:'Pseudo', ph:'phUsernameHistory' },
     { v:'gh', icon:'logo/github.png', label:'GitHub', ph:'phGithub' },
     { v:'twitter', icon:'logo/twitter.png', label:'Twitter/X', ph:'phTwitter' },
     { v:'tiktok', icon:'logo/tiktok.png', label:'TikTok', ph:'phTiktok' },
@@ -1869,17 +1882,23 @@ const SEARCH_CATEGORIES = [
   { id:'network', label:'Network', icon:'logo/satellite.png', types:[
     { v:'email_check', icon:'logo/mail.png', label:'Email Check', ph:'phEmail' },
     { v:'ip_intel', icon:'logo/ip.png', label:'IP Intel', ph:'phIp' },
-    { v:'domain_intel', icon:'logo/server.png', label:'Domain Intel', ph:'phDomainIntel' },
-    { v:'whois', icon:'logo/contact.png', label:'WHOIS', ph:'phDomainIntel' },
+    { v:'domain_intel', icon:'logo/server.png', label:'Domain Intel', ph:'phDomainIntel', off:true },
+    { v:'whois', icon:'logo/contact.png', label:'WHOIS', ph:'phDomainIntel', off:true },
     { v:'phone_intel', icon:'logo/phone.png', label:'Phone OSINT', ph:'phPhone' },
   ]},
 ];
 
 let searchTopMode = 'manual';
 let manualCategory = 'pages_blanches';
+let searchPage = 1;
+// Nombre de profils affichés par page. L'API temporaire accepte 100 max ;
+// on reste sur 20 pour que les cartes restent lisibles d'un coup d'œil.
+const RESULTS_PER_PAGE = 20;
+let lastSearchMeta = {};
 
 function setSearchTopMode(mode){
   searchTopMode = mode;
+  searchPage = 1;
   document.getElementById('smode-manual')?.classList.toggle('active', mode==='manual');
   document.getElementById('smode-automated')?.classList.toggle('active', mode==='automated');
   const grid = document.getElementById('manual-search-grid');
@@ -1894,7 +1913,6 @@ function setSearchTopMode(mode){
     if(iconEl) iconEl.src = 'logo/robot.png';
     if(input){ input.placeholder = t('searchPlaceholder'); if(input.value.trim()) showAutoDetect(input.value.trim()); }
     if (villeInput) villeInput.style.display = 'none';
-    notify('Mode Automated indisponible (ancienne API en maintenance). Utilisez le mode Manual avec PagesBlanches.', true);
   } else {
     setManualCategory(manualCategory);
   }
@@ -1902,10 +1920,13 @@ function setSearchTopMode(mode){
 
 function setManualCategory(catId){
   manualCategory = catId;
+  searchPage = 1;
   const cat = SEARCH_CATEGORIES.find(c => c.id === catId) || SEARCH_CATEGORIES[0];
   renderSearchCatTabs();
   renderSearchTypeButtons(cat);
-  selectManualType(cat.types[0].v);
+  // Une catégorie peut s'ouvrir sur un type indisponible (Discord, WHOIS…) :
+  // on saute directement sur le premier type réellement couvert.
+  selectManualType((cat.types.find(ty => !ty.off) || cat.types[0]).v);
 }
 
 function renderSearchCatTabs(){
@@ -1919,16 +1940,19 @@ function renderSearchCatTabs(){
 function renderSearchTypeButtons(cat){
   const wrap = document.getElementById('search-type-tabs'); if(!wrap) return;
   wrap.innerHTML = cat.types.map(ty => `
-    <button class="stt-btn${ty.v===selectedSearchType?' active':''}" data-value="${ty.v}" data-icon="${ty.icon}" data-i18n-ph="${ty.ph}" onclick="selectManualType('${ty.v}')">
-      <img src="${ty.icon}" alt="">${ty.label}
+    <button class="stt-btn${ty.v===selectedSearchType?' active':''}${ty.off?' off':''}" data-value="${ty.v}" data-icon="${ty.icon}" data-i18n-ph="${ty.ph}"
+      ${ty.off ? `title="${escAttr(t('typeUnavailable'))}"` : `onclick="selectManualType('${ty.v}')"`}>
+      <img src="${ty.icon}" alt=""><span class="stt-label">${ty.label}</span>
     </button>`).join('');
 }
 
 function selectManualType(value){
-  selectedSearchType = value;
   const cat = SEARCH_CATEGORIES.find(c => c.id === manualCategory);
-  if(cat) renderSearchTypeButtons(cat);
   const typeObj = cat?.types.find(ty => ty.v === value);
+  if (typeObj && typeObj.off) { notify(t('typeUnavailable'), true); return; }
+  searchPage = 1;
+  selectedSearchType = value;
+  if(cat) renderSearchTypeButtons(cat);
   const iconEl = document.getElementById('std-icon');
   const input = document.getElementById('search-input');
   const villeInput = document.getElementById('search-input-ville');
@@ -1953,18 +1977,17 @@ function selectManualType(value){
   }
 }
 
+// Reflet exact de autoDetectField() côté serveur (api/search.js) : le badge
+// annonce ce qui sera réellement envoyé au fournisseur, pas ce qu'il
+//devrait faire. Domaines, URL, hash et identifiants Discord ne sont plus
+//interrogeables via l'API temporaire, donc plus affichés ici.
 const AUTO_DETECT_TYPES = [
   { id:'email',   label:'Email',          icon:'logo/mail.png',      test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
-  { id:'username',label:'Discord ID',     icon:'logo/discord.png',   test: v => /^\d{17,19}$/.test(v) },
-  { id:'username',label:'Discord Tag',    icon:'logo/discord.png',   test: v => /.+#\d{4}$/.test(v) },
   { id:'phone',   label:'Phone Number',   icon:'logo/telephone.png', test: v => /^\+?[\d\s\-().]{7,}$/.test(v) && (v.match(/\d/g)||[]).length >= 7 },
   { id:'ip',      label:'IP Address',     icon:'logo/ip.png',        test: v => /^(\d{1,3}\.){3}\d{1,3}$/.test(v) && v.split('.').every(n=>+n<=255) },
   { id:'ip',      label:'IPv6 Address',   icon:'logo/ip.png',        test: v => /^[0-9a-fA-F:]{2,}:[0-9a-fA-F:]{2,}$/.test(v) },
-  { id:'name',    label:'Full Name',      icon:'logo/id.png',        test: v => /^[a-zA-ZÀ-ÿ'-]+ [a-zA-ZÀ-ÿ'-]+/.test(v) && !/\d/.test(v) },
-  { id:'username',label:'Username',       icon:'logo/id.png',        test: v => /^[a-zA-Z0-9._\-]{3,}$/.test(v) },
-  { id:'domain',  label:'Domain',         icon:'logo/server.png',    test: v => /^[a-zA-Z0-9][a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(v) && !/^https?:\/\//i.test(v) },
-  { id:'url',     label:'URL',            icon:'logo/link.png',      test: v => /^https?:\/\/.+/i.test(v) },
-  { id:'hash',    label:'Hash',           icon:'logo/cmd.png',       test: v => /^[a-fA-F0-9]{32,}$/.test(v) },
+  { id:'name',    label:'Full Name',      icon:'logo/id.png',        test: v => /\s/.test(v) },
+  { id:'username',label:'Username',       icon:'logo/user.png',      test: v => /^[a-zA-Z0-9._\-]{2,}$/.test(v) },
 ];
 
 function detectInputType(val) {
@@ -2033,79 +2056,68 @@ function setSearchMode(mode){
   document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
 }
 
-async function doSearch(){
-  const isPagesBlanches = selectedSearchType === 'pages_blanches' || selectedSearchType === 'name_city';
+async function doSearch(pageOverride){
+  const isPagesBlanches = searchTopMode === 'manual' && (selectedSearchType === 'pages_blanches' || selectedSearchType === 'name_city');
+  const isAutomated = searchTopMode === 'automated';
   let q, nom_famille, ville;
-  
+
   if (isPagesBlanches) {
     nom_famille = document.getElementById('search-input').value.trim();
     ville = document.getElementById('search-input-ville').value.trim();
-    if (!nom_famille || !ville) return notify('Nom de famille et ville sont requis.', true);
-    q = nom_famille + ' ' + ville; // For display/validation
+    if (!nom_famille || !ville) return notify(t('pbNeedBoth'), true);
   } else {
     q = document.getElementById('search-input').value.trim();
     if(!q) return notify(t('enterTarget'), true);
   }
-  
+
   if(!currentUser) return notify(t('loginRequired'), true);
-  const sel = document.getElementById('search-type');
-  if(sel) selectedSearchType = sel.value;
+
+  // Une nouvelle saisie repart de la page 1 ; la pagination rejoue la même
+  // requête avec un numéro de page différent.
+  const isNewSearch = pageOverride === undefined;
+  const requestedPage = isNewSearch ? 1 : pageOverride;
+  if (isNewSearch) searchPage = 1;
 
   const loading = document.getElementById('search-loading');
   const resultsWrap = document.getElementById('results-wrap');
   const quotaWarn = document.getElementById('quota-warn');
   const fill = document.getElementById('search-fill');
   const loadText = document.getElementById('search-loading-text');
-  if(loading) loading.classList.add('show');
-  if(resultsWrap) resultsWrap.innerHTML = '';
+  if(loading && isNewSearch) loading.classList.add('show');
+  else if(loading) loading.style.display = 'none';
+  if(resultsWrap && isNewSearch) resultsWrap.innerHTML = '';
   if(quotaWarn) quotaWarn.style.display = 'none';
   if(fill) { fill.style.animation = 'none'; fill.offsetHeight; fill.style.animation = 'searchLoad 5s linear forwards'; }
   if(loadText) loadText.textContent = t('loadingSearch');
 
   try{
-    const apiParams = {token:sessionToken, type:selectedSearchType, mode:searchTopMode};
+    const apiParams = {token:sessionToken, type:isAutomated ? 'auto' : selectedSearchType, mode:searchTopMode};
     if (isPagesBlanches) {
       apiParams.nom_famille = nom_famille;
       apiParams.ville = ville;
-      apiParams.per_page = 20;
+      apiParams.per_page = RESULTS_PER_PAGE;
+      if (requestedPage > 1) apiParams.page = requestedPage;
     } else {
       apiParams.query = q;
+      apiParams.per_page = RESULTS_PER_PAGE;
+      if (requestedPage > 1) apiParams.page = requestedPage;
     }
-    
-    const res=await api('search', apiParams);
+
+    const res = await api('search', apiParams);
+
+    // Chaque appel au fournisseur consomme un crédit, pagination comprise :
+    // on applique toujours l'état renvoyé par le serveur.
     saveSession(res.user);
     updateCreditsUI();
-    track('search');
+    if (isNewSearch) track('search');
 
     if(loading) loading.classList.remove('show');
     if(!resultsWrap) return;
 
-    const data = res.results;
-    if(res.category === 'discord_user'){
-      resultsWrap.innerHTML = renderDiscordProfileCard(data);
-    } else if(res.category){
-      resultsWrap.innerHTML = renderSpecialResult(data);
-    } else if(!data || (Array.isArray(data) && data.length === 0) || (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)){
-      resultsWrap.innerHTML = `<div class="result-item"><h4>${t('noResults')}</h4><p>${t('noResultsDesc')}</p></div>`;
-    } else if(Array.isArray(data)){
-      resultsWrap.innerHTML = data.map((r, i) => `
-        <div class="result-item" style="animation-delay:${i*80}ms">
-          <h4>${esc(r.source || t('resultLabel')+' '+(i+1))}</h4>
-          <p>${Object.entries(r.data || r).filter(([k]) => k !== 'source').map(([k,v]) => `<strong>${esc(k)}:</strong> ${esc(typeof v === 'string' ? v : JSON.stringify(v))}`).join('<br>')}</p>
-          ${r.tag ? `<span class="result-tag">${esc(r.tag)}</span>` : ''}
-        </div>
-      `).join('');
-    } else {
-      resultsWrap.innerHTML = Object.entries(data).map(([key, val], i) => `
-        <div class="result-item" style="animation-delay:${i*80}ms">
-          <h4>${esc(key)}</h4>
-          <p>${typeof val === 'string' ? esc(val) : Object.entries(val || {}).map(([k,v]) => `<strong>${esc(k)}:</strong> ${esc(typeof v === 'string' ? v : JSON.stringify(v))}`).join('<br>')}</p>
-        </div>
-      `).join('');
-    }
-
-    const stolenHtml = renderStolenInfoSection(res.stealer_results);
-    if(stolenHtml) resultsWrap.innerHTML += stolenHtml;
+    lastSearchMeta = res.meta || {};
+    searchPage = lastSearchMeta.page || requestedPage;
+    resultsWrap.innerHTML = renderSearchResults(res.results, lastSearchMeta);
+    resultsWrap.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }catch(e){
     if(loading) loading.classList.remove('show');
     notify(e.message, true);
@@ -2972,6 +2984,9 @@ function setNote(id, msg, type='') {
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// esc() ne touche pas aux guillemets : les valeurs qu'on injecte dans un
+// attribut (data-v, title…) passent par celle-ci.
+function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
 // ── Generic renderer for specialized single-purpose lookups (Discord ID,
 // GitHub, IP intel, WHOIS, etc.) — response shapes differ per endpoint,
@@ -3085,6 +3100,185 @@ function renderSpecialResult(data){
   if(!entries.length) return `<div class="result-item"><h4>${t('noResults')}</h4><p>${t('noResultsDesc')}</p></div>`;
   return `<div class="result-item">${entries.map(([k,v]) => `<p><strong>${esc(k)}:</strong> ${renderProfileValue(v)}</p>`).join('')}</div>`;
 }
+
+// ── RÉSULTATS BRIXHUB ───────────────────────────────────────────
+// L'API temporaire renvoie une liste de profils plats : on les presente en
+// cartes avec l'identite en tete, les contacts cliquables, puis les
+// champs restants ranges par theme pour que la carte reste scannable.
+const FIELD_META = {
+  // identité
+  prenom:          { label:{fr:'Prénom', en:'First name'},        group:'identity' },
+  nom_famille:     { label:{fr:'Nom', en:'Last name'},            group:'identity' },
+  nom_affichage:   { label:{fr:'Nom affiché', en:'Display name'},  group:'identity' },
+  nom_utilisateur: { label:{fr:'Pseudo', en:'Username'},          group:'identity' },
+  nom_naissance:   { label:{fr:'Nom de naissance', en:'Birth name'}, group:'identity' },
+  civilite:        { label:{fr:'Civilité', en:'Sex'},             group:'identity' },
+  genre:           { label:{fr:'Genre', en:'Gender'},              group:'identity' },
+  date_naissance:  { label:{fr:'Naissance', en:'Birth date'},      group:'identity' },
+  annee_naissance: { label:{fr:'Année de naissance', en:'Birth year'}, group:'identity' },
+  jour_naissance:  { label:{fr:'Jour de naissance', en:'Birth day'},  group:'identity' },
+  mois_naissance:  { label:{fr:'Mois de naissance', en:'Birth month'}, group:'identity' },
+  date_inscription:{ label:{fr:'Inscription', en:'Signed up'},     group:'identity' },
+  // contact
+  email:           { label:{fr:'Email', en:'Email'},               group:'contact', icon:'logo/mail.png', copy:true },
+  telephone:       { label:{fr:'Téléphone', en:'Phone'},           group:'contact', icon:'logo/telephone.png', copy:true },
+  mobile:          { label:{fr:'Mobile', en:'Mobile'},            group:'contact', icon:'logo/telephone.png', copy:true },
+  adresse_ip:      { label:{fr:'Adresse IP', en:'IP address'},     group:'contact', icon:'logo/ip.png', copy:true },
+  discord_id:      { label:{fr:'Discord', en:'Discord'},           group:'contact', icon:'logo/discord.png', copy:true },
+  steam_id:        { label:{fr:'Steam', en:'Steam'},               group:'contact', icon:'logo/steam.png', copy:true },
+  xbox_live_id:    { label:{fr:'Xbox Live', en:'Xbox Live'},       group:'contact', icon:'logo/trophee.png', copy:true },
+  iban:            { label:{fr:'IBAN', en:'IBAN'},                 group:'contact', icon:'logo/dollars.png', copy:true },
+  bic:             { label:{fr:'BIC', en:'BIC'},                   group:'contact' },
+  // localisation
+  adresse:         { label:{fr:'Adresse', en:'Address'},           group:'geo', icon:'logo/home.png' },
+  complement_adresse:{label:{fr:'Complément', en:'Address line 2'}, group:'geo' },
+  code_postal:     { label:{fr:'Code postal', en:'Postcode'},      group:'geo' },
+  ville:           { label:{fr:'Ville', en:'City'},               group:'geo', icon:'logo/contact.png' },
+  departement:     { label:{fr:'Département', en:'Department'},     group:'geo' },
+  region:          { label:{fr:'Région', en:'Region'},             group:'geo' },
+  pays:            { label:{fr:'Pays', en:'Country'},              group:'geo' },
+  ville_naissance: { label:{fr:'Ville de naissance', en:'Birth city'}, group:'geo' },
+  lieu_naissance:  { label:{fr:'Lieu de naissance', en:'Birth place'}, group:'geo' },
+  // professionnel
+  societe:         { label:{fr:'Société', en:'Company'},           group:'work', icon:'logo/boutique.png' },
+  profession:      { label:{fr:'Profession', en:'Job title'},       group:'work' },
+  fonction:        { label:{fr:'Fonction', en:'Role'},              group:'work' },
+  siret:           { label:{fr:'SIRET', en:'SIRET'},               group:'work' },
+  siren:           { label:{fr:'SIREN', en:'SIREN'},               group:'work' },
+  marque:          { label:{fr:'Marque', en:'Make'},               group:'work' },
+  modele:          { label:{fr:'Modèle', en:'Model'},              group:'work' },
+  vin_plaque:      { label:{fr:'Plaque / VIN', en:'Plate / VIN'},  group:'work' },
+  immatriculation: { label:{fr:'Immatriculation', en:'Registration'}, group:'work' },
+  numero_serie:    { label:{fr:'N° de série', en:'Serial number'}, group:'work' },
+  fivem_license:   { label:{fr:'FiveM License', en:'FiveM license'}, group:'work' },
+  fivem_license2:  { label:{fr:'FiveM License 2', en:'FiveM license 2'}, group:'work' },
+  fivem_id:        { label:{fr:'FiveM ID', en:'FiveM ID'},          group:'work' },
+  live_id:         { label:{fr:'Live ID', en:'Live ID'},            group:'work' },
+  sources:         { label:{fr:'Sources', en:'Sources'},           group:'meta' },
+  confidence:      { label:{fr:'Confiance', en:'Confidence'},       group:'meta' },
+};
+const GROUP_TITLES = {
+  identity:{fr:'Identité', en:'Identity'},
+  contact: {fr:'Contact',  en:'Contact'},
+  geo:     {fr:'Localisation', en:'Location'},
+  work:    {fr:'Professionnel & véhicules', en:'Professional & vehicles'},
+  meta:    {fr:'Provenance', en:'Provenance'},
+  other:   {fr:'Autres champs', en:'Other fields'},
+};
+// 'other' est en dernier et reste toujours présent : l'API peut renvoyer un
+// champ qu'on ne connaît pas encore, et il doit s'afficher quand même.
+const GROUP_ORDER = ['contact','identity','geo','work','meta','other'];
+
+// L'API code certains champs en interne (genre « 1 »/« 2 », civilité « M »/« F »).
+// On les traduit quand on recognises le code, et on laisse tel quel sinon —
+// mieux vaut afficher « 3 » qu'inventer un sens.
+const VALUE_CODES = {
+  genre:    { '1':{fr:'Homme',en:'Male'},   '2':{fr:'Femme',en:'Female'}, m:{fr:'Homme',en:'Male'}, f:{fr:'Femme',en:'Female'} },
+  civilite: { M:{fr:'Homme',en:'Male'}, F:{fr:'Femme',en:'Female'}, '1':{fr:'Homme',en:'Male'}, '2':{fr:'Femme',en:'Female'} },
+};
+function formatFieldValue(key, raw){
+  if(Array.isArray(raw)) return raw.join(' · ');
+  const entry = VALUE_CODES[key]?.[String(raw)];
+  if(entry) return entry[settings.lang] || entry.fr;
+  return String(raw);
+}
+
+function fieldLabel(key){
+  const m = FIELD_META[key];
+  if(m) return m.label[settings.lang] || m.label.fr;
+  // champ inconnu : on le rend lisible plutôt que de l'afficher brut
+  return key.replace(/_/g,' ').replace(/^./, c => c.toUpperCase());
+}
+
+function humanName(p){
+  const full = [p.prenom, p.nom_famille].filter(Boolean).join(' ').trim();
+  return full || p.nom_affichage || p.nom_utilisateur || p.nom_naissance || null;
+}
+
+function copyText(v){ navigator.clipboard?.writeText(String(v)).then(() => notify(t('copied'))).catch(()=>{}); }
+
+function renderSearchResults(results, meta){
+  const list = Array.isArray(results) ? results : [];
+  if(!list.length){
+    return `<div class="result-item"><h4>${t('noResults')}</h4><p>${t('noResultsDesc')}</p></div>`;
+  }
+
+  const total = meta?.total ?? list.length;
+  const page  = meta?.page  || 1;
+  const pages = meta?.pages || 1;
+
+  const header = `<div class="sr-head">
+    <span class="sr-count">${esc(String(total))} <span>${t('results')}</span></span>
+    ${pages > 1 ? `<span class="sr-page">${t('page')} ${esc(String(page))} / ${esc(String(pages))}</span>` : ''}
+  </div>`;
+
+  const cards = list.map((p, i) => renderProfileCard(p, i)).join('');
+
+  return header + cards + (pages > 1 ? renderPagination(page, pages) : '');
+}
+
+function renderProfileCard(p, i){
+  const name = humanName(p);
+  const identityBits = [p.civilite, p.date_naissance].filter(Boolean).join(' · ');
+  const location = [p.code_postal, p.ville].filter(Boolean).join(' ');
+
+  // Découpe le profil en groupes, dans l'ordre d'intérêt pour l'utilisateur.
+  // jour/mois/année de naissance sont la même info que date_naissance : on ne
+  // les affiche que si la date complète est absente.
+  const derived = p.date_naissance ? new Set(['annee_naissance','jour_naissance','mois_naissance']) : new Set();
+  const groups = {};
+  for(const key of Object.keys(p)){
+    if(derived.has(key)) continue;
+    const meta = FIELD_META[key];
+    const g = meta ? meta.group : 'other';
+    (groups[g] ||= []).push(key);
+  }
+
+  const sections = GROUP_ORDER.filter(g => groups[g]?.length).map(g => {
+    const rows = groups[g].map(key => {
+      const meta = FIELD_META[key] || {};
+      const icon = meta.icon ? `<img src="${meta.icon}" alt="">` : '';
+      const value = formatFieldValue(key, p[key]);
+      const copyBtn = meta.copy ? `<button class="sr-copy" onclick="copyText(this.dataset.v)" data-v="${escAttr(value)}" title="${escAttr(t('copy'))}"><img src="logo/code.png" alt=""></button>` : '';
+      return `<div class="sr-field">${icon}<span class="sr-key">${esc(fieldLabel(key))}</span><span class="sr-val">${esc(value)}</span>${copyBtn}</div>`;
+    }).join('');
+    const title = GROUP_TITLES[g] ? `<div class="sr-group-title">${esc(GROUP_TITLES[g][settings.lang] || GROUP_TITLES[g].fr)}</div>` : '';
+    return `<div class="sr-group">${title}${rows}</div>`;
+  }).join('');
+
+  const confidence = typeof p.confidence === 'number' && p.confidence > 0
+    ? `<span class="sr-conf" title="${esc(t('confidence'))}">${esc(String(p.confidence))}</span>` : '';
+
+  return `<article class="sr-card" style="animation-delay:${Math.min(i,12)*60}ms">
+    <header class="sr-card-top">
+      <div class="sr-avatar">${name ? esc(name.trim().charAt(0).toUpperCase()) : '?'}</div>
+      <div class="sr-id">
+        <h3>${name ? esc(name) : esc(t('unnamedProfile'))}</h3>
+        <p>${[identityBits, location].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ') || '&nbsp;'}</p>
+      </div>
+      ${confidence}
+    </header>
+    <div class="sr-body">${sections}</div>
+  </article>`;
+}
+
+function renderPagination(page, pages){
+  // Fenêtre glissante : 1 … 4 5 [6] 7 8 … 20
+  const nums = new Set([1, pages, page, page-1, page+1]);
+  const list = [...nums].filter(n => n>=1 && n<=pages).sort((a,b)=>a-b);
+  let prev = 0;
+  let btns = '';
+  for(const n of list){
+    if(n - prev > 1) btns += `<span class="sr-gap">…</span>`;
+    btns += `<button class="sr-page-btn${n===page?' active':''}" onclick="doSearch(${n})">${n}</button>`;
+    prev = n;
+  }
+  return `<nav class="sr-pager">
+    <button class="sr-page-btn nav" onclick="doSearch(${page-1})" ${page<=1?'disabled':''}>←</button>
+    ${btns}
+    <button class="sr-page-btn nav" onclick="doSearch(${page+1})" ${page>=pages?'disabled':''}>→</button>
+  </nav>`;
+}
 function copyLTC(){navigator.clipboard.writeText(CONFIG.site.ltcAddress).then(()=>notify(t('ltcCopied')));}
 
 document.getElementById('search-btn')?.addEventListener('click', () => doSearch());
@@ -3096,7 +3290,7 @@ document.addEventListener('keydown',e=>{
     if(authVisible){
       if(document.getElementById('auth-signup')?.classList.contains('active')) doSignup();
       else if(document.getElementById('auth-login')?.classList.contains('active')) doLogin();
-    } else if(e.target.id==='search-input'){
+    } else if(e.target.id==='search-input' || e.target.id==='search-input-ville'){
       doSearch();
     }
   }
