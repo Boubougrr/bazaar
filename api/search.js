@@ -6,29 +6,23 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const SEEK_API_KEY = process.env.SEEK_API_KEY;
-
 const EPOCH = new Date('2026-01-01T00:00:00Z').getTime();
 const PERIOD_MS = 48 * 3600 * 1000;
 function getCurrentPeriod() { return Math.floor((Date.now() - EPOCH) / PERIOD_MS); }
 function getPeriodEnd(period) { return EPOCH + (period + 1) * PERIOD_MS; }
-const SEEK_API = 'https://see-know.icu/api/v1';
 
-// A real browser User-Agent + Accept header reduces the odds of being caught by
-// see-know.icu's Cloudflare bot-protection, which otherwise returns an HTML
-// "Just a moment..." challenge page instead of a JSON API response.
-const SEEK_HEADERS = {
+// Nouvelle API temporaire (brixhub.ru) - recherche par nom_famille + ville
+const BRIXHUB_API = 'https://api.brixhub.ru/api/v1/search';
+const BRIXHUB_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   'Accept': 'application/json',
+  'Content-Type': 'application/json',
 };
 
-// see-know.icu's Cloudflare challenge page is returned as HTML (not JSON) when
-// the request is flagged as a bot — surface a clean, actionable message instead
-// of dumping the raw challenge-page HTML back to the user.
-function parseSeekError(status, text) {
+function parseBrixhubError(status, text) {
   const looksLikeHtml = /^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text);
   if (looksLikeHtml) {
-    return 'Le service de recherche est temporairement bloqué par une protection anti-bot (Cloudflare). Réessayez dans quelques instants ou contactez le support si ça persiste.';
+    return 'Le service de recherche est temporairement bloqué par une protection anti-bot. Réessayez dans quelques instants.';
   }
   try {
     const errJson = JSON.parse(text);
@@ -38,20 +32,8 @@ function parseSeekError(status, text) {
   }
 }
 
-const TYPE_MAP = {
-  'email': 'email',
-  'username': 'username',
-  'phone': 'phone',
-  'ip': 'ip',
-  'domain': 'domain',
-  'name': 'name',
-  'hash': 'hash',
-  'url': 'url',
-  'machine_id': 'machine_id',
-};
-
-// Specialized single-purpose lookups (each hits its own see-know.eu GET endpoint
-// instead of the generic /search+/stealer flow used by TYPE_MAP above).
+// Types supportés par l'ancienne API (maintenant indisponible)
+const LEGACY_TYPES = ['email', 'username', 'phone', 'ip', 'domain', 'hash', 'url', 'machine_id'];
 const SPECIAL_ENDPOINTS = {
   discord_user:     { path: '/discord/user',       param: 'discord_id' },
   discord_roblox:   { path: '/discord/to-roblox',  param: 'discord_id' },
@@ -71,39 +53,34 @@ const SPECIAL_ENDPOINTS = {
   minecraft:        { path: '/gaming/minecraft',   param: 'username' },
 };
 
-function detectType(query) {
-  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(query) && query.split('.').every(n => +n <= 255)) return 'ip';
-  if (/^[0-9a-fA-F:]{2,}:[0-9a-fA-F:]{2,}$/.test(query)) return 'ip';
-  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query)) return 'email';
-  if (/^\d{17,19}$/.test(query)) return 'username';
-  if (/^.+#\d{4}$/.test(query)) return 'username';
-  if (/^\+?[\d\s\-().]{7,}$/.test(query) && (query.match(/\d/g) || []).length >= 7) return 'phone';
-  if (/^[a-zA-Z0-9._\-]{3,}$/.test(query)) return 'username';
-  return 'email';
-}
+// Nouveau type pour la recherche PagesBlanches (nom + ville)
+const NEW_API_TYPES = ['pages_blanches', 'name_city'];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { action, token, query, mode } = req.body;
+  const { action, token, query, mode, nom_famille, ville, per_page } = req.body;
   // Automated mode always auto-detects the target type server-side, regardless
   // of what the client sends — Manual mode costs 1 credit, Automated costs 2.
   const type = mode === 'automated' ? 'auto' : req.body.type;
   const cost = mode === 'automated' ? 2 : 1;
 
-  // Free, public health check — no session/credits needed, just proxies see-know.eu's own status.
+  // Free, public health check — no session/credits needed
   if (action === 'status') {
-    try {
-      const r = await fetch(`${SEEK_API}/status`, { headers: { ...SEEK_HEADERS, 'X-API-Key': SEEK_API_KEY } });
-      const text = await r.text();
-      if (!r.ok) return res.status(502).json({ error: parseSeekError(r.status, text) });
-      return res.json({ ok: true, status: JSON.parse(text) });
-    } catch (e) {
-      return res.status(502).json({ error: 'Impossible de contacter le service.' });
-    }
+    return res.json({ ok: true, status: { operational: true, message: 'Service opérationnel (API temporaire)' } });
   }
 
-  if (!query) return res.status(400).json({ error: 'Paramètres manquants.' });
+  // Vérifier si c'est une recherche PagesBlanches (nouvelle API)
+  const isPagesBlanches = type === 'pages_blanches' || type === 'name_city';
+  
+  // Pour PagesBlanches, on a besoin de nom_famille et ville
+  if (isPagesBlanches) {
+    if (!nom_famille || !ville) {
+      return res.status(400).json({ error: 'Nom de famille et ville sont requis pour cette recherche.' });
+    }
+  } else if (!query) {
+    return res.status(400).json({ error: 'Paramètres manquants.' });
+  }
 
   const { data: status } = await supabase.from('site_status').select('osint_enabled').eq('id', 1).single();
   if (status && status.osint_enabled === false) {
@@ -139,62 +116,36 @@ export default async function handler(req, res) {
   let stealerData = null;
   let category = null;
 
-  const special = SPECIAL_ENDPOINTS[type];
-
-  if (special) {
-    category = type;
+  if (isPagesBlanches) {
+    // Nouvelle API brixhub.ru - recherche par nom_famille + ville
+    category = 'pages_blanches';
     try {
-      const url = `${SEEK_API}${special.path}?${special.param}=${encodeURIComponent(query)}`;
-      const specialRes = await fetch(url, { headers: { ...SEEK_HEADERS, 'X-API-Key': SEEK_API_KEY } });
-      const specialText = await specialRes.text();
-      if (specialRes.ok) {
-        searchData = JSON.parse(specialText);
+      const body = {
+        nom_famille: nom_famille.trim(),
+        ville: ville.trim(),
+        per_page: per_page || 20,
+      };
+      const response = await fetch(BRIXHUB_API, {
+        method: 'POST',
+        headers: BRIXHUB_HEADERS,
+        body: JSON.stringify(body),
+      });
+      const text = await response.text();
+      if (response.ok) {
+        const data = JSON.parse(text);
+        // L'API retourne {status, message, data: {results, meta}, timestamp}
+        searchData = data.data?.results || data.results || [];
       } else {
-        return res.status(502).json({ error: parseSeekError(specialRes.status, specialText) });
+        return res.status(502).json({ error: parseBrixhubError(response.status, text) });
       }
     } catch (e) {
       return res.status(502).json({ error: 'Impossible de contacter l\'API de recherche: ' + e.message });
     }
   } else {
-    const apiType = TYPE_MAP[type] || (type === 'auto' ? detectType(query) : type);
-
-    try {
-      const searchRes = await fetch(`${SEEK_API}/search`, {
-        method: 'POST',
-        headers: {
-          ...SEEK_HEADERS,
-          'Authorization': `Bearer ${SEEK_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query, type: apiType, limit: 100 }),
-      });
-      const searchText = await searchRes.text();
-      if (searchRes.ok) {
-        searchData = JSON.parse(searchText);
-      } else {
-        return res.status(502).json({ error: parseSeekError(searchRes.status, searchText) });
-      }
-    } catch (e) {
-      return res.status(502).json({ error: 'Impossible de contacter l\'API de recherche: ' + e.message });
-    }
-
-    if (apiType === 'domain') {
-      try {
-        const stealerRes = await fetch(`${SEEK_API}/stealer`, {
-          method: 'POST',
-          headers: {
-            ...SEEK_HEADERS,
-            'Authorization': `Bearer ${SEEK_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ query, type: 'domain' }),
-        });
-        const stealerText = await stealerRes.text();
-        if (stealerRes.ok) {
-          stealerData = JSON.parse(stealerText);
-        }
-      } catch (e) {}
-    }
+    // Ancienne API (see-know.icu) - en maintenance
+    return res.status(503).json({ 
+      error: 'Les autres types de recherche (email, téléphone, IP, Discord, etc.) sont temporairement indisponibles car le fournisseur d\'API est en maintenance. Seule la recherche "PagesBlanches" (nom + ville) fonctionne pour le moment.' 
+    });
   }
 
   const now = new Date();

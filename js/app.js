@@ -145,7 +145,7 @@ const I18N = {
     heroFeatureTools:'Outils gratuits',
     creditsRemaining:'Crédits Restants',
     searchPlaceholder:'Recherche automatique…',
-    phEmail:'Adresse email…', phPhone:'Numéro de téléphone…', phIp:'Adresse IP…', phName:'Nom complet…', phMachineId:'Machine ID…',
+    phEmail:'Adresse email…', phPhone:'Numéro de téléphone…', phIp:'Adresse IP…', phName:'Nom complet…', phMachineId:'Machine ID…', phPagesBlanches:'Nom de famille + Ville…', phPagesBlanchesNom:'Nom de famille…', phPagesBlanchesVille:'Ville…',
     phDiscordId:'ID Discord (17-19 chiffres)…', phGithub:'Pseudo GitHub…', phTwitter:'Pseudo Twitter/X…',
     phTiktok:'Pseudo TikTok…', phReddit:'Pseudo Reddit…', phSocial:'Pseudo à rechercher…',
     phUsernameHistory:'Pseudo actuel…', phDomainIntel:'Nom de domaine…', phXbox:'Gamertag Xbox…',
@@ -488,7 +488,7 @@ const I18N = {
     heroFeatureTools:'Free Tools',
     creditsRemaining:'Credits Left',
     searchPlaceholder:'Search automatically…',
-    phEmail:'Email address…', phPhone:'Phone number…', phIp:'IP address…', phName:'Full name…', phMachineId:'Machine ID…',
+    phEmail:'Email address…', phPhone:'Phone number…', phIp:'IP address…', phName:'Full name…', phMachineId:'Machine ID…', phPagesBlanches:'Last name + City…', phPagesBlanchesNom:'Last name…', phPagesBlanchesVille:'City…',
     phDiscordId:'Discord ID (17-19 digits)…', phGithub:'GitHub username…', phTwitter:'Twitter/X handle…',
     phTiktok:'TikTok username…', phReddit:'Reddit username…', phSocial:'Username to search…',
     phUsernameHistory:'Current username…', phDomainIntel:'Domain name…', phXbox:'Xbox gamertag…',
@@ -1843,6 +1843,9 @@ function toggleSearchDD(e) {
 
 // ── Manual/Automated search mode + category-grouped type picker ────
 const SEARCH_CATEGORIES = [
+  { id:'pages_blanches', label:'PagesBlanches', icon:'logo/id.png', types:[
+    { v:'pages_blanches', icon:'logo/id.png', label:'Nom + Ville', ph:'phPagesBlanches' },
+  ]},
   { id:'data_leaks', label:'Data Leaks', icon:'logo/database.png', types:[
     { v:'email', icon:'logo/mail.png', label:'Email', ph:'phEmail' },
     { v:'phone', icon:'logo/phone.png', label:'Phone', ph:'phPhone' },
@@ -1873,7 +1876,7 @@ const SEARCH_CATEGORIES = [
 ];
 
 let searchTopMode = 'manual';
-let manualCategory = 'data_leaks';
+let manualCategory = 'pages_blanches';
 
 function setSearchTopMode(mode){
   searchTopMode = mode;
@@ -1882,6 +1885,7 @@ function setSearchTopMode(mode){
   const grid = document.getElementById('manual-search-grid');
   if(grid) grid.style.display = mode==='manual' ? '' : 'none';
   const input = document.getElementById('search-input');
+  const villeInput = document.getElementById('search-input-ville');
   if(mode==='automated'){
     selectedSearchType = 'auto';
     const sel = document.getElementById('search-type');
@@ -1889,6 +1893,8 @@ function setSearchTopMode(mode){
     const iconEl = document.getElementById('std-icon');
     if(iconEl) iconEl.src = 'logo/robot.png';
     if(input){ input.placeholder = t('searchPlaceholder'); if(input.value.trim()) showAutoDetect(input.value.trim()); }
+    if (villeInput) villeInput.style.display = 'none';
+    notify('Mode Automated indisponible (ancienne API en maintenance). Utilisez le mode Manual avec PagesBlanches.', true);
   } else {
     setManualCategory(manualCategory);
   }
@@ -1925,12 +1931,26 @@ function selectManualType(value){
   const typeObj = cat?.types.find(ty => ty.v === value);
   const iconEl = document.getElementById('std-icon');
   const input = document.getElementById('search-input');
+  const villeInput = document.getElementById('search-input-ville');
   if(iconEl && typeObj) iconEl.src = typeObj.icon;
   if(input && typeObj) input.placeholder = t(typeObj.ph);
   const sel = document.getElementById('search-type');
   if(sel) sel.value = value;
   if(value !== 'auto') hideAutoDetect();
   else if(input?.value.trim()) showAutoDetect(input.value.trim());
+  
+  // Show/hide ville input for PagesBlanches
+  if (villeInput) {
+    if (value === 'pages_blanches' || value === 'name_city') {
+      villeInput.style.display = '';
+      input.placeholder = t('phPagesBlanchesNom');
+      villeInput.placeholder = t('phPagesBlanchesVille');
+    } else {
+      villeInput.style.display = 'none';
+      // Reset placeholder for other types
+      if (input && typeObj) input.placeholder = t(typeObj.ph);
+    }
+  }
 }
 
 const AUTO_DETECT_TYPES = [
@@ -2014,8 +2034,19 @@ function setSearchMode(mode){
 }
 
 async function doSearch(){
-  const q=document.getElementById('search-input').value.trim();
-  if(!q) return notify(t('enterTarget'), true);
+  const isPagesBlanches = selectedSearchType === 'pages_blanches' || selectedSearchType === 'name_city';
+  let q, nom_famille, ville;
+  
+  if (isPagesBlanches) {
+    nom_famille = document.getElementById('search-input').value.trim();
+    ville = document.getElementById('search-input-ville').value.trim();
+    if (!nom_famille || !ville) return notify('Nom de famille et ville sont requis.', true);
+    q = nom_famille + ' ' + ville; // For display/validation
+  } else {
+    q = document.getElementById('search-input').value.trim();
+    if(!q) return notify(t('enterTarget'), true);
+  }
+  
   if(!currentUser) return notify(t('loginRequired'), true);
   const sel = document.getElementById('search-type');
   if(sel) selectedSearchType = sel.value;
@@ -2032,7 +2063,16 @@ async function doSearch(){
   if(loadText) loadText.textContent = t('loadingSearch');
 
   try{
-    const res=await api('search',{token:sessionToken, query:q, type:selectedSearchType, mode:searchTopMode});
+    const apiParams = {token:sessionToken, type:selectedSearchType, mode:searchTopMode};
+    if (isPagesBlanches) {
+      apiParams.nom_famille = nom_famille;
+      apiParams.ville = ville;
+      apiParams.per_page = 20;
+    } else {
+      apiParams.query = q;
+    }
+    
+    const res=await api('search', apiParams);
     saveSession(res.user);
     updateCreditsUI();
     track('search');
