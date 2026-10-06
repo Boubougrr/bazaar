@@ -120,8 +120,6 @@ const I18N = {
     noResults:'Aucun résultat', noResultsDesc:'Aucune donnée trouvée pour cette cible avec les sources disponibles.',
     typeUnavailable:'Type indisponible : l\'API temporaire du fournisseur ne couvre pas cette recherche (maintenance en cours).',
     pbNeedBoth:'Renseigne le nom de famille et la ville.',
-    results:'résultats', page:'Page', copied:'Copié.', copy:'Copier',
-    unnamedProfile:'Profil sans identité', confidence:'Confiance de la correspondance',
     resultLabel:'Résultat',
     loginToReview:'🔑 Connectez-vous pour laisser un avis.', reviewTooShort:'Avis trop court.',
     sending:'Envoi…', reviewSent:'✓ Avis envoyé !', noReviewsYet:'Aucun avis pour le moment.',
@@ -467,8 +465,6 @@ const I18N = {
     noResults:'No results', noResultsDesc:'No data found for this target with available sources.',
     typeUnavailable:'Unavailable type: the provider\'s temporary API does not cover this search (maintenance).',
     pbNeedBoth:'Enter both the last name and the city.',
-    results:'results', page:'Page', copied:'Copied.', copy:'Copy',
-    unnamedProfile:'Unnamed profile', confidence:'Match confidence',
     resultLabel:'Result',
     loginToReview:'🔑 Log in to leave a review.', reviewTooShort:'Review too short.',
     sending:'Sending…', reviewSent:'✓ Review sent!', noReviewsYet:'No reviews yet.',
@@ -3102,164 +3098,29 @@ function renderSpecialResult(data){
 }
 
 // ── RÉSULTATS BRIXHUB ───────────────────────────────────────────
-// L'API temporaire renvoie une liste de profils plats : on les presente en
-// cartes avec l'identite en tete, les contacts cliquables, puis les
-// champs restants ranges par theme pour que la carte reste scannable.
-const FIELD_META = {
-  // identité
-  prenom:          { label:{fr:'Prénom', en:'First name'},        group:'identity' },
-  nom_famille:     { label:{fr:'Nom', en:'Last name'},            group:'identity' },
-  nom_affichage:   { label:{fr:'Nom affiché', en:'Display name'},  group:'identity' },
-  nom_utilisateur: { label:{fr:'Pseudo', en:'Username'},          group:'identity' },
-  nom_naissance:   { label:{fr:'Nom de naissance', en:'Birth name'}, group:'identity' },
-  civilite:        { label:{fr:'Civilité', en:'Sex'},             group:'identity' },
-  genre:           { label:{fr:'Genre', en:'Gender'},              group:'identity' },
-  date_naissance:  { label:{fr:'Naissance', en:'Birth date'},      group:'identity' },
-  annee_naissance: { label:{fr:'Année de naissance', en:'Birth year'}, group:'identity' },
-  jour_naissance:  { label:{fr:'Jour de naissance', en:'Birth day'},  group:'identity' },
-  mois_naissance:  { label:{fr:'Mois de naissance', en:'Birth month'}, group:'identity' },
-  date_inscription:{ label:{fr:'Inscription', en:'Signed up'},     group:'identity' },
-  // contact
-  email:           { label:{fr:'Email', en:'Email'},               group:'contact', icon:'logo/mail.png', copy:true },
-  telephone:       { label:{fr:'Téléphone', en:'Phone'},           group:'contact', icon:'logo/telephone.png', copy:true },
-  mobile:          { label:{fr:'Mobile', en:'Mobile'},            group:'contact', icon:'logo/telephone.png', copy:true },
-  adresse_ip:      { label:{fr:'Adresse IP', en:'IP address'},     group:'contact', icon:'logo/ip.png', copy:true },
-  discord_id:      { label:{fr:'Discord', en:'Discord'},           group:'contact', icon:'logo/discord.png', copy:true },
-  steam_id:        { label:{fr:'Steam', en:'Steam'},               group:'contact', icon:'logo/steam.png', copy:true },
-  xbox_live_id:    { label:{fr:'Xbox Live', en:'Xbox Live'},       group:'contact', icon:'logo/trophee.png', copy:true },
-  iban:            { label:{fr:'IBAN', en:'IBAN'},                 group:'contact', icon:'logo/dollars.png', copy:true },
-  bic:             { label:{fr:'BIC', en:'BIC'},                   group:'contact' },
-  // localisation
-  adresse:         { label:{fr:'Adresse', en:'Address'},           group:'geo', icon:'logo/home.png' },
-  complement_adresse:{label:{fr:'Complément', en:'Address line 2'}, group:'geo' },
-  code_postal:     { label:{fr:'Code postal', en:'Postcode'},      group:'geo' },
-  ville:           { label:{fr:'Ville', en:'City'},               group:'geo', icon:'logo/contact.png' },
-  departement:     { label:{fr:'Département', en:'Department'},     group:'geo' },
-  region:          { label:{fr:'Région', en:'Region'},             group:'geo' },
-  pays:            { label:{fr:'Pays', en:'Country'},              group:'geo' },
-  ville_naissance: { label:{fr:'Ville de naissance', en:'Birth city'}, group:'geo' },
-  lieu_naissance:  { label:{fr:'Lieu de naissance', en:'Birth place'}, group:'geo' },
-  // professionnel
-  societe:         { label:{fr:'Société', en:'Company'},           group:'work', icon:'logo/boutique.png' },
-  profession:      { label:{fr:'Profession', en:'Job title'},       group:'work' },
-  fonction:        { label:{fr:'Fonction', en:'Role'},              group:'work' },
-  siret:           { label:{fr:'SIRET', en:'SIRET'},               group:'work' },
-  siren:           { label:{fr:'SIREN', en:'SIREN'},               group:'work' },
-  marque:          { label:{fr:'Marque', en:'Make'},               group:'work' },
-  modele:          { label:{fr:'Modèle', en:'Model'},              group:'work' },
-  vin_plaque:      { label:{fr:'Plaque / VIN', en:'Plate / VIN'},  group:'work' },
-  immatriculation: { label:{fr:'Immatriculation', en:'Registration'}, group:'work' },
-  numero_serie:    { label:{fr:'N° de série', en:'Serial number'}, group:'work' },
-  fivem_license:   { label:{fr:'FiveM License', en:'FiveM license'}, group:'work' },
-  fivem_license2:  { label:{fr:'FiveM License 2', en:'FiveM license 2'}, group:'work' },
-  fivem_id:        { label:{fr:'FiveM ID', en:'FiveM ID'},          group:'work' },
-  live_id:         { label:{fr:'Live ID', en:'Live ID'},            group:'work' },
-  sources:         { label:{fr:'Sources', en:'Sources'},           group:'meta' },
-  confidence:      { label:{fr:'Confiance', en:'Confidence'},       group:'meta' },
-};
-const GROUP_TITLES = {
-  identity:{fr:'Identité', en:'Identity'},
-  contact: {fr:'Contact',  en:'Contact'},
-  geo:     {fr:'Localisation', en:'Location'},
-  work:    {fr:'Professionnel & véhicules', en:'Professional & vehicles'},
-  meta:    {fr:'Provenance', en:'Provenance'},
-  other:   {fr:'Autres champs', en:'Other fields'},
-};
-// 'other' est en dernier et reste toujours présent : l'API peut renvoyer un
-// champ qu'on ne connaît pas encore, et il doit s'afficher quand même.
-const GROUP_ORDER = ['contact','identity','geo','work','meta','other'];
-
-// L'API code certains champs en interne (genre « 1 »/« 2 », civilité « M »/« F »).
-// On les traduit quand on recognises le code, et on laisse tel quel sinon —
-// mieux vaut afficher « 3 » qu'inventer un sens.
-const VALUE_CODES = {
-  genre:    { '1':{fr:'Homme',en:'Male'},   '2':{fr:'Femme',en:'Female'}, m:{fr:'Homme',en:'Male'}, f:{fr:'Femme',en:'Female'} },
-  civilite: { M:{fr:'Homme',en:'Male'}, F:{fr:'Femme',en:'Female'}, '1':{fr:'Homme',en:'Male'}, '2':{fr:'Femme',en:'Female'} },
-};
-function formatFieldValue(key, raw){
-  if(Array.isArray(raw)) return raw.join(' · ');
-  const entry = VALUE_CODES[key]?.[String(raw)];
-  if(entry) return entry[settings.lang] || entry.fr;
-  return String(raw);
-}
-
-function fieldLabel(key){
-  const m = FIELD_META[key];
-  if(m) return m.label[settings.lang] || m.label.fr;
-  // champ inconnu : on le rend lisible plutôt que de l'afficher brut
-  return key.replace(/_/g,' ').replace(/^./, c => c.toUpperCase());
-}
-
-function humanName(p){
-  const full = [p.prenom, p.nom_famille].filter(Boolean).join(' ').trim();
-  return full || p.nom_affichage || p.nom_utilisateur || p.nom_naissance || null;
-}
-
-function copyText(v){ navigator.clipboard?.writeText(String(v)).then(() => notify(t('copied'))).catch(()=>{}); }
-
+// Rendu volontairement identique à celui d'origine : un bloc .result-item
+// par profil, titre + lignes clé/valeur. Seule différence avec le code
+// précédent, on n'applique pas Object.entries() au tableau lui-même :
+// sur un tableau ça indexe les résultats par 0, 1, 2… et on y perd le
+// contenu au profit des index.
 function renderSearchResults(results, meta){
   const list = Array.isArray(results) ? results : [];
   if(!list.length){
     return `<div class="result-item"><h4>${t('noResults')}</h4><p>${t('noResultsDesc')}</p></div>`;
   }
 
-  const total = meta?.total ?? list.length;
   const page  = meta?.page  || 1;
   const pages = meta?.pages || 1;
 
-  const header = `<div class="sr-head">
-    <span class="sr-count">${esc(String(total))} <span>${t('results')}</span></span>
-    ${pages > 1 ? `<span class="sr-page">${t('page')} ${esc(String(page))} / ${esc(String(pages))}</span>` : ''}
-  </div>`;
+  const cards = list.map((r, i) => `
+    <div class="result-item" style="animation-delay:${i*80}ms">
+      <h4>${esc(r.source || t('resultLabel')+' '+(i+1))}</h4>
+      <p>${Object.entries(r).filter(([k]) => k !== 'source').map(([k,v]) =>
+        `<strong>${esc(k)}:</strong> ${esc(typeof v === 'string' ? v : JSON.stringify(v))}`
+      ).join('<br>')}</p>
+    </div>`).join('');
 
-  const cards = list.map((p, i) => renderProfileCard(p, i)).join('');
-
-  return header + cards + (pages > 1 ? renderPagination(page, pages) : '');
-}
-
-function renderProfileCard(p, i){
-  const name = humanName(p);
-  const identityBits = [p.civilite, p.date_naissance].filter(Boolean).join(' · ');
-  const location = [p.code_postal, p.ville].filter(Boolean).join(' ');
-
-  // Découpe le profil en groupes, dans l'ordre d'intérêt pour l'utilisateur.
-  // jour/mois/année de naissance sont la même info que date_naissance : on ne
-  // les affiche que si la date complète est absente.
-  const derived = p.date_naissance ? new Set(['annee_naissance','jour_naissance','mois_naissance']) : new Set();
-  const groups = {};
-  for(const key of Object.keys(p)){
-    if(derived.has(key)) continue;
-    const meta = FIELD_META[key];
-    const g = meta ? meta.group : 'other';
-    (groups[g] ||= []).push(key);
-  }
-
-  const sections = GROUP_ORDER.filter(g => groups[g]?.length).map(g => {
-    const rows = groups[g].map(key => {
-      const meta = FIELD_META[key] || {};
-      const icon = meta.icon ? `<img src="${meta.icon}" alt="">` : '';
-      const value = formatFieldValue(key, p[key]);
-      const copyBtn = meta.copy ? `<button class="sr-copy" onclick="copyText(this.dataset.v)" data-v="${escAttr(value)}" title="${escAttr(t('copy'))}"><img src="logo/code.png" alt=""></button>` : '';
-      return `<div class="sr-field">${icon}<span class="sr-key">${esc(fieldLabel(key))}</span><span class="sr-val">${esc(value)}</span>${copyBtn}</div>`;
-    }).join('');
-    const title = GROUP_TITLES[g] ? `<div class="sr-group-title">${esc(GROUP_TITLES[g][settings.lang] || GROUP_TITLES[g].fr)}</div>` : '';
-    return `<div class="sr-group">${title}${rows}</div>`;
-  }).join('');
-
-  const confidence = typeof p.confidence === 'number' && p.confidence > 0
-    ? `<span class="sr-conf" title="${esc(t('confidence'))}">${esc(String(p.confidence))}</span>` : '';
-
-  return `<article class="sr-card" style="animation-delay:${Math.min(i,12)*60}ms">
-    <header class="sr-card-top">
-      <div class="sr-avatar">${name ? esc(name.trim().charAt(0).toUpperCase()) : '?'}</div>
-      <div class="sr-id">
-        <h3>${name ? esc(name) : esc(t('unnamedProfile'))}</h3>
-        <p>${[identityBits, location].filter(Boolean).map(esc).join(' &nbsp;·&nbsp; ') || '&nbsp;'}</p>
-      </div>
-      ${confidence}
-    </header>
-    <div class="sr-body">${sections}</div>
-  </article>`;
+  return cards + (pages > 1 ? renderPagination(page, pages) : '');
 }
 
 function renderPagination(page, pages){
